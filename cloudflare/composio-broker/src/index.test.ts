@@ -95,7 +95,7 @@ describe("connected-apps broker boundaries", () => {
   });
 
   it("hashes installation tokens before storage", async () => {
-    await expect(sha256("alcabots")).resolves.toBe("63c74f70a9d4681c334e84001935955a75245ea5b16b9c37c808e85c69963705");
+    await expect(sha256("alcabots")).resolves.toBe("7ff807e1848412e87ac039fc619b14dd9c1278cf6a1fa43cad64545fc20b67a5");
   });
 
   it("creates Sessions with explicit multi-account selection", async () => {

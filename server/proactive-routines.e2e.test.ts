@@ -235,7 +235,7 @@ describe("a read-and-draft run", () => {
     await expect.poll(() => existsSync(join(fixture.info.dataDir, "decisions", `${month}.ndjson`)), { timeout: 5_000 }).toBe(true);
     const decisions = readFileSync(join(fixture.info.dataDir, "decisions", `${month}.ndjson`), "utf8");
     const dump = JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8"));
-    expect(Object.keys(dump.mcpConfig.mcpServers).sort()).toEqual(["agents", "composio", "abot"]);
+    expect(Object.keys(dump.mcpConfig.mcpServers).sort()).toEqual(["abot", "agents", "composio"]);
     expect(dump.systemPrompt).not.toContain("Your enabled automations");
     expect(dump.systemPrompt).not.toContain("Pause a temporary monitor");
     expect(dump.systemPrompt).toContain("within its read-and-draft limits");
