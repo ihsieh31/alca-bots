@@ -14,8 +14,8 @@ describe("the box's environment allow-list", () => {
       SOME_RANDOM_NAME: "x", EMPTY: undefined,
     });
     expect(Object.keys(kept).sort()).toEqual([
-      "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "CLAUDE_CONFIG_DIR", "CODEX_HOME", "ELECTRON_RUN_AS_NODE", "HOME", "HTTPS_PROXY", "LANG", "LC_ALL",
-      "NO_PROXY", "NPM_CONFIG_LOGLEVEL", "ALCA_COMMS_TOKEN", "ALCA_HOOK_URL", "OPENAI_API_KEY", "PATH", "TERM", "TZ",
+      "ALCA_COMMS_TOKEN", "ALCA_HOOK_URL", "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "CLAUDE_CONFIG_DIR", "CODEX_HOME", "ELECTRON_RUN_AS_NODE", "HOME", "HTTPS_PROXY", "LANG", "LC_ALL",
+      "NO_PROXY", "NPM_CONFIG_LOGLEVEL", "OPENAI_API_KEY", "PATH", "TERM", "TZ",
     ]);
   });
 

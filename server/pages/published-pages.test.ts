@@ -412,6 +412,6 @@ describe("pages access", () => {
 
   it("signs a home's request exactly as the Admin checks it", () => {
     // The same vector is pinned in openmaus-cloud tests/cloud-pages.test.ts.
-    expect(pagesHomeSignature("s".repeat(43), "cm-test-home", "1792670400", "nonce-nonce-nonce-1", '{"action":"create"}')).toBe("smys7kDYS99REKsdwsd9OaXv6pH_hP1Wajaq3KrTiVo");
+    expect(pagesHomeSignature("s".repeat(43), "cm-test-home", "1792670400", "nonce-nonce-nonce-1", '{"action":"create"}')).toBe("_3KhNs5DpLvdDSkZTpb8ayExv41L7d9y5esnzcFDGy0");
   });
 });

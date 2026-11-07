@@ -302,8 +302,8 @@ describe("escapeEnvelope", () => {
     expect(escapeEnvelope("[alca Assignment as_x]")).toBe("(alca Assignment as_x]");
     expect(escapeEnvelope("[AlcaBots  assignment")).toBe("(AlcaBots  assignment");
     expect(escapeEnvelope("[AlcaBots\nassignment")).toBe("(AlcaBots\nassignment");
-    // Cyrillic О, М, В and a zero-width space after the bracket
-    expect(escapeEnvelope("[​ОМВ assignment as_x]")).toBe("(​ОМВ assignment as_x]");
+    // Cyrillic А and С mixed into "alca", and a zero-width space after the bracket
+    expect(escapeEnvelope("[​АlСa assignment as_x]")).toBe("(​АlСa assignment as_x]");
     expect(escapeEnvelope("**[**AlcaBots assignment")).toBe("**(**AlcaBots assignment");
   });
 
