@@ -11,9 +11,9 @@ import { locales } from "./index";
 const RETIRED: ReadonlyArray<readonly [string, RegExp, string]> = [
   ["ALCA Cloud", /ALCA Cloud/i, "AlcaBot Cloud"],
   ["AlcaBots Cloud", /AlcaBots Cloud/i, "AlcaBot Cloud"],
-  ["AlcaBot Pro", /AlcaBot Pro\b/, "AlcaBot Cloud"],
+  ["AlcaBot Pro", /AlcaBots? Pro\b/, "AlcaBot Cloud"],
   // \b before "_" fails, so environment names such as ALCA_PUBLIC_IPV4 pass.
-  ["ALCA", /\bOMB\b/, "AlcaBot"],
+  ["ALCA", /\bALCA\b/, "AlcaBot"],
   ["Cloud box", /Cloud box/i, "cloud desktop"],
   ["Hosted desktop", /Hosted desktop/i, "cloud desktop"],
   ["Cloud VM", /Cloud VM/i, "cloud desktop"],

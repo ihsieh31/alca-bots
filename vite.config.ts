@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Connect, Plugin } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
@@ -56,7 +57,12 @@ export default defineConfig({
     environment: "node",
     include,
     // ALCA_VITEST_E2E=host (CI's Windows and macOS shards) leaves the e2e files that run on Linux only.
-    exclude: [...configDefaults.exclude, ...(hostE2eOnly() ? portableE2eFiles(root, include) : [])],
+    exclude: [
+      ...configDefaults.exclude,
+      ...(hostE2eOnly() ? portableE2eFiles(root, include) : []),
+      // These exercise upstream's enterprise/ layer, which alca-bots does not ship.
+      ...(existsSync(resolve(root, "enterprise")) ? [] : ["server/hosted-access.test.ts", "server/hosted-models-api.test.ts"]),
+    ],
     setupFiles: ["server/testing/setup.ts", "src/testing/all-locales.ts"],
     // One file at a time by default: the suite spawns fake provider CLIs and real
     // harness servers, which a laptop feels. CI sets its runner's count (scripts/ci-scope.mjs).
