@@ -384,7 +384,7 @@ it("gives the edge only its routing name and the server the contract, never a ga
   expect(edge.ALCA_CLOUD_PUBLIC_HOST).toBe(cloudHomeHost(config));
   expect(JSON.stringify(edge)).not.toContain(token);
   expect(JSON.stringify(edge)).not.toContain(secret);
-  expect(passwdIds("root:x:0:0::/root:/bin/sh\nmaus:x:1001:1002::/data:/bin/bash\n", "alca")).toEqual({ uid: 1001, gid: 1002 });
+  expect(passwdIds("root:x:0:0::/root:/bin/sh\nalca:x:1001:1002::/data:/bin/bash\n", "alca")).toEqual({ uid: 1001, gid: 1002 });
   expect(passwdIds("root:x:0:0::/root:/bin/sh\n", "alca")).toBeNull();
 });
 

@@ -404,10 +404,10 @@ describe("bearerToken", () => {
     expect(bearerToken("bearer alca_abc")).toBe("alca_abc");
     expect(bearerToken("BEARER alca_abc")).toBe("alca_abc");
     expect(bearerToken("BeArEr alca_abc")).toBe("alca_abc");
-    expect(bearerToken("BeArEr\tomb_abc")).toBe("alca_abc");
+    expect(bearerToken("BeArEr\talca_abc")).toBe("alca_abc");
     expect(bearerToken("Bearer ")).toBeUndefined();
     expect(bearerToken("Bearer   ")).toBeUndefined();
-    expect(bearerToken("Beareromb_abc")).toBeUndefined();
+    expect(bearerToken("Beareralca_abc")).toBeUndefined();
   });
 });
 

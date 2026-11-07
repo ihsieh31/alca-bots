@@ -4,7 +4,7 @@ export const docsContentRoute = '/llms.mdx/docs';
 export const appName = 'AlcaBots Docs';
 
 export const gitConfig = {
-  user: 'milind-soni',
+  user: 'ihsieh31',
   repo: 'AlcaBots',
   branch: 'main',
 };

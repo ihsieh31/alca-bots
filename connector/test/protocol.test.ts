@@ -60,7 +60,7 @@ describe("the connector protocol", () => {
       expect(refused({ [name]: "x" }), name).toMatchObject({ ok: false, message: `env name ${name} is the image's own setting` });
     }
     const secret = "T0P-SECRET-VALUE";
-    for (const value of [`${secret}\nOMB_CLOUD_HARDEN=0`, `${secret}\r`, `${secret}\0`, 42, null, "x".repeat(8193)]) {
+    for (const value of [`${secret}\nALCA_CLOUD_HARDEN=0`, `${secret}\r`, `${secret}\0`, 42, null, "x".repeat(8193)]) {
       const result = refused({ ALCA_CLOUD_X_TOKEN: value });
       expect(result.ok).toBe(false);
       expect(JSON.stringify(result)).not.toContain(secret);

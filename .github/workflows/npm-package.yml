@@ -113,7 +113,7 @@ jobs:
       # OIDC token, so no registry token is stored
       # anywhere and no one-time password is asked for. One-time setup on
       # npmjs.com: package → Settings → Publishing access → GitHub Actions,
-      # owner milind-soni, repository AlcaBots, workflow npm-package.yml.
+      # owner ihsieh31, repository alca-bots, workflow npm-package.yml.
       # Needs npm ≥ 11.5 (Node 24 ships it).
       - name: Publish to npm
         run: |

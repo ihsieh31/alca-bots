@@ -49,35 +49,24 @@ describe("endpoint account configuration", () => {
     }
   });
 
-  it("parses the production account list once its token is saved, and only then", () => {
+  it("parses the production account list, now empty, without issues", () => {
+    // wrangler.jsonc no longer lists CLOUDFLARE_ENDPOINT_ACCOUNTS; the alcabot.si entry is gone.
     const production = JSON.parse(env.TEST_PRODUCTION_ENDPOINT_ACCOUNTS) as unknown[];
+    expect(production).toEqual([]);
     const configured = readConfig(withAccounts(production));
     expect(configured.endpointAccountIssues).toEqual([]);
-    expect(configured.endpointAccounts.slice(1).map(({ apiToken: _token, ...account }) => account)).toEqual([{
-      accountId: "bbb5305f06e28a6f2abaac299f3b09dc",
-      companionHostSuffix: "alcabot.si",
-      dnsRecordLimit: 3500,
-      minAppVersion: "0.1.104",
-      newEndpoints: true,
-      tunnelLimit: 1000,
-      zoneId: "4ded3da43e7b2c3a5f27b0fb33e5bd7a",
-    }]);
-    // Deployed before its token: the entry is dropped and reported, nothing breaks.
-    const unsaved = readConfig(withAccounts(production, {}));
-    expect(unsaved.endpointAccounts).toEqual([unsaved.cloudflare]);
-    expect(unsaved.endpointAccountIssues).toEqual(["entry_1_token"]);
+    expect(configured.endpointAccounts).toEqual([configured.cloudflare]);
   });
 
   it("deploys every account's limits at its real Cloudflare quotas", () => {
-    // alca-corp.me and alcabot.si are both Pro zones (3,500 DNS records;
-    // alcabot.si was Free, 200, until Oct 21). Both accounts allow 1,000 tunnels.
+    // The production list is empty now (alcabot.si was removed from wrangler.jsonc),
+    // so only the primary zone is deployed: a Pro zone with 3,500 DNS records and 1,000 tunnels.
     const production = JSON.parse(env.TEST_PRODUCTION_ENDPOINT_ACCOUNTS) as unknown[];
     const deployed = readConfig(withAccounts(production)).endpointAccounts;
     expect(deployed.map(({ companionHostSuffix, dnsRecordLimit, tunnelLimit }) => (
       { companionHostSuffix, dnsRecordLimit, tunnelLimit }
     ))).toEqual([
       { companionHostSuffix: "alca-corp.me", dnsRecordLimit: 3500, tunnelLimit: 1000 },
-      { companionHostSuffix: "alcabot.si", dnsRecordLimit: 3500, tunnelLimit: 1000 },
     ]);
   });
 

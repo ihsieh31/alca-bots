@@ -87,7 +87,7 @@ jobs:
           fi
           [ -f "$res/app-update.yml" ] || { echo "::error::missing $res/app-update.yml"; fail=1; }
           if [ -f "$res/app-update.yml" ]; then
-            grep -Eq '^repo: AlcaBots$' "$res/app-update.yml" || {
+            grep -Eq '^repo: alca-bots$' "$res/app-update.yml" || {
               echo "::error::app-update.yml does not point at ihsieh31/alca-bots"; fail=1; }
             # while the build is unsigned, a publisherName makes
             # electron-updater reject every update as untrusted

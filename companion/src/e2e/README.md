@@ -60,7 +60,7 @@ reveals nothing about `psk`: the two are separate HMAC outputs under different l
   - `h` and `r` are present only when the computer has a relay token (signed in, relay enabled). A device restricted to "Wi-Fi and
     Tailscale only" still gets them: they admit nothing by themselves, and they let a restricted phone away from home probe the relay
     now and then (4404 until it is allowed again).
-  - `r` lists 1 to 4 hostnames in the order to try. Each MUST match `^relay[1-9][0-9]?\.alcabots\.com$`.
+  - `r` lists 1 to 4 hostnames in the order to try. Each MUST match `^bots-relay[1-9][0-9]?\.alca-corp\.me$`.
   - `routes` is optional, `"any"` or `"local"`. `"local"` means the computer restricted this device to Wi-Fi and
     Tailscale; it may come with `h` and `r` (an older computer sends it without them). Absent means `"any"`, so a
     descriptor without `h` and `r` and without `"local"` only says the computer has no relay right now (signed out, or

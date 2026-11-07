@@ -66,14 +66,12 @@ describe("desktop companion endpoint", () => {
     expect(normalizeDesktopCompanionEndpoint(`${LABEL}.alca-corp.me`)).toBe(
       `https://${LABEL}.alca-corp.me`,
     );
-    // The control plane's second Cloudflare account gives addresses here.
-    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.alcabot.si`)).toBe(
-      `https://${LABEL}.alcabot.si`,
-    );
-    expect(normalizeDesktopCompanionEndpoint(` ${LABEL.toUpperCase()}.Alcabot.SI/ `)).toBe(
-      `https://${LABEL}.alcabot.si`,
+    expect(normalizeDesktopCompanionEndpoint(` ${LABEL.toUpperCase()}.Alca-Corp.ME/ `)).toBe(
+      `https://${LABEL}.alca-corp.me`,
     );
     for (const endpoint of [
+      // upstream's second zone is not ours
+      `https://${LABEL}.alcabot.si`,
       "https://unrelated.example.com",
       `http://${LABEL}.alca-corp.me`,
       "http://10.0.0.4:8810",
@@ -109,7 +107,7 @@ describe("desktop companion endpoint", () => {
   it("accepts one c-<32 hex> label under each listed domain, and only those", () => {
     // The third domain is a one-line change; until the owner names it, nothing new is accepted.
     expect(NEXT_MANAGED_COMPANION_HOST_SUFFIX).toBe("");
-    expect(MANAGED_COMPANION_HOST_SUFFIXES).toEqual(["alca-corp.me", "alcabot.si"]);
+    expect(MANAGED_COMPANION_HOST_SUFFIXES).toEqual(["alca-corp.me"]);
     expect(Object.isFrozen(MANAGED_COMPANION_HOST_SUFFIXES)).toBe(true);
     for (const suffix of MANAGED_COMPANION_HOST_SUFFIXES) {
       expect(suffix).toMatch(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/);
@@ -138,9 +136,7 @@ describe("desktop companion endpoint", () => {
       hostedAccess,
     );
     const secondDomain = { ...access, endpoint: `https://${LABEL}.alcabot.si` };
-    expect(desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: secondDomain })).toEqual(
-      secondDomain,
-    );
+    expect(desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: secondDomain })).toBeNull();
     expect(
       desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: { ...access, endpoint: "https://app.alcabot.si" } }),
     ).toBeNull();
@@ -205,18 +201,13 @@ describe("desktop companion pairing", () => {
       expect.objectContaining({ method: "POST" }),
     );
 
-    const secondDomain = await pairDesktopCompanion({
+    await expect(pairDesktopCompanion({
       endpoint: `${LABEL}.alcabot.si`,
       code: "654321",
       deviceName: "Desktop client",
       requestId: "request-https-02",
       fetchImpl,
-    });
-    expect(secondDomain).toEqual({ ...access, endpoint: `https://${LABEL}.alcabot.si` });
-    expect(fetchImpl).toHaveBeenLastCalledWith(
-      `https://${LABEL}.alcabot.si/api/pair`,
-      expect.objectContaining({ method: "POST" }),
-    );
+    })).rejects.toThrow(/companion address/);
 
     await expect(
       pairDesktopCompanion({
@@ -227,7 +218,7 @@ describe("desktop companion pairing", () => {
         fetchImpl,
       }),
     ).rejects.toThrow("AlcaBots HTTPS companion address");
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it("rejects bad codes and surfaces a sidecar error without returning secrets", async () => {

@@ -97,7 +97,7 @@ describe("rendered files", () => {
   it("writes the environment, the first config and the sign-in edits the server reads live", () => {
     const workspace: FleetWorkspace = { slug: "acme", host: "acme.agentada.cc", port: 8810, webhookPort: 8811, status: "running", createdAt: "" };
     expect(instanceEnv({ workspace, dataDir: "/var/lib/alcabots/acme/.alcabots", licenseKey: "alca1.k" })).toBe(
-      "ALCA_DATA_DIR=/var/lib/alcabots/acme/.alcabots\nOMB_PORT=8810\nOMB_WEBHOOK_PORT=8811\nOMB_PUBLIC_URL=https://acme.agentada.cc\nOMB_LICENSE_KEY=alca1.k\n",
+      "ALCA_DATA_DIR=/var/lib/alcabots/acme/.alcabots\nALCA_PORT=8810\nALCA_WEBHOOK_PORT=8811\nALCA_PUBLIC_URL=https://acme.agentada.cc\nALCA_LICENSE_KEY=alca1.k\n",
     );
     expect(JSON.parse(initialConfig({ admins: ["ada@example.test"], members: ["@acme.test"], anthropicKey: "sk-ant-x", monthlyCapUsd: 50 }))).toEqual({
       signIn: { admins: ["ada@example.test"], members: ["@acme.test"] }, anthropic: { key: "sk-ant-x" }, budgets: { monthlyUsd: 50 },
@@ -205,7 +205,7 @@ describe("plans", () => {
     const seed = { admins: ["owner@example.test"], members: [], portalUrl: "https://admin.example.test", anthropicUrl: "https://admin.example.test/api/gateway/acme/anthropic", anthropicKey: "workspace-scoped-token" };
     const plan = createPlan({ registry, slug: "acme", seed, now, layout });
     const env = plan.steps.find((step) => step.kind === "write" && step.path.endsWith("/acme.env"));
-    expect(env).toMatchObject({ mode: 0o600, content: expect.stringContaining("ALCA_ADMIN_URL=https://admin.example.test\nOMB_ADMIN_WORKSPACE=acme") });
+    expect(env).toMatchObject({ mode: 0o600, content: expect.stringContaining("ALCA_ADMIN_URL=https://admin.example.test\nALCA_ADMIN_WORKSPACE=acme") });
     expect(env).not.toHaveProperty("owner");
     const config = plan.steps.find((step) => step.kind === "write" && step.path.endsWith("/config.json"));
     expect(config).toMatchObject({ owner: "alca-acme", content: expect.stringContaining('"url": "https://admin.example.test/api/gateway/acme/anthropic"') });
