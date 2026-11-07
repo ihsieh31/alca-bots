@@ -53,7 +53,7 @@ if (process.versions.electron && process.argv.includes(flag)) {
         const entry = entries.get(object[1]); assert.ok(entry);
         if (req.method === "PUT") {
           const data = await body(req); assert.equal(data.length, entry.sizeBytes);
-          assert.equal(data.subarray(0, 16).toString(), "ALCA-WORKSPACE-1\n");
+          assert.equal(data.subarray(0, 17).toString(), "ALCA-WORKSPACE-1\n");
           assert.equal(createHash("sha256").update(data).digest("hex"), entry.sha256);
           const etag = `"${createHash("md5").update(data).digest("hex")}"`;
           uploadedParts.set(entry.id, { data, etag });

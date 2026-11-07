@@ -605,12 +605,12 @@ describe("finding the browser engine", () => {
   it("pins the native-verified Windows revision in both download and desktop manifests", () => {
     const asset = resolveAgentBrowserReleaseAsset("win32", "x64")!;
     expect(asset).toEqual({
-      target: "win32-x64", version: "0.36.0-alca.1",
-      asset: "agent-browser-win32-x64-0.36.0-alca.1.exe",
-      url: "https://github.com/ihsieh31/alca-bots/releases/download/browser-engine-v0.36.0-alca.1/agent-browser-win32-x64-0.36.0-alca.1.exe",
+      target: "win32-x64", version: "0.36.0-omb.1",
+      asset: "agent-browser-win32-x64-0.36.0-omb.1.exe",
+      url: "https://github.com/milind-soni/OpenMausBot/releases/download/browser-engine-v0.36.0-omb.1/agent-browser-win32-x64-0.36.0-omb.1.exe",
       bytes: 13806080, sha256: "33bee834f6a6072ec8688b0914726e0262874d758f69f27e8baf7eaac6b5ed15",
     });
-    expect(agentBrowserReleaseVersion(asset)).toBe("0.36.0-alca.1");
+    expect(agentBrowserReleaseVersion(asset)).toBe("0.36.0-omb.1");
     expect(browserBundleSpec("win32-x64").engine).toEqual({
       version: asset.version, asset: asset.asset, url: asset.url,
       bytes: asset.bytes, sha256: asset.sha256, executable: "agent-browser.exe",
@@ -624,20 +624,20 @@ describe("finding the browser engine", () => {
     const dataDir = join(tmpdir(), "alca-versioned-browser-fixture");
     const old = join(dataDir, "tools", "agent-browser", "0.36.0", "agent-browser.exe");
     const revised = pinnedBinaryPath(dataDir, "win32", "x64");
-    expect(revised).toBe(join(dataDir, "tools", "agent-browser", "0.36.0-alca.1", "agent-browser.exe"));
+    expect(revised).toBe(join(dataDir, "tools", "agent-browser", "0.36.0-omb.1", "agent-browser.exe"));
     const files = new Set([old]);
     const options = { dataDir, platform: "win32" as const, arch: "x64", env: { PATH: "" }, exists: (file: string) => files.has(file) };
     expect(resolveAgentBrowserBinary(options)).toBeNull();
     files.add(revised);
-    expect(browserEngineStatus(options)).toMatchObject({ kind: "ready", binaryPath: revised, version: "0.36.0-alca.1" });
+    expect(browserEngineStatus(options)).toMatchObject({ kind: "ready", binaryPath: revised, version: "0.36.0-omb.1" });
     expect(resolveAgentBrowserBinary({ ...options, env: { PATH: "", ALCA_AGENT_BROWSER_PATH: old } })).toBe(old);
   });
 
   it("retains default upstream versions and permits a pinned platform-specific asset URL", () => {
     const official = resolveAgentBrowserReleaseAsset("linux", "x64")!;
     expect(agentBrowserReleaseVersion(official)).toBe(AGENT_BROWSER_VERSION);
-    const revised = { ...official, version: "0.36.0-alca.1", url: "https://example.invalid/releases/download/fixed/fixture.exe" };
-    expect(agentBrowserReleaseVersion(revised)).toBe("0.36.0-alca.1");
+    const revised = { ...official, version: "0.36.0-omb.1", url: "https://example.invalid/releases/download/fixed/fixture.exe" };
+    expect(agentBrowserReleaseVersion(revised)).toBe("0.36.0-omb.1");
     expect(agentBrowserReleaseUrl(revised)).toBe(revised.url);
   });
 
