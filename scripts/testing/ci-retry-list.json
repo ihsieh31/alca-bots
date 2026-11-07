@@ -77,6 +77,13 @@
       "owner": "ihsieh31",
       "reason": "Computer-wait timing on a loaded Linux shard: failed once in CI run 42405922581, passes locally and passed in the previous run.",
       "since": "2026-11-08"
+    },
+    {
+      "file": "server/cloud-lending-memory.e2e.test.ts",
+      "test": "a conversation a guest left behind is never captured into the bot's memory; the owner's own chat is",
+      "owner": "ihsieh31",
+      "reason": "Memory capture misses the 45s poll on a loaded Linux shard 8 (CI runs 42407515589, 42409378349); passes locally.",
+      "since": "2026-11-08"
     }
   ]
 }
