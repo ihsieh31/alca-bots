@@ -1,0 +1,10 @@
+{
+  "name": "alcabot-connector",
+  "private": true,
+  "type": "module",
+  "description": "Runs a AlcaBot Cloud home on a server of its owner's, under AlcaBot's control, over one outbound connection.",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  }
+}

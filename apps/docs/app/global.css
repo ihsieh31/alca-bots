@@ -1,0 +1,200 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+:root {
+  --alca-bg: #ffffff;
+  --alca-raised: #f7f8f8;
+  --alca-ink: #0a0a0b;
+  --alca-muted: #5f6570;
+  --alca-line: #e5e7ea;
+  --alca-accent: #009957;
+  --alca-accent-soft: #eaf8f1;
+
+  --color-fd-background: var(--alca-bg);
+  --color-fd-foreground: var(--alca-ink);
+  --color-fd-muted: var(--alca-raised);
+  --color-fd-muted-foreground: var(--alca-muted);
+  --color-fd-border: var(--alca-line);
+  --color-fd-primary: var(--alca-accent);
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-card: var(--alca-bg);
+  --color-fd-card-foreground: var(--alca-ink);
+  --color-fd-secondary: var(--alca-raised);
+  --color-fd-secondary-foreground: var(--alca-ink);
+  --color-fd-accent: var(--alca-accent-soft);
+  --color-fd-accent-foreground: #006b3d;
+}
+
+.dark {
+  --alca-bg: #070708;
+  --alca-raised: #131315;
+  --alca-ink: #f4f4f5;
+  --alca-muted: #9a9aa4;
+  --alca-line: #232327;
+  --alca-accent: #3fae6e;
+  --alca-accent-soft: #10271a;
+
+  --color-fd-primary-foreground: #07130c;
+  --color-fd-accent-foreground: #7bd69e;
+}
+
+html {
+  scrollbar-gutter: stable;
+  background: var(--alca-bg);
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0 !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+body {
+  background:
+    radial-gradient(circle at 75% -20%, color-mix(in srgb, var(--alca-accent) 8%, transparent), transparent 32rem),
+    var(--alca-bg);
+  color: var(--alca-ink);
+  letter-spacing: -0.012em;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--alca-accent) 24%, transparent);
+}
+
+.alca-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+}
+
+.alca-brand img {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 0.5rem;
+}
+
+.alca-brand-docs {
+  border-left: 1px solid var(--alca-line);
+  color: var(--alca-muted);
+  font-size: 0.78rem;
+  font-weight: 520;
+  letter-spacing: 0;
+  margin-left: 0.1rem;
+  padding-left: 0.7rem;
+}
+
+.alca-product-shot {
+  margin: 2rem 0;
+}
+
+.alca-product-shot-frame {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--alca-line) 88%, transparent);
+  border-radius: 1.25rem;
+  background: #0a0a0b;
+  box-shadow:
+    0 1px 1px color-mix(in srgb, var(--alca-ink) 5%, transparent),
+    0 22px 60px color-mix(in srgb, var(--alca-ink) 10%, transparent);
+}
+
+.alca-product-shot img {
+  display: block;
+  width: 100%;
+  max-height: 38rem;
+  object-fit: cover;
+}
+
+.alca-product-shot figcaption {
+  color: var(--alca-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin-top: 0.65rem;
+  text-align: center;
+}
+
+.alca-kicker {
+  color: var(--alca-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.alca-lede {
+  color: var(--alca-muted);
+  font-size: 1.08rem;
+  line-height: 1.75;
+  max-width: 44rem;
+}
+
+.alca-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1.75rem 0;
+}
+
+.alca-stat {
+  border: 1px solid var(--alca-line);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--alca-raised) 78%, transparent);
+  padding: 1rem;
+}
+
+.alca-stat strong,
+.alca-stat span {
+  display: block;
+}
+
+.alca-stat strong {
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.alca-stat span {
+  color: var(--alca-muted);
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+}
+
+#nd-sidebar,
+#nd-subnav {
+  background: color-mix(in srgb, var(--alca-bg) 92%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+#nd-sidebar {
+  border-right-color: var(--alca-line);
+}
+
+#nd-subnav {
+  border-bottom-color: var(--alca-line);
+}
+
+.prose :where(h2, h3, h4) {
+  letter-spacing: -0.035em;
+}
+
+.prose :where(a:not([data-card])) {
+  text-decoration-color: color-mix(in srgb, var(--alca-accent) 45%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.prose :where(table) {
+  overflow: hidden;
+  border: 1px solid var(--alca-line);
+  border-radius: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .alca-stat-row {
+    grid-template-columns: 1fr;
+  }
+
+  .alca-product-shot-frame {
+    border-radius: 0.9rem;
+  }
+}

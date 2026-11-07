@@ -1,0 +1,66 @@
+name: ${COMPOSE_PROJECT_NAME:-alcabots}
+services:
+  alca:
+    # Collects exited browser processes; Chrome's shared memory as on the
+    # desktop containers (docs/browser-packaging.md, "Process hygiene").
+    init: true
+    shm_size: 512m
+    build:
+      context: ./deploy/local
+      args:
+        BASE_IMAGE: ${ALCA_BASE_IMAGE:-ghcr.io/ihsieh31/alca-bots:latest}
+        ENGINES: ${ENGINES-@anthropic-ai/claude-code @openai/codex}
+    image: ${ALCA_LOCAL_IMAGE:-alcabots-local:latest}
+    restart: unless-stopped
+    volumes:
+      - data:/data
+    ports:
+      - "${ALCA_BIND_ADDRESS:-127.0.0.1}:${ALCA_HTTP_PORT:-8080}:80"
+    environment:
+      ALCA_PORT: "8799"
+      ALCA_WEBHOOK_PORT: "8800"
+      ALCA_PUBLIC_URL: ${ALCA_PUBLIC_URL:-http://localhost:${ALCA_HTTP_PORT:-8080}}
+      ALCA_WEBHOOK_PUBLIC_URL: ${ALCA_WEBHOOK_PUBLIC_URL:-${ALCA_PUBLIC_URL:-http://localhost:${ALCA_HTTP_PORT:-8080}}}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8799/api/health', { signal: AbortSignal.timeout(4000) }).then(async r => { if (!r.ok || !(await r.text()).includes('alcabots')) process.exit(1); }).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2}
+    restart: unless-stopped
+    network_mode: service:alca
+    environment:
+      ALCA_HTTPS_HOST: ${ALCA_HTTPS_HOST:-}
+      ALCA_BIND_ADDRESS: ${ALCA_BIND_ADDRESS:-127.0.0.1}
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export ALCA_UPSTREAM_SCHEME=http
+        if [ -n "$$ALCA_HTTPS_HOST" ] && [ "$$ALCA_BIND_ADDRESS" != "127.0.0.1" ]; then
+          echo "ALCA_HTTPS_HOST requires ALCA_BIND_ADDRESS=127.0.0.1; forward HTTPS through a trusted local proxy." >&2
+          exit 1
+        fi
+        if [ -n "$$ALCA_HTTPS_HOST" ]; then
+          export ALCA_UPSTREAM_SCHEME=https
+        fi
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+    depends_on:
+      alca:
+        condition: service_healthy
+    volumes:
+      - ./deploy/local/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  data:
+    external: ${ALCA_DATA_EXTERNAL:-false}
+    name: ${ALCA_DATA_VOLUME:-${COMPOSE_PROJECT_NAME:-alcabots}_data}
+  caddy_data:
+  caddy_config:
