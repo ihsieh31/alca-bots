@@ -367,7 +367,7 @@ describe("cloudHomePrompt", () => {
       expect(text).toMatch(/^ You run on the user's My Cloud, their always-on AlcaBots in the cloud, not on their own computer\./);
       expect(text.startsWith(` You run on ${CLOUD_HOME_PLACE}.`)).toBe(true);
       expect(text).toContain("Offer what works here: the built-in browser and their cloud computer, a desktop in the cloud. Call it their cloud computer, as the app does.");
-      expect(text).not.toMatch(/\bOMB\b|\bBoat\b|\bbox\b/);
+      expect(text).not.toMatch(/\bALCA\b|\bBoat\b|\bbox\b/);
       expect(text).toContain("Never ask them to set up this computer or a Local VM; neither exists here.");
       expect(text).not.toMatch(/Computer panel|container runtime|configure/i);
     }

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { forWorker, workerPort } from "./worker-port.ts";
@@ -37,7 +37,7 @@ describe("a worker's ports", () => {
 it("leaves no suite picking a raw random port another worker could pick too", () => {
   const raw = /\d[\d_]{3,5} *\+ *Math\.floor\(Math\.random\(\) *\*/;
   const root = new URL("../../", import.meta.url);
-  const offenders = ["server", "companion", "enterprise", "shared"].flatMap((dir) =>
+  const offenders = ["server", "companion", "enterprise", "shared"].filter((dir) => existsSync(new URL(dir, root))).flatMap((dir) =>
     (readdirSync(new URL(dir, root), { recursive: true }) as string[])
       .filter((file) => /\.test\.[cm]?ts$/.test(file) && !file.includes("node_modules"))
       .filter((file) => raw.test(readFileSync(new URL(`${dir}/${file}`, root), "utf8")))

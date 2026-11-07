@@ -1877,10 +1877,10 @@ describe("ClaudeDriver turns (fake CLI)", () => {
 
     const browsing = await mounted("t-tool-search", true);
     expect(browsing.toolSearch).toBe("true");
-    expect(browsing.alwaysLoaded).toEqual(["agents", "browser", "abot"]);
+    expect(browsing.alwaysLoaded).toEqual(["abot", "agents", "browser"]);
     expect(browsing.onDemand).toEqual(["composio", "computer", "data", "device", "docs", "dweb", "email", "own_apps", "phone", "postiz", "shop"]);
     const other = await mounted("t-tool-search-no-browse", false);
-    expect(other.alwaysLoaded).toEqual(["agents", "abot"]);
+    expect(other.alwaysLoaded).toEqual(["abot", "agents"]);
     expect(other.onDemand).toContain("browser");
   });
 

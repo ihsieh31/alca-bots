@@ -1401,7 +1401,7 @@ process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:m.id,result})+'\\n');});`)
     expect(seen.argv).toContain("features.shell_snapshot=false");
     expect(seen.calls.find((call: { method: string }) => call.method === "thread/start").params.config["shell_environment_policy.exclude"]).toEqual([
       "USER_SECRET_*", "ALCA_REMOTE_MCP_CONFIG_*",
-      "ELECTRON_RUN_AS_NODE", "GITHUB_PERSONAL_ACCESS_TOKEN", "ALCA_COMMS_TOKEN", "ALCA_CONNECTORS_TOKEN", "ALCA_PHONE_TOKEN", "OVERRIDDEN",
+      "ALCA_COMMS_TOKEN", "ALCA_CONNECTORS_TOKEN", "ALCA_PHONE_TOKEN", "ELECTRON_RUN_AS_NODE", "GITHUB_PERSONAL_ACCESS_TOKEN", "OVERRIDDEN",
     ]);
   });
 

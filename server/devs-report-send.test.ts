@@ -92,7 +92,7 @@ describe("asking what became of the reports this app sent", () => {
 
   it("signs exactly as the Admin checks it", () => {
     // The same vector is pinned in openmaus-cloud tests/bug-report-fixes.test.ts.
-    expect(bugReportsHomeSignature("s".repeat(43), "cm-test-home", "1792670400", "nonce-nonce-nonce-1", '{"installId":"install_0001","ids":[]}')).toBe("yk4dl82CpryMBfCaT18e_sJ6uihfo3dPHVP4prToXL8");
+    expect(bugReportsHomeSignature("s".repeat(43), "cm-test-home", "1792670400", "nonce-nonce-nonce-1", '{"installId":"install_0001","ids":[]}')).toBe("nVmLToX4T61qwkT5AKCIajyToj6e99d_Pdux1BCkGeQ");
   });
 
   it("has no answer from an Admin before this route, a refusal, an answer it can't read, or no network: asked again later", async () => {

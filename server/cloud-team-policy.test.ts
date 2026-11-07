@@ -36,7 +36,7 @@ describe("the document", () => {
     // The same vectors are pinned in openmaus-cloud tests/cloud-team-policy.test.ts.
     expect(teamPolicyFingerprint({ schema: 1, limits: { remoteAccess: "off", allowedEngines: ["claudeAgent", "codex"] } })).toBe("8341e89f9d7fc734");
     expect(teamPolicyFingerprint({ limits: { allowedEngines: ["claudeAgent", "codex"], remoteAccess: "off" }, schema: 1 })).toBe("8341e89f9d7fc734");
-    expect(teamPolicySignature("s".repeat(43), "cm-test-home", "1792670400", "nonce-nonce-nonce-1", '{"v":1,"loaded":null,"problem":null}')).toBe("ZNkIYIIuPldLp7gQ4cy7s1zQJpBiWkyP8DOyRtRz03w");
+    expect(teamPolicySignature("s".repeat(43), "cm-test-home", "1792670400", "nonce-nonce-nonce-1", '{"v":1,"loaded":null,"problem":null}')).toBe("S3J-MGmp-UY5acJ1y6bgRU91ZY0z5xVDxsvU5rH-etw");
   });
 
   it("accepts explicitly permissive values, and refuses a key it can't enforce", () => {

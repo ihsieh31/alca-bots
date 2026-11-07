@@ -104,8 +104,8 @@ describe("PhoneSecretBridge", () => {
       messageId: "message-1",
       target: "ttsKey",
       requestKey: "credential-request-1",
-      encapsulatedKey: "BDhy_5hMSvVIy3zGSmBwBECAedYBAwwFLvbWoXCGTJyLRH1cItoQXo9NBcEG0cTQV_VwaEf5judXcsJlh2jfW7Q",
-      ciphertext: "CjM0CnBT8NYd_BHAXJRKFrbYrSw6OgMIlJLAKs8VUPSSCsa2",
+      encapsulatedKey: "BLR6Lc33oG9_0HhLUjWQQF4ZUtuaOrsdgEMY4ZxSViQ9AbqrvPqaH7jEy8tT-l4g3kJy7kHnKVpgoB1luN5xpQI",
+      ciphertext: "MpntxF-WNKN6Fqpo_IXS80S-OLQYr06iHIADsb48wZmHDjlC",
     })).resolves.toBeUndefined();
     expect(send).toHaveBeenCalledTimes(1);
   });

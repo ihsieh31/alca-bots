@@ -117,7 +117,7 @@ describe("one name per thing", () => {
     const offending = Object.entries(locales).filter(([code]) => code !== "en").flatMap(([code, pack]) =>
       Object.entries(pack)
         .filter(([key]) => !PENDING_KEY_PREFIXES.some((prefix) => key.startsWith(prefix)))
-        .filter(([key, value]) => /\bOMB\b|\bT3\b/.test(value!) || productNames.some(([, pattern]) => pattern.test(value!))
+        .filter(([key, value]) => /\bALCA\b|\bT3\b/.test(value!) || productNames.some(([, pattern]) => pattern.test(value!))
           || (/AlcaBot Cloud/.test((en as Record<string, string>)[key]!) && !/AlcaBot Cloud/.test(value!))
           || (/boat/i.test(value!) && !/\bboats?\b/i.test((en as Record<string, string>)[key]!)))
         .map(([key]) => `${code}: ${key}`));

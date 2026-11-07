@@ -207,6 +207,13 @@ jobs:
         # before Vitest starts so a cold download cannot consume the fixture
         # timeout.
         run: node --input-type=commonjs -e "require('electron')"
+      - name: Remove bubblewrap from the Linux runner
+        # The suite assumes a Team Cloud never gets a bubblewrap box on a
+        # GitHub runner (see the static job). Current ubuntu images let bwrap
+        # start, which sends cloud-team and box-attachment tests down the box
+        # path they don't set up for, so drop it as the Boat lanes do.
+        if: runner.os == 'Linux'
+        run: sudo rm -f /usr/bin/bwrap
       - name: Run tests
         # The github-actions reporter turns each failure into an annotation
         # on the PR, so the failing test and its assertion are readable
