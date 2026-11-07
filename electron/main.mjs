@@ -1576,9 +1576,7 @@ function navigateMainWindow(url, keepingRecovery = false) {
 let rememberedHome = null;
 
 function acquireDataDirLeaseFor(dir) {
-  return dir === desktopDataDir()
-    ? acquireDataDirLease(dir, { t: nativeT, legacyDataDir: path.join(app.getPath("home"), ".alcabots") })
-    : acquireDataDirLease(dir, { t: nativeT });
+  return acquireDataDirLease(dir, { t: nativeT });
 }
 
 /** Pause the supervisor first, or its recovery forks on the wrong data dir; resume() stays in the finally. */
@@ -2921,9 +2919,7 @@ app.whenReady().then(async () => {
   if (app.isPackaged) {
     try {
       // Acquire before either plaintext credential migration touches config.json.
-      desktopDataDirLease = acquireDataDirLease(bootDataDir, { t: nativeT,
-        legacyDataDir: path.join(app.getPath("home"), ".alcabots"),
-      });
+      desktopDataDirLease = acquireDataDirLease(bootDataDir, { t: nativeT });
       runningDataDir = bootDataDir;
     } catch (error) {
       dialog.showErrorBox(
@@ -3058,9 +3054,7 @@ app.whenReady().then(async () => {
       }
       desktopDataDirLease = null;
       try {
-        desktopDataDirLease = acquireDataDirLease(desktopDataDir(), { t: nativeT,
-          legacyDataDir: path.join(app.getPath("home"), ".alcabots"),
-        });
+        desktopDataDirLease = acquireDataDirLease(desktopDataDir(), { t: nativeT });
         runningDataDir = desktopDataDir();
       } catch (error) {
         dialog.showErrorBox(

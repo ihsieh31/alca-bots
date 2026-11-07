@@ -40,12 +40,17 @@ pnpm exec vitest run <檔案>   # 完整套件很慢（本機一小時以上）�
   - 已移除 upstream 的第二網域 `alcabot.si`：它不屬於你，保留會讓別人有機會冒充你的主機。
   - Cloudflare 端已建好：D1 資料庫 `alcabots-control-plane`（migrations 已套用）、Worker secrets `CLOUDFLARE_API_TOKEN`、`BETTER_AUTH_SECRET`、API token `alca-bots-control-plane`（帳號的 Tunnel Edit 加上 alca-corp.me 的 DNS Edit）。
 - **macOS 簽章**：ad-hoc 簽章（`identity: "-"`），不做公證。release workflow 已移除 Developer ID 憑證、公證和舊版鏡像的步驟，改用 `GITHUB_TOKEN`。
+- **測試與 CI**：
+  - 改名造成的測試失敗都已修好：簽章和雜湊的固定值、排序（`abot`、`ALCA_*` 現在排在最前面）、長度（`alca_pair_` 比舊前綴多 1 字元），以及用 Swift CryptoKit 重新產生的 HPKE 測試資料（`server/phone-secret.test.ts`）。
+  - 已拿掉 `~/.openmausbot → ~/.alcabots` 的舊資料夾搬移，以及它的測試：改名後這段只會把 `~/.alcabots` 搬到它自己，沒有意義。
+  - CI 的 Linux vitest shard 會先刪掉 `/usr/bin/bwrap`。上游的測試假設 GitHub runner 上沒有 bubblewrap，但現在的 ubuntu image 可以執行 bwrap，會讓 cloud-team 和 box 的測試失敗。我在 podman 裡確認過，上游原版程式碼也是同樣的失敗，不是改名造成的。
+  - `scripts/testing/ci-retry-list.json` 新增了兩個只在 CI 偶發失敗的電腦等待測試（owner 為 ihsieh31）。之後修好這兩個測試，再把它們從清單移除。
 
 ## 待處理
 
 1. **吉祥物、圖示、截圖（商標）**：`build/icon*`、`public/app-icon.svg`、`src/assets/`、`docs/screenshots/`、`docs/verification/evidence/` 裡還是上游的美術，需要換掉。
 2. **Email 登入驗證碼**：Cloudflare Email Sending 需要 Workers Paid（每月 5 美元）。升級後到 alca-corp.me → Email → Email Sending 完成網域設定，寄件地址是 `noreply@alca-corp.me`。在那之前，雲端帳號的 email 登入寄不出信；本機使用 App 不受影響。
-3. **Composio broker**（連接 500+ App 的功能）：需要你自己的 Composio API key，然後：
+3. **Composio broker**（連接 500+ App 的功能）：App 預設的 broker 網址已經改成 `https://bots-composio.alca-corp.me`（`electron/managed-composio.mjs`），但還沒部署，所以目前「連接 App」功能無法使用。`cloudflare/composio-broker/wrangler.jsonc` 裡的帳號和 route 都已經設好，只剩 D1 和 API key 要你處理。準備好 Composio API key 之後：
    ```sh
    cd cloudflare/composio-broker
    # 把 wrangler.jsonc 的 database_id 換成 `npx wrangler d1 create alcabots-composio` 回傳的值

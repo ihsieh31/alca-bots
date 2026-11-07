@@ -2,9 +2,11 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "alcabots-composio",
   "main": "src/index.ts",
+  "account_id": "c8670c9c7767c29df14ff4990dd62234",
   "compatibility_date": "2026-08-18",
   "compatibility_flags": ["nodejs_compat"],
-  "workers_dev": true,
+  "workers_dev": false,
+  "routes": [{ "pattern": "bots-composio.alca-corp.me", "custom_domain": true }],
   "vars": {
     "COMPOSIO_API_BASE": "https://backend.composio.dev/api/v3.1",
     "COMPOSIO_TOOLKIT_BASE": "https://backend.composio.dev/api/v3",
@@ -15,7 +17,7 @@
     {
       "binding": "DB",
       "database_name": "alcabots-composio",
-      "database_id": "435bcde1-c017-416f-b041-7ffc508e9d88",
+      "database_id": "REPLACE_WITH_ID_FROM_wrangler_d1_create",
       "migrations_dir": "migrations"
     }
   ],

@@ -117,7 +117,7 @@ test("main's places: My Cloud only while the person keeps this computer's bots h
   try {
     await main.refresh({ force: true });
     assert.deepEqual(await handlers.get("two-places:state")({}), { suggest: { key: "cloud:https://alca-u-1.fly.dev", name: "My Cloud", kind: "cloud" } });
-    assert.deepEqual([...new Set(asked)].sort(), ["https://garage.example.test", "https://alca-u-1.fly.dev"], "never the team's Cloud or a server others use");
+    assert.deepEqual([...new Set(asked)].sort(), ["https://alca-u-1.fly.dev", "https://garage.example.test"], "never the team's Cloud or a server others use");
     await handlers.get("two-places:accept")({}, "cloud:https://alca-u-1.fly.dev");
     assert.equal(keep.on, false, "the one tap lets this computer's bots move to My Cloud, as anyone's first move");
     await main.refresh({ force: true });
