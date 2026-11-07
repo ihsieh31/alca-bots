@@ -78,7 +78,7 @@ describe("Tailscale from a shell-less standalone macOS app", () => {
       controlToken: () => "fixture-control-token",
       companionPort: 8787,
       discovery: () => ({ advertising: false, name: "Fixture" }),
-      hostedUrl: () => "https://fixture.alcabots.com",
+      hostedUrl: () => "https://fixture.alca-corp.me",
       refreshTailscale: () => refreshTailnetName(),
     });
     await new Promise<void>((resolve) => control!.listen(0, "127.0.0.1", resolve));
@@ -88,7 +88,7 @@ describe("Tailscale from a shell-less standalone macOS app", () => {
     expect(response.status).toBe(200);
     expect(state.tailnetName).toBe("fixture.tail1234.ts.net");
     expect(state.endpoints).toContainEqual({ url: "http://fixture.tail1234.ts.net:8787", kind: "tailnet", priority: 100 });
-    expect(state.endpoints).toContainEqual({ url: "https://fixture.alcabots.com", kind: "hosted", priority: 0 });
+    expect(state.endpoints).toContainEqual({ url: "https://fixture.alca-corp.me", kind: "hosted", priority: 0 });
     expect(state.endpoints.some((endpoint: { url: string }) => endpoint.url.includes("100.64.0.7"))).toBe(false);
     expect(state.pairing).toBeNull();
     expect(fixture.calls).toHaveLength(1);

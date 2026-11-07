@@ -42,7 +42,7 @@ async function serveStub(seen: Seen[], options: { researchOff?: boolean } = {}):
       if (own && path === "/orgs/org-e2e/balance?limit=1") return send(200, { balance_micro: 4_250_000 });
       if (own && path === "/call/anyapi.x.search.posts") return send(200, POSTS, { "x-treg-cost-micro": "750" });
       if (own && path === "/catalog/endpoints/apollo.people.search") return send(200, { endpoint: PEOPLE_ROW });
-      if (own && path === "/call/apollo.people.search?q_organization_domains=alcabots.com") return send(200, { people: [{ name: "Alca" }] }, { "x-treg-cost-micro": "2000", "x-treg-call-id": "call-e2e" });
+      if (own && path === "/call/apollo.people.search?q_organization_domains=alca-corp.me") return send(200, { people: [{ name: "Alca" }] }, { "x-treg-cost-micro": "2000", "x-treg-call-id": "call-e2e" });
       if (plan && req.method === "GET" && path === PROBE) {
         return options.researchOff ? send(503, { error: "service_unavailable", message: "Research isn't available right now." })
           : send(400, { error: "invalid_request", message: "Say what the research is for in q." });
@@ -107,7 +107,7 @@ async function withFixture(test: (f: any) => Promise<void>, options: { plan: boo
 }
 
 const SEARCH = { tool: "x_search", arguments: { query: "alcabot" } };
-const PEOPLE = { tool: "research_call", arguments: { id: "apollo.people.search", params: { q_organization_domains: "alcabots.com" } } };
+const PEOPLE = { tool: "research_call", arguments: { id: "apollo.people.search", params: { q_organization_domains: "alca-corp.me" } } };
 
 it("shows no research tools without a treg key or a Cloud plan, even to a bot switched on", async () => withFixture(async (f) => {
   const config = await f.api("/api/config", undefined, "GET");
@@ -135,7 +135,7 @@ it("with the person's own treg key, every bot has the tools by default and calls
   expect(calls.map((seen: Seen) => [seen.method, seen.path, seen.tregToken, seen.authorization])).toEqual([
     ["POST", "/call/anyapi.x.search.posts", OWN_KEY, undefined],
     ["GET", "/catalog/endpoints/apollo.people.search", OWN_KEY, undefined],
-    ["GET", "/call/apollo.people.search?q_organization_domains=alcabots.com", OWN_KEY, undefined],
+    ["GET", "/call/apollo.people.search?q_organization_domains=alca-corp.me", OWN_KEY, undefined],
   ]);
   expect(calls[2].idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
   expect(f.seen.some((seen: Seen) => seen.path.startsWith(RELAY_PATH))).toBe(false);
@@ -159,7 +159,7 @@ it("with only a Cloud plan, calls go through the relay with the plan's token, an
     ["POST", `${RELAY_PATH}/call/anyapi.x.search.posts`, `Bearer ${PLAN_TOKEN}`, undefined],
     ["POST", `${RELAY_PATH}/research/call/apollo.people.search`, `Bearer ${PLAN_TOKEN}`, undefined],
   ]);
-  expect(calls[1].body).toEqual({ params: { q_organization_domains: "alcabots.com" } });
+  expect(calls[1].body).toEqual({ params: { q_organization_domains: "alca-corp.me" } });
   expect(calls[1].idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
   expect(await f.status()).toEqual({ using: "included", ownKey: false, included: true, usage: USAGE });
   expect(f.seen.at(-1)).toMatchObject({ method: "GET", path: `${RELAY_PATH}/usage`, authorization: `Bearer ${PLAN_TOKEN}`, tregToken: undefined });

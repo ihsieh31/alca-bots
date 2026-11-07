@@ -138,7 +138,7 @@ export function welcomeFinishedThisLaunch(): boolean {
   }
 }
 
-export const DEFAULT_ADMIN_ORIGIN = "https://admin.alcabots.com";
+export const DEFAULT_ADMIN_ORIGIN = "https://bots-admin.alca-corp.me";
 
 export function organisationSignIn<Bridge>(
   abot: { organization?: Bridge; remoteClient?: { active?: boolean } } | undefined,

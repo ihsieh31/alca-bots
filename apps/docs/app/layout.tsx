@@ -6,7 +6,7 @@ import './global.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://docs.alcabots.com'),
+  metadataBase: new URL('https://bots-docs.alca-corp.me'),
   title: {
     default: 'AlcaBots Docs',
     template: '%s · AlcaBots Docs',

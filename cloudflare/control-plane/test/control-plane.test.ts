@@ -233,7 +233,7 @@ describe("control-plane migrations and health", () => {
           (installation_id, hostname, tunnel_name, tunnel_id, dns_record_id, status,
            last_reconciled_at, created_at, updated_at)
          VALUES ('before-0007', ?, ?, '10000000-0000-4000-8000-000000000001', 'dns-1', 'ready', 5, 1, 5)`,
-      ).bind(`c-${"a".repeat(32)}.alcabots.com`, `alca-c-${"a".repeat(32)}`),
+      ).bind(`c-${"a".repeat(32)}.alca-corp.me`, `alca-c-${"a".repeat(32)}`),
       db.prepare(
         `UPDATE managed_endpoint_capacity
             SET scan_page = 7, tunnel_count = 1000, dns_record_count = 990, reclaim_pending = 3,
@@ -249,14 +249,14 @@ describe("control-plane migrations and health", () => {
       "SELECT provider_account, hostname, status FROM installation_endpoints WHERE installation_id = 'before-0007'",
     ).first()).toEqual({
       provider_account: env.CLOUDFLARE_ACCOUNT_ID,
-      hostname: `c-${"a".repeat(32)}.alcabots.com`,
+      hostname: `c-${"a".repeat(32)}.alca-corp.me`,
       status: "ready",
     });
     // A Worker that predates the column keeps inserting into the same account.
     await db.prepare(
       `INSERT INTO installation_endpoints (installation_id, hostname, tunnel_name, status, created_at, updated_at)
        VALUES ('older-worker', ?, ?, 'pending', 1, 1)`,
-    ).bind(`c-${"b".repeat(32)}.alcabots.com`, `alca-c-${"b".repeat(32)}`).run();
+    ).bind(`c-${"b".repeat(32)}.alca-corp.me`, `alca-c-${"b".repeat(32)}`).run();
     expect(await db.prepare(
       "SELECT provider_account FROM installation_endpoints WHERE installation_id = 'older-worker'",
     ).first()).toEqual({ provider_account: env.CLOUDFLARE_ACCOUNT_ID });

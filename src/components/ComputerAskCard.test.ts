@@ -74,7 +74,7 @@ describe("a bot's ask to turn on what it needs from the person's computer", () =
   it("when the app there is the fix, links to it instead of a Turn on that can't work", () => {
     const markup = panel(ask({ reason: "closed" }));
     expect(markup).toContain("AlcaBot isn&#x27;t open on your PC. Open it there and Scout carries on.");
-    expect(markup).toContain('href="https://www.alcabots.com/download"');
+    expect(markup).toContain('href="https://bots.alca-corp.me/download"');
     expect(markup).toContain(">Get AlcaBot</a>");
     expect(markup).not.toContain(">Turn on</button>");
   });

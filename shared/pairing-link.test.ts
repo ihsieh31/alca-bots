@@ -179,7 +179,7 @@ describe("phonePairingLink", () => {
   it("carries the end-to-end descriptor a phone parses, and leaves out one it would refuse", async () => {
     const { parseDescriptor } = await import("../companion/src/e2e/descriptor.ts");
     const k = Buffer.from(createECDH("prime256v1").generateKeys()).toString("base64url");
-    const e2e = { v: 1 as const, k, h: "lz81isB3BuNV6rHgYgG3Wg", r: ["relay1.alcabots.com", "relay2.alcabots.com"] };
+    const e2e = { v: 1 as const, k, h: "lz81isB3BuNV6rHgYgG3Wg", r: ["bots-relay1.alca-corp.me", "bots-relay2.alca-corp.me"] };
     const link = phonePairingLink({ address: "192.168.1.5", port: 8810, token, e2e })!;
     const parsed = parseDescriptor(new URL(link).searchParams.get("e2e"));
     expect(parsed).toMatchObject({ outcome: "ok", descriptor: e2e });

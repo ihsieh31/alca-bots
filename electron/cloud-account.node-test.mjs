@@ -467,7 +467,7 @@ test("only the Admin's own answer ends a sign-in: a 401/403 page from in between
   const f = await fixture(t); await f.connect();
   const paid = { plan: "pro", tier: "max", status: "active", expiresAt: f.now + 3 * 3600_000, version: 1 };
   f.entitlement = paid; await f.client.refresh();
-  // A firewall or bot-check page (Cloudflare serves cloud.alcabots.com).
+  // A firewall or bot-check page (Cloudflare serves bots-cloud.alca-corp.me).
   f.sessionPage = 403;
   let state = await f.client.refresh();
   assert.equal(state.status, "connected"); assert.deepEqual(state.entitlement, paid); assert.equal(state.checking, undefined);

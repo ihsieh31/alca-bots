@@ -655,13 +655,13 @@ describe("What's new after the update", () => {
   it("See the new Cloud and Start a Team open the Cloud website with their slide's tag, and end it for good", async () => {
     await launch();
     press("See the new Cloud"); await flush();
-    expect(window.abot?.openExternal).toHaveBeenCalledWith("https://cloud.alcabots.com/cloud?src=app_whats_new_pro");
+    expect(window.abot?.openExternal).toHaveBeenCalledWith("https://bots-cloud.alca-corp.me/cloud?src=app_whats_new_pro");
     expect(steps().at(-1)).toEqual(step("see_cloud", "pro"));
     await keptForGood();
     fresh(); vi.mocked(window.abot!.openExternal!).mockClear();
     await relaunch(); press("Next");
     press("Start a Team"); await flush();
-    expect(window.abot?.openExternal).toHaveBeenCalledWith("https://cloud.alcabots.com/pro/buy?plan=team&src=app_whats_new_team");
+    expect(window.abot?.openExternal).toHaveBeenCalledWith("https://bots-cloud.alca-corp.me/pro/buy?plan=team&src=app_whats_new_team");
     expect(steps().at(-1)).toEqual(step("start_team", "team"));
     await keptForGood();
   });

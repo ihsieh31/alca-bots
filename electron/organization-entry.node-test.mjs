@@ -8,7 +8,7 @@ import localOrigin from "./local-origin.cjs";
 import { createOrganizationEntry, isOrganizationDeepLink, takeOrganizationDeepLink, organizationRestartIntent, withOrganizationRestartIntent, withoutOrganizationRestartIntent } from "./organization-entry.mjs";
 
 const remote = { id: "old", name: "Old cloud", origin: "https://old.example" };
-const companion = { endpoint: "https://c-old.alcabots.com", serverName: "Old computer", deviceId: "device-a" };
+const companion = { endpoint: "https://c-old.alca-corp.me", serverName: "Old computer", deviceId: "device-a" };
 function fixture({ activeId = "old", remoteAccess = null, restartIntent = false, accepted = true } = {}) {
   const state = { environments: { activeId, environments: [remote] }, remoteAccess, restartIntent };
   const calls = [];

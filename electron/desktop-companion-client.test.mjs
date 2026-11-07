@@ -60,11 +60,11 @@ describe("desktop companion endpoint", () => {
     expect(normalizeTailscaleCompanionEndpoint("http://HOST.example-tailnet.ts.net:9910/")).toBe(
       "http://host.example-tailnet.ts.net:9910",
     );
-    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.alcabots.com`)).toBe(
-      `https://${LABEL}.alcabots.com`,
+    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.alca-corp.me`)).toBe(
+      `https://${LABEL}.alca-corp.me`,
     );
-    expect(normalizeDesktopCompanionEndpoint(`${LABEL}.alcabots.com`)).toBe(
-      `https://${LABEL}.alcabots.com`,
+    expect(normalizeDesktopCompanionEndpoint(`${LABEL}.alca-corp.me`)).toBe(
+      `https://${LABEL}.alca-corp.me`,
     );
     // The control plane's second Cloudflare account gives addresses here.
     expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.alcabot.si`)).toBe(
@@ -75,15 +75,15 @@ describe("desktop companion endpoint", () => {
     );
     for (const endpoint of [
       "https://unrelated.example.com",
-      `http://${LABEL}.alcabots.com`,
+      `http://${LABEL}.alca-corp.me`,
       "http://10.0.0.4:8810",
       "http://host.local:8810",
       "https://10.0.0.4",
       "http://host.example-tailnet.ts.net/path",
-      `https://${LABEL}.alcabots.com/path`,
+      `https://${LABEL}.alca-corp.me/path`,
       "http://user@host.example-tailnet.ts.net",
       "http://host.example-tailnet.ts.net.evil.test",
-      `https://${LABEL}.alcabots.com.evil.test`,
+      `https://${LABEL}.alca-corp.me.evil.test`,
       `http://${LABEL}.alcabot.si`,
       `https://${LABEL}.alcabot.si/path`,
       `https://${LABEL}.alcabot.si.evil.test`,
@@ -93,8 +93,8 @@ describe("desktop companion endpoint", () => {
       `https://${LABEL}.evilalcabot.si`,
       "https://www.alcabot.si",
       "https://app.alcabot.si",
-      "https://accounts.alcabots.com",
-      "https://c-opaque.alcabots.com",
+      "https://bots-accounts.alca-corp.me",
+      "https://c-opaque.alca-corp.me",
       "https://c-opaque.alcabot.si",
       `https://${LABEL.slice(0, -1)}.alcabot.si`,
       `https://${LABEL}0.alcabot.si`,
@@ -109,7 +109,7 @@ describe("desktop companion endpoint", () => {
   it("accepts one c-<32 hex> label under each listed domain, and only those", () => {
     // The third domain is a one-line change; until the owner names it, nothing new is accepted.
     expect(NEXT_MANAGED_COMPANION_HOST_SUFFIX).toBe("");
-    expect(MANAGED_COMPANION_HOST_SUFFIXES).toEqual(["alcabots.com", "alcabot.si"]);
+    expect(MANAGED_COMPANION_HOST_SUFFIXES).toEqual(["alca-corp.me", "alcabot.si"]);
     expect(Object.isFrozen(MANAGED_COMPANION_HOST_SUFFIXES)).toBe(true);
     for (const suffix of MANAGED_COMPANION_HOST_SUFFIXES) {
       expect(suffix).toMatch(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/);
@@ -133,7 +133,7 @@ describe("desktop companion endpoint", () => {
   });
 
   it("validates, adds, and removes the encrypted credential document field", () => {
-    const hostedAccess = { ...access, endpoint: `https://${LABEL}.alcabots.com` };
+    const hostedAccess = { ...access, endpoint: `https://${LABEL}.alca-corp.me` };
     expect(desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: hostedAccess })).toEqual(
       hostedAccess,
     );
@@ -193,15 +193,15 @@ describe("desktop companion pairing", () => {
       }),
     );
     const paired = await pairDesktopCompanion({
-      endpoint: `https://${LABEL}.alcabots.com`,
+      endpoint: `https://${LABEL}.alca-corp.me`,
       code: "654321",
       deviceName: "Desktop client",
       requestId: "request-https-01",
       fetchImpl,
     });
-    expect(paired).toEqual({ ...access, endpoint: `https://${LABEL}.alcabots.com` });
+    expect(paired).toEqual({ ...access, endpoint: `https://${LABEL}.alca-corp.me` });
     expect(fetchImpl).toHaveBeenCalledWith(
-      `https://${LABEL}.alcabots.com/api/pair`,
+      `https://${LABEL}.alca-corp.me/api/pair`,
       expect.objectContaining({ method: "POST" }),
     );
 

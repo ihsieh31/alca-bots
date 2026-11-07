@@ -69,14 +69,14 @@ describe("endpoint account configuration", () => {
   });
 
   it("deploys every account's limits at its real Cloudflare quotas", () => {
-    // alcabots.com and alcabot.si are both Pro zones (3,500 DNS records;
+    // alca-corp.me and alcabot.si are both Pro zones (3,500 DNS records;
     // alcabot.si was Free, 200, until Oct 21). Both accounts allow 1,000 tunnels.
     const production = JSON.parse(env.TEST_PRODUCTION_ENDPOINT_ACCOUNTS) as unknown[];
     const deployed = readConfig(withAccounts(production)).endpointAccounts;
     expect(deployed.map(({ companionHostSuffix, dnsRecordLimit, tunnelLimit }) => (
       { companionHostSuffix, dnsRecordLimit, tunnelLimit }
     ))).toEqual([
-      { companionHostSuffix: "alcabots.com", dnsRecordLimit: 3500, tunnelLimit: 1000 },
+      { companionHostSuffix: "alca-corp.me", dnsRecordLimit: 3500, tunnelLimit: 1000 },
       { companionHostSuffix: "alcabot.si", dnsRecordLimit: 3500, tunnelLimit: 1000 },
     ]);
   });
@@ -154,7 +154,7 @@ describe("endpoint account configuration", () => {
 const PRIMARY: EndpointAccount = {
   accountId: "0c92969a82eb9e173b013a7e7a02333d",
   apiToken: "primary-token-for-pure-tests-only",
-  companionHostSuffix: "alcabots.com",
+  companionHostSuffix: "alca-corp.me",
   dnsRecordLimit: 1000,
   minAppVersion: null,
   newEndpoints: true,
@@ -214,7 +214,7 @@ describe("endpoint account rules", () => {
   });
 
   it("never chooses an account with no free tunnel or DNS record while another has both", () => {
-    // Production on 2026-10-20: alcabots.com (a Pro zone) had 26 tunnels
+    // Production on 2026-10-20: alca-corp.me (a Pro zone) had 26 tunnels
     // free and 1,878 dormant endpoints; alcabot.si (a Free zone) 770 tunnels
     // free, all 200 DNS records used, and 207 dormant endpoints.
     const primary = { ...PRIMARY, dnsRecordLimit: 3500 };
@@ -288,9 +288,9 @@ describe("endpoint account rules", () => {
     const config = accounts(PRIMARY, SECOND);
     const label = `c-${"0123456789abcdef".repeat(2)}`;
     expect(endpointAccountFor(config, { hostname: `${label}.alcabot.si`, provider_account: SECOND.accountId })).toBe(SECOND);
-    expect(endpointAccountFor(config, { hostname: `${label}.alcabots.com`, provider_account: PRIMARY.accountId })).toBe(PRIMARY);
+    expect(endpointAccountFor(config, { hostname: `${label}.alca-corp.me`, provider_account: PRIMARY.accountId })).toBe(PRIMARY);
     for (const [providerAccount, hostname] of [
-      [SECOND.accountId, `${label}.alcabots.com`],
+      [SECOND.accountId, `${label}.alca-corp.me`],
       [PRIMARY.accountId, `${label}.alcabot.si`],
       ["9".repeat(32), `${label}.alcabot.si`],
       [SECOND.accountId, `www.${label}.alcabot.si`],
@@ -308,9 +308,9 @@ describe("endpoint account rules", () => {
     const label = (index: number) => `c-${index.toString(16).padStart(32, "0")}`;
     const cases: Array<[string, string]> = [
       [SECOND.accountId, `${label(1)}.alcabot.si`],
-      [PRIMARY.accountId, `${label(2)}.alcabots.com`],
+      [PRIMARY.accountId, `${label(2)}.alca-corp.me`],
       [SECOND.accountId, `c-${"0123456789abcdef".repeat(2)}.alcabot.si`],
-      [SECOND.accountId, `${label(3)}.alcabots.com`],
+      [SECOND.accountId, `${label(3)}.alca-corp.me`],
       [PRIMARY.accountId, `${label(4)}.alcabot.si`],
       ["9".repeat(32), `${label(5)}.alcabot.si`],
       [SECOND.accountId, `www.${label(6)}.alcabot.si`],

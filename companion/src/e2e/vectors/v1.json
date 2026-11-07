@@ -2113,8 +2113,8 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.alcabots.com",
-      "relay2.alcabots.com"
+      "bots-relay1.alca-corp.me",
+      "bots-relay2.alca-corp.me"
      ]
     }
    },
@@ -2136,10 +2136,10 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.alcabots.com",
-      "relay2.alcabots.com",
-      "relay3.alcabots.com",
-      "relay99.alcabots.com"
+      "bots-relay1.alca-corp.me",
+      "bots-relay2.alca-corp.me",
+      "bots-relay3.alca-corp.me",
+      "bots-relay99.alca-corp.me"
      ]
     }
    },
@@ -2152,8 +2152,8 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.alcabots.com",
-      "relay2.alcabots.com"
+      "bots-relay1.alca-corp.me",
+      "bots-relay2.alca-corp.me"
      ]
     }
    },
@@ -2166,8 +2166,8 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.alcabots.com",
-      "relay2.alcabots.com"
+      "bots-relay1.alca-corp.me",
+      "bots-relay2.alca-corp.me"
      ]
     }
    },
@@ -2190,8 +2190,8 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.alcabots.com",
-      "relay2.alcabots.com"
+      "bots-relay1.alca-corp.me",
+      "bots-relay2.alca-corp.me"
      ],
      "routes": "any"
     }
@@ -2215,8 +2215,8 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.alcabots.com",
-      "relay2.alcabots.com"
+      "bots-relay1.alca-corp.me",
+      "bots-relay2.alca-corp.me"
      ],
      "routes": "local"
     }

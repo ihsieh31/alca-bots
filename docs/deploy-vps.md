@@ -70,7 +70,7 @@ root, sign in again as `alca`; those accounts have different homes and credentia
 
 ## Path A: a public address with one command
 
-No domain, no proxy, no open port. The server gets an address like `https://c-7f3a9c.alcabots.com` through a Cloudflare tunnel; only traffic through the tunnel reaches it, and that traffic still has to pair.
+No domain, no proxy, no open port. The server gets an address like `https://c-7f3a9c.alca-corp.me` through a Cloudflare tunnel; only traffic through the tunnel reaches it, and that traffic still has to pair.
 
 ```sh
 npx alcabots setup          # once: choose AI access, connect, and choose a model
@@ -192,7 +192,7 @@ npx alcabots pair --label "Kitchen iPad"
 ```
 pairing code:  RR8Y-BLR6-H939
 expires:       10:59:45 AM (single use)
-open or scan:  https://c-7f3a9c.alcabots.com/pair#code=RR8Y-BLR6-H939
+open or scan:  https://c-7f3a9c.alca-corp.me/pair#code=RR8Y-BLR6-H939
 ```
 
 - **A browser:** open the link. The code is filled in; press **Connect**. That browser is paired for 30 days, renewed on use as above.

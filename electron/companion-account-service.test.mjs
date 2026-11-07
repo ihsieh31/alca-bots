@@ -32,7 +32,7 @@ const DUPLICATE_INSTALLATION_ID = "33333333-3333-4333-8333-333333333333";
 const ACCOUNT_TOKEN = `signed.${"a".repeat(80)}`;
 const INSTALLATION_CREDENTIAL = `alca_install_${"b".repeat(22)}.${"c".repeat(43)}`;
 const CONNECTOR_TOKEN = `eyJ${"d".repeat(100)}`;
-const ENDPOINT = "https://c-opaque.alcabots.com";
+const ENDPOINT = "https://c-opaque.alca-corp.me";
 
 function credentialStore(initial = {}) {
   let document = structuredClone(initial);
@@ -113,7 +113,7 @@ function signedCredentials(overrides = {}) {
 describe("Companion account service", () => {
   it("uses the packaged hosted default and only explicit safe development origins", () => {
     expect(resolveCompanionControlPlaneURL({ isPackaged: true, environment: {} })).toBe(
-      "https://accounts.alcabots.com",
+      "https://bots-accounts.alca-corp.me",
     );
     expect(resolveCompanionControlPlaneURL({
       isPackaged: false,
@@ -121,11 +121,11 @@ describe("Companion account service", () => {
     })).toBe("http://127.0.0.1:8787");
     expect(resolveCompanionControlPlaneURL({
       isPackaged: true,
-      environment: { ALCA_CONTROL_PLANE_URL: "http://accounts.alcabots.com" },
+      environment: { ALCA_CONTROL_PLANE_URL: "http://bots-accounts.alca-corp.me" },
     })).toBe("");
     expect(resolveCompanionControlPlaneURL({
       isPackaged: true,
-      environment: { ALCA_CONTROL_PLANE_URL: new String("https://accounts.alcabots.com") },
+      environment: { ALCA_CONTROL_PLANE_URL: new String("https://bots-accounts.alca-corp.me") },
     })).toBe("");
     expect(resolveCompanionControlPlaneURL({ isPackaged: false, environment: {} })).toBe("");
   });

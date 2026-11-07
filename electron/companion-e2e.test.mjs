@@ -15,7 +15,7 @@ const HOST_ID = "lz81isB3BuNV6rHgYgG3Wg";
 const grant = (overrides = {}) => ({
   token: "eyJ2IjoxfQ.c2lnbmF0dXJl",
   hostId: HOST_ID,
-  nodes: ["relay1.alcabots.com", "relay2.alcabots.com"],
+  nodes: ["bots-relay1.alca-corp.me", "bots-relay2.alca-corp.me"],
   expiresAt: 10 * 60 * 60_000,
   refreshAfter: 60 * 60_000,
   ...overrides,

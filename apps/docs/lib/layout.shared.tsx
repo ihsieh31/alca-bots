@@ -10,7 +10,7 @@ export function baseOptions(): BaseLayoutProps {
       transparentMode: 'none',
     },
     links: [
-      { text: 'Website', url: 'https://www.alcabots.com', external: true },
+      { text: 'Website', url: 'https://bots.alca-corp.me', external: true },
       { text: 'Changelog', url: '/docs/changelog' },
       { type: 'button', text: 'Download', url: 'https://github.com/ihsieh31/alca-bots/releases/latest', external: true },
     ],

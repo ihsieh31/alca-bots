@@ -8,7 +8,7 @@ import { z } from "zod";
 import { DEVS_REPORT_LIMITS, withoutContact, type DevsReportPayload } from "./devs-report.ts";
 
 export const BUG_REPORT_PATH = "/api/bug-reports";
-export const PRODUCTION_CLOUD_ORIGIN = "https://cloud.alcabots.com";
+export const PRODUCTION_CLOUD_ORIGIN = "https://bots-cloud.alca-corp.me";
 export const STAGING_CLOUD_ORIGIN = "https://alca-cloud-staging.fly.dev";
 const SEND_TIMEOUT_MS = 20_000;
 const ANSWER_MAX_BYTES = 16 * 1024;

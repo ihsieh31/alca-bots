@@ -49,27 +49,13 @@ jobs:
           # the renderer is served by the server itself (ALCA_STATIC_DIR)
           docker exec alca curl -sf http://127.0.0.1:8799/ | grep -qi "<html" || { docker logs alca; echo "UI not served"; exit 1; }
           docker logs alca | tail -5
-      - name: Prove the image finds its enterprise layer
-        # The image ships dist-server/ alone, so the bundled layer sits inside
-        # the server root (server/enterprise.ts looks there after the sibling
-        # folder). A key that is not genuine proves the layer loaded and
-        # checked it; a missing layer would report "no enterprise layer exists"
-        # and a licensed self-hoster would silently run the open-source edition.
+      - name: Prove the image runs the open-source edition
+        # alca-bots ships without upstream's enterprise/ layer.
         run: |
           set -euo pipefail
-          docker run -d --name alca-ent -e ALCA_LICENSE_KEY=alca1.not.real alcabots:ci
-          for i in $(seq 1 40); do
-            if docker exec alca-ent curl -sf http://127.0.0.1:8799/api/health | grep -q alcabots; then break; fi
-            sleep 2
-            if [ "$i" = "40" ]; then docker logs alca-ent; echo "server never became healthy"; exit 1; fi
-          done
-          edition=$(docker exec alca-ent curl -sf http://127.0.0.1:8799/api/edition)
+          edition=$(docker exec alca curl -sf http://127.0.0.1:8799/api/edition)
           echo "$edition"
-          if grep -q 'no enterprise layer exists' <<<"$edition"; then echo "the image cannot find its enterprise layer"; exit 1; fi
           grep -q '"edition":"oss"' <<<"$edition"
-          grep -q 'enterprise layer disabled: ALCA_LICENSE_KEY signature does not match' <<<"$edition"
-          docker exec alca-ent test -f /app/dist-server/enterprise/LICENSE
-          docker rm -f alca-ent >/dev/null
       - name: Prove the non-root user can browse with the baked-in Chrome
         run: |
           set -euo pipefail

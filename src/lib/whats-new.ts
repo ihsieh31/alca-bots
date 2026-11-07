@@ -13,7 +13,7 @@ export type WhatsNewAudience = "none" | "own" | "team" | "other";
 
 /** Each slide's tag on the Cloud's funnel: `src` on its links, and `source` on the checkout the app opens from it. */
 export const WHATS_NEW_SOURCES = { pro: "app_whats_new_pro", team: "app_whats_new_team" } as const satisfies Record<WhatsNewSlide, string>;
-const CLOUD_SITE = "https://cloud.alcabots.com", STAGING_SITE = "https://alca-cloud-staging.fly.dev";
+const CLOUD_SITE = "https://bots-cloud.alca-corp.me", STAGING_SITE = "https://alca-cloud-staging.fly.dev";
 
 /** The Cloud website's Home, which shows the plans to someone without one; `src` on /cloud opens that page. */
 export const newCloudUrl = (staging = false) => `${staging ? STAGING_SITE : CLOUD_SITE}/cloud?src=${WHATS_NEW_SOURCES.pro}`;

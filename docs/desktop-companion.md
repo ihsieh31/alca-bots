@@ -23,10 +23,10 @@ below. The two connection types intentionally do not share credentials.
 2. Open a pairing window so the host displays a six-digit code.
 3. On the client, open **Settings → Remote access → Connect to another computer**
    and choose **Desktop companion**.
-4. Enter the host's managed companion address (`https://c-….alcabots.com` or `https://c-….alcabot.si`) and the six-digit code.
+4. Enter the host's managed companion address (`https://c-….alca-corp.me` or `https://c-….alcabot.si`) and the six-digit code.
 5. Choose **Pair and switch to client mode**. The client restarts and opens the host's bot UI.
 
-The HTTPS address uses the host's managed outbound tunnel. TLS is verified by the operating system, and the client does not need Tailscale. HTTPS is intentionally restricted to the names AlcaBots issues (`c-` and 32 hexadecimal characters under `alcabots.com` or `alcabot.si`) so a typo, or any other host in those domains, cannot receive the pairing code or a paired-device token. Desktop releases up to 0.1.103 accept only `alcabots.com` names; update the client to pair with a host whose address is on `alcabot.si`, or pair over Tailscale.
+The HTTPS address uses the host's managed outbound tunnel. TLS is verified by the operating system, and the client does not need Tailscale. HTTPS is intentionally restricted to the names AlcaBots issues (`c-` and 32 hexadecimal characters under `alca-corp.me` or `alcabot.si`) so a typo, or any other host in those domains, cannot receive the pairing code or a paired-device token. Desktop releases up to 0.1.103 accept only `alca-corp.me` names; update the client to pair with a host whose address is on `alcabot.si`, or pair over Tailscale.
 
 ## Pair over Tailscale
 

@@ -153,7 +153,7 @@ export async function startRig(relayUrl: (signingPublicKey: Buffer) => Promise<s
     if (!res.ok) throw new Error(`${method} ${path}: ${res.status} ${await res.text()}`);
     return (await res.json()) as State;
   };
-  await control("PUT", "/e2e/relay", { hostId: hid, nodes: ["relay1.alcabots.com"], relayToken: relayToken() });
+  await control("PUT", "/e2e/relay", { hostId: hid, nodes: ["bots-relay1.alca-corp.me"], relayToken: relayToken() });
   await waitFor(async () => (await control("GET", "/state")).e2e.relay === "connected", 10_000);
   const transportKey = (state: State) => fromB64u(state.e2e.descriptor!.k)!;
   return {

@@ -210,12 +210,12 @@ describe("phone setup flow", () => {
     expect(secureAddressRequestLapsed(account("connecting"), waiting)).toBe(false);
     expect(secureAddressRequestLapsed(account("error"), waiting)).toBe(false);
     expect(secureAddressRequestLapsed(
-      { ...account("ready"), endpoint: "https://c-opaque.alcabots.com" },
+      { ...account("ready"), endpoint: "https://c-opaque.alca-corp.me" },
       waiting,
     )).toBe(false);
     expect(secureAddressRequestLapsed(account("ready"), {
       enabled: true,
-      endpoints: [{ kind: "hosted", url: "https://c-opaque.alcabots.com", priority: 0 }],
+      endpoints: [{ kind: "hosted", url: "https://c-opaque.alca-corp.me", priority: 0 }],
     })).toBe(false);
     expect(secureAddressRequestLapsed(account("ready"), { enabled: false })).toBe(false);
     expect(secureAddressRequestLapsed(null, waiting)).toBe(false);

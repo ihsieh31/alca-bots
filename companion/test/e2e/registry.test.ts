@@ -20,7 +20,7 @@ describe("E2ERegistry admission", () => {
       const registry = new E2ERegistry(devices);
       const hostId = randomBytes(16);
       registry.setKey(generateKeyPair());
-      registry.setRelay({ hostId, nodes: ["relay1.alcabots.com"] });
+      registry.setRelay({ hostId, nodes: ["bots-relay1.alca-corp.me"] });
       const { code } = devices.openPairing();
       const paired = devices.redeem(code, "Phone");
       if ("error" in paired) throw new Error(paired.error);
@@ -40,7 +40,7 @@ describe("E2ERegistry admission", () => {
       await held;
       expect(registry.admissionSet()).toEqual([]);
       expect(changes).toBe(1);
-      expect(registry.descriptor(paired.device.id)).toMatchObject({ h: expect.any(String), r: ["relay1.alcabots.com"], routes: "local" });
+      expect(registry.descriptor(paired.device.id)).toMatchObject({ h: expect.any(String), r: ["bots-relay1.alca-corp.me"], routes: "local" });
     } finally {
       vi.useRealTimers();
     }

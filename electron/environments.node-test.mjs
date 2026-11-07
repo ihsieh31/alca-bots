@@ -25,7 +25,7 @@ test("a pairing link keeps its code in the hash; a code anywhere else is refused
 });
 
 test("self-hosted pairing supports custom HTTPS and Cloudflare names without Tailscale", () => {
-  for (const origin of ["https://bots.example.com", "https://example.trycloudflare.com", "https://c-example.alcabots.com"]) {
+  for (const origin of ["https://bots.example.com", "https://example.trycloudflare.com", "https://c-example.alca-corp.me"]) {
     const link = `${origin}/pair#code=ABCD-EFGH-JKLM`;
     assert.deepEqual(env.parsePairingLink(link), {
       origin, code: "ABCD-EFGH-JKLM", url: link,
@@ -216,7 +216,7 @@ test("the places line names this computer's bots briefly, says nothing when its 
 test("native window identity distinguishes hosted HTML, companion data, and the local workspace", () => {
   const state = { environments: [{ id: "old", name: "Old team", origin: "https://old.example" }], activeId: "old" };
   assert.equal(env.workspaceWindowTitle(state), "AlcaBots — Hosted: Old team (old.example)");
-  assert.equal(env.workspaceWindowTitle(state, { serverName: "Office", endpoint: "https://c-office.alcabots.com" }), "AlcaBots — Connected to: Office (c-office.alcabots.com)");
+  assert.equal(env.workspaceWindowTitle(state, { serverName: "Office", endpoint: "https://c-office.alca-corp.me" }), "AlcaBots — Connected to: Office (c-office.alca-corp.me)");
   assert.equal(env.workspaceWindowTitle(env.withActive(state, "local")), "AlcaBots");
 });
 

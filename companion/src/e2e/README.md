@@ -51,7 +51,7 @@ reveals nothing about `psk`: the two are separate HMAC outputs under different l
   `e2e=<b64u(JSON)>`, where the JSON is:
 
 ```json
-{"v":1,"k":"<b64u 65-byte T.pub, 87 chars>","h":"<b64u 16-byte hostId, 22 chars>","r":["relay1.alcabots.com","relay2.alcabots.com"]}
+{"v":1,"k":"<b64u 65-byte T.pub, 87 chars>","h":"<b64u 16-byte hostId, 22 chars>","r":["bots-relay1.alca-corp.me","bots-relay2.alca-corp.me"]}
 ```
 
 - **Field rules:**
@@ -215,7 +215,7 @@ This uses the yamux wire format (`hashicorp/yamux` spec): a 12-byte header of `v
 
 ## 9. Relay protocol (outside the encryption)
 
-- **Hosts.** The relay nodes are `relay1.alcabots.com` and `relay2.alcabots.com`, WSS on 443. Caddy terminates TLS and proxies to the
+- **Hosts.** The relay nodes are `bots-relay1.alca-corp.me` and `bots-relay2.alca-corp.me`, WSS on 443. Caddy terminates TLS and proxies to the
   relay on `127.0.0.1:8080`. Auth is always the **first WebSocket message**, which works with every WebSocket client (Node's built-in client
   included).
 - **Pre-auth rules:**
@@ -267,7 +267,7 @@ own the `sid`, and a `sid` is single-use with a 10 s life. The relay then splice
 **Control plane endpoint:** `POST /v1/installations/self/relay-token` with `Authorization: Bearer <alca_install_…>`.
 - **Request body:** `{"appVersion":"0.1.150","devices":{"e2e":2,"legacy":1}}`. The counts are for adoption gates and carry no
   identifiers.
-- **200 response:** `{"token","hostId","nodes":["relay1.alcabots.com","relay2.alcabots.com"],"expiresAt","refreshAfter"}`.
+- **200 response:** `{"token","hostId","nodes":["bots-relay1.alca-corp.me","bots-relay2.alca-corp.me"],"expiresAt","refreshAfter"}`.
   - `refreshAfter = iat + 1 h`.
   - `nodes` is ordered by rendezvous hash: highest `SHA256(hostId ‖ nodeName)[0:8]` first. A future US node is ranked first when the
     request's `cf.continent` is NA or SA.

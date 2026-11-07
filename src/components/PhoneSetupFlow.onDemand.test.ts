@@ -14,7 +14,7 @@ function PhoneSetupFlow() {
   return createElement(PhoneSetupFlowView, { controller: usePhoneSetupController() });
 }
 
-const HOSTED = "https://c-opaque.alcabots.com";
+const HOSTED = "https://c-opaque.alca-corp.me";
 const FULL =
   "Secure HTTPS links are temporarily full. Try again in 10 minutes, or pair on this Wi-Fi or with Tailscale.";
 

@@ -2,9 +2,9 @@
 # AlcaBot on a server of your own: checks the server, installs the bot box's two security profiles, starts the AlcaBot
 # connector and connects it to AlcaBot with the one-time code AlcaBot shows. Running it again repairs the install.
 #
-#   curl -fsSL https://cloud.alcabots.com/install.sh | sudo sh -s -- <code>
-#   curl -fsSL https://cloud.alcabots.com/install.sh | sudo sh -s -- uninstall               (keeps your data)
-#   curl -fsSL https://cloud.alcabots.com/install.sh | sudo sh -s -- uninstall --delete-data (deletes it too)
+#   curl -fsSL https://bots-cloud.alca-corp.me/install.sh | sudo sh -s -- <code>
+#   curl -fsSL https://bots-cloud.alca-corp.me/install.sh | sudo sh -s -- uninstall               (keeps your data)
+#   curl -fsSL https://bots-cloud.alca-corp.me/install.sh | sudo sh -s -- uninstall --delete-data (deletes it too)
 #
 # AlcaBot serves this file with its own address and the connector's image (pinned by digest) filled in below.
 set -eu

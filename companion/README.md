@@ -125,7 +125,7 @@ it is switched on, so the opt-in is never implicit.
 | `ALCA_COMPANION_NAME` | your name, from the harness | what the phone calls this computer |
 | `ALCA_COMPANION_E2E` | off | `1` turns on the end-to-end encrypted connection when standing alone (the desktop app turns it on itself); the transport key is kept in `e2e-key.json` beside the devices |
 | `ALCA_COMPANION_BONJOUR` | on | `0` keeps a test rig off the network's Bonjour |
-| `ALCA_COMPANION_RELAY_URL` | none | test rigs only: a `ws://127.0.0.1:<port>` relay in place of `wss://relayN.alcabots.com` |
+| `ALCA_COMPANION_RELAY_URL` | none | test rigs only: a `ws://127.0.0.1:<port>` relay in place of `wss://relayN.alca-corp.me` |
 
 `ALCA_COMPANION_NAME` overrides a name the sidecar otherwise asks the harness
 for: the computer name set in Settings → Remote access, else the profile from

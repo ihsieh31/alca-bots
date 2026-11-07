@@ -20,7 +20,7 @@ const WORK = mkdtempSync(join(tmpdir(), "alca-rail-"));
 const POLL_MS = 150_000;
 const DEBUG_PORT = 9333;
 
-const ADMIN_HOST = "cloud.alcabots.com", AWAKE_HOST = "alca-u-aaaaaaaaaaaa.fly.dev", ASLEEP_HOST = "alca-u-bbbbbbbbbbbb.fly.dev";
+const ADMIN_HOST = "bots-cloud.alca-corp.me", AWAKE_HOST = "alca-u-aaaaaaaaaaaa.fly.dev", ASLEEP_HOST = "alca-u-bbbbbbbbbbbb.fly.dev";
 const BLOCKED = ["us.i.posthog.com", "us-assets.i.posthog.com", "app.posthog.com"];
 const TOKEN = `omc_${"T".repeat(43)}`, COOKIE = "alca_session_fixture";
 const results = [];
