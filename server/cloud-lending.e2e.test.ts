@@ -505,7 +505,7 @@ it("My Cloud remembers a lent computer across its restart, says it is offline by
   await waitForExit(child, { signal: "SIGTERM" });
   await boot();
   const known = (await api("GET", "/api/shared-computers", { token: owner })).body.known;
-  expect(known).toEqual([expect.objectContaining({ id, platform: process.platform, online: false, lent: true, scopes: { folders: 1, terminal: false, screen: false, internet: false, chrome: false } })]);
+  expect(known).toEqual([expect.objectContaining({ id, platform: process.platform, online: false, lent: true, scopes: { folders: 1, terminal: false, screen: false } })]);
   call = await ask();
   // The turn's own instructions name the computer the same way.
   expect(turn.systemPrompt).toContain(`If they ask for something on their ${device} (`);
@@ -525,7 +525,7 @@ it("My Cloud remembers a lent computer across its restart, says it is offline by
   await expect.poll(() => connector!.cloudState(env).connected, { timeout: 8000 }).toBe(true);
   connector.pause();
   await expect.poll(async () => (await api("GET", "/api/shared-computers", { token: owner })).body.known, { timeout: 5000 })
-    .toEqual([expect.objectContaining({ online: false, lent: false, scopes: { folders: 0, terminal: false, screen: true, internet: false, chrome: false } })]);
+    .toEqual([expect.objectContaining({ online: false, lent: false, scopes: { folders: 0, terminal: false, screen: true } })]);
   call = await ask();
   expect(JSON.parse((await call("list_shared_computers")).content[0].text).say).toMatch(new RegExp(`^Their ${device} .+ no longer shares itself with the Cloud: AlcaBots on it is paused`, "u"));
   connector.close();
@@ -576,7 +576,7 @@ it("a Mac signed in to My Cloud is lent by itself, its home folder with editing,
   lending.start();
   const lentNow = async () => (await api("GET", "/api/shared-computers", { token: owner })).body;
   await expect.poll(async () => (await lentNow()).computers[0]?.scopes, { timeout: 8000 })
-    .toEqual({ folders: [{ id: expect.any(String), name: expect.any(String), write: true }], terminal: false, screen: false, internet: true, chrome: true });
+    .toEqual({ folders: [{ id: expect.any(String), name: expect.any(String), write: true }], terminal: false, screen: false });
   lending.pause();
   await expect.poll(async () => (await lentNow()).known.every((computer: { lent: boolean }) => !computer.lent), { timeout: 5000 }).toBe(true);
   expect((await lentNow()).computers).toEqual([]);

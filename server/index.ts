@@ -2361,7 +2361,7 @@ function dataIntegration(botId: string, turn: { threadId: string; generation: st
 }
 const emailIntegration = (bot: BotRecord, turn: { threadId: string; generation: string }) => emailHost.integration(bot, () => mintInternalCapability({ botId: bot.id, ...turn, kind: "email", depth: 0, skillAuthoring: false, createdBots: 0, openedThreads: 0 }), `http://127.0.0.1:${PORT}`);
 
-export function browserEngineSummary(): { kind: "engine" | "unavailable"; reason?: string } {
+function browserEngineSummary(): { kind: "engine" | "unavailable"; reason?: string } {
   const status = egoBrowserStatus();
   return status.kind === "ready" ? { kind: "engine" } : { kind: "unavailable", reason: status.reason };
 }

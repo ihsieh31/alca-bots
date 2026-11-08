@@ -34,7 +34,7 @@ afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 async function session(calls: Array<{ name: string; arguments?: Record<string, unknown> }>, extraEnv: Record<string, string> = {}) {
   const child = spawn(process.execPath, [SPAWNED_PROXIES.egoBrowser], {
-    env: { ...process.env, ALCA_EGO_BROWSER_COMMAND: fake, ALCA_EGO_BROWSER_ARGS: "[]", ...extraEnv },
+    env: { ...process.env, ALCA_EGO_BROWSER_COMMAND: process.execPath, ALCA_EGO_BROWSER_ARGS: JSON.stringify([fake]), ...extraEnv },
     stdio: ["pipe", "pipe", "inherit"],
   });
   const lines = createInterface({ input: child.stdout });
@@ -104,9 +104,11 @@ describe("ego-browser proxy", () => {
 describe("ego-browser integration", () => {
   it("mounts the proxy with the CLI named by ALCA_EGO_BROWSER_PATH", () => {
     const env = { ...process.env, ALCA_EGO_BROWSER_PATH: fake };
-    expect(egoBrowserCommand(env)?.command).toBe(fake);
+    const ego = egoBrowserCommand(env);
+    // Windows runs a script file through Node rather than by its shebang.
+    expect([ego?.command, ...(ego?.args ?? [])]).toContain(fake);
     const spec = egoBrowserIntegration(env);
     expect(spec?.args).toEqual([SPAWNED_PROXIES.egoBrowser]);
-    expect(spec?.env.ALCA_EGO_BROWSER_COMMAND).toBe(fake);
+    expect(spec?.env.ALCA_EGO_BROWSER_COMMAND).toBe(ego?.command);
   });
 });

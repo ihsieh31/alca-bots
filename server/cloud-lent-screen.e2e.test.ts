@@ -63,7 +63,7 @@ async function lendPc(): Promise<void> {
   const environmentId = (await api("GET", "/.well-known/alcabots/environment")).body.environmentId as string;
   const headers = { "x-alca-computer-secret": PC.secret };
   const connected = await api("POST", "/api/shared-computers/connect", { token: owner, headers, body: {
-    id: PC.id, name: "OFFICE-PC", environmentId, folders: [], terminal: false, computer: true, platform: "win32", chrome: true,
+    id: PC.id, name: "OFFICE-PC", environmentId, folders: [], terminal: false, computer: true, platform: "win32",
     commandTimeouts: true, longCommands: true, fileEdits: true,
   } });
   expect(connected.status, JSON.stringify(connected.body)).toBe(200);
@@ -180,7 +180,7 @@ it("lets an Auto conversation pinned to the cloud computer use the person's lent
 
   const call = await agentTools(turn);
   const listed = JSON.parse((await call("list_shared_computers")).content[0]!.text);
-  expect(listed.computers).toEqual([expect.objectContaining({ id: PC.id, name: "OFFICE-PC", device: "PC", computer: true, terminal: false, chrome: true })]);
+  expect(listed.computers).toEqual([expect.objectContaining({ id: PC.id, name: "OFFICE-PC", device: "PC", computer: true, terminal: false })]);
   expect(listed.unavailable).toBeUndefined();
   const tools = await call("shared_computer", { computer_id: PC.id, action: "computer_tools" });
   expect(tools.isError, JSON.stringify(tools)).not.toBe(true);

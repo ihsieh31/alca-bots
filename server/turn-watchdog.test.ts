@@ -330,7 +330,7 @@ describe("a Stop that wins against a provider dispatch", () => {
       return source.slice(start, end);
     };
     const code = ts.transpileModule(section("\nfunction markCancelledProviderHandshake", "\nfunction clearCancelledProviderHandshake") +
-      section("\nfunction cancelDirectTurnDispatch", "\nconst {") + "\nglobalThis.cancelDirectTurnDispatch = cancelDirectTurnDispatch;",
+      section("\nfunction cancelDirectTurnDispatch", "\nconst dataSheets = ") + "\nglobalThis.cancelDirectTurnDispatch = cancelDirectTurnDispatch;",
     { compilerOptions: { target: ts.ScriptTarget.ESNext } }).outputText;
     const quarantined: string[] = [];
     const context = vm.createContext({

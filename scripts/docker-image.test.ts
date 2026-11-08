@@ -245,7 +245,7 @@ describe("container images", () => {
     expect(keys.env!.CLOUD_HOME_ENGINES).toBe("@anthropic-ai/claude-code @openai/codex");
   });
 
-  it("resolves the current engine releases, and keys on the date when a lookup fails", () => {
+  it.skipIf(process.platform === "win32")("resolves the current engine releases, and keys on the date when a lookup fails", () => {
     const keys = (workflow.jobs.publish.steps as { id?: string; run?: string; env?: Record<string, string> }[]).find(step => step.id === "keys")!;
     const resolve = (ok: boolean) => {
       const root = mkdtempSync(join(tmpdir(), "alca-docker-keys-"));

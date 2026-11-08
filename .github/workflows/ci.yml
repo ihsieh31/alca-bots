@@ -560,9 +560,9 @@ jobs:
     needs: static
     if: contains(needs.static.outputs.jobs, '"ui-smoke"')
     # Advisory, outside the required `test` matrix: the renderer recipe in
-    # docs/verification/chat-ui.md run by a machine. It downloads the pinned
-    # agent-browser release (digest verified) and its Chrome, drives the real
-    # <App/> against the isolated fake-engine fixture, and keeps the screenshot.
+    # docs/verification/chat-ui.md run by a machine. It installs the pinned
+    # agent-browser from npm and its Chrome, drives the real <App/> against the
+    # isolated fake-engine fixture, and keeps the screenshot.
     name: renderer smoke (control-alca ui, Ubuntu 24.04)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -576,6 +576,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Install the UI driver
+        # AlcaBots no longer ships agent-browser; the UI checks drive the app with this pinned copy.
+        run: npm install -g agent-browser@0.37.0
       - name: Let Chrome build its sandbox on this runner
         # Ubuntu 24.04's AppArmor profile blocks unprivileged user namespaces,
         # so the downloaded Chrome for Testing dies with "No usable sandbox".

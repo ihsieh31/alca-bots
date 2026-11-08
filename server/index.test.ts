@@ -397,6 +397,7 @@ const statusWithHeaders = (headers: Record<string, string>): Promise<number> =>
     req.end();
   });
 
+let fakeEgoBrowser = "";
 beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "alca-api-test-"));
   staticDir = join(home, "static");
@@ -413,6 +414,8 @@ beforeAll(async () => {
   fakeVpsFixture = join(home, ".alcabots", "fake-vps-container.json");
   fakeDockerLog = join(home, ".alcabots", "fake-docker-calls.log");
   mkdirSync(fakeDockerDir, { recursive: true });
+  fakeEgoBrowser = join(fakeDockerDir, "ego-browser.mjs");
+  writeFileSync(fakeEgoBrowser, "process.exit(1);\n");
   writeFileSync(fakeDockerProgram, [
     'import { appendFileSync, existsSync, readFileSync, rmSync } from "node:fs";',
     'const args = process.argv.slice(2);',
@@ -1207,6 +1210,8 @@ beforeAll(async () => {
       ALCA_PORT: String(PORT),
       ALCA_WEBHOOK_PORT: String(WEBHOOK_PORT),
       ALCA_EXTRA_PATH: fakeDockerDir,
+      // CI has no ego lite; the browser tools mount whenever the CLI is found.
+      ALCA_EGO_BROWSER_PATH: fakeEgoBrowser,
       ALCA_BOAT_API: `http://127.0.0.1:${boatStubPort}`,
       ALCA_COMPOSIO_API: `http://127.0.0.1:${boatStubPort}/api/v3.1`,
       ALCA_COMPOSIO_TOOLKITS_API: `http://127.0.0.1:${boatStubPort}/api/v3`,
