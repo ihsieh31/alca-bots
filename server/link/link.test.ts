@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createECDH, randomBytes } from "node:crypto";
 import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -11,6 +11,7 @@ import { generateIdentity, LinkClient, pairDevice, type LinkCredentials } from "
 import { startRelay } from "../../link/relay/server.ts";
 import { HTTP_CHANNEL, HTTP_CHUNK_BYTES, linkRequestRefusal, requestHeadersFor, responseHeadersFor, type HttpEvent } from "../../shared/link-http.ts";
 import { parseLinkPairingFragment } from "../../shared/link.ts";
+import type { Notification } from "../../shared/notification.ts";
 import { createLinkEventSource } from "../../src/phone/event-source.ts";
 import { LinkHttp } from "../../src/phone/link-http.ts";
 import { LinkService, type LinkSessions } from "./service.ts";
@@ -87,7 +88,7 @@ async function harness(big: Buffer) {
   return { port: (server.address() as AddressInfo).port, seen };
 }
 
-async function setup(big = Buffer.alloc(0)) {
+async function setup(big = Buffer.alloc(0), options: { pushFetch?: typeof fetch; remoteAccessRefusal?: () => string | undefined } = {}) {
   const dataDir = mkdtempSync(join(tmpdir(), "alca-link-"));
   cleanups.push(() => rmSync(dataDir, { recursive: true, force: true }));
   const relay = await startRelay({ port: 0 });
@@ -95,7 +96,7 @@ async function setup(big = Buffer.alloc(0)) {
   const { port, seen } = await harness(big);
   const sessions = new FakeSessions();
   const service = new LinkService({
-    dataDir, port, sessions, computerName: () => "test computer", env: { ALCA_LINK_RELAY_URL: relay.url, ALCA_LINK_ALLOW_LOOPBACK: "1" },
+    dataDir, port, sessions, computerName: () => "test computer", env: { ALCA_LINK_RELAY_URL: relay.url, ALCA_LINK_ALLOW_LOOPBACK: "1" }, ...options,
   });
   cleanups.push(() => service.stop());
   return { dataDir, relay, seen, sessions, service };
@@ -252,6 +253,89 @@ describe("LinkService", () => {
     s.sessions.end("s2", "revoked");
     expect(s.service.status().devices).toEqual([]);
     expect(s.service.devices.get(id)?.revoked).toBe(true);
+  });
+});
+
+describe("notifications to a phone", () => {
+  const ENDPOINT = "https://web.push.apple.com/a";
+  const NOTE = { kind: "approval", botId: "b", botName: "Ledger", threadId: "t", title: "Ledger", body: "Needs you" } as Notification;
+  const subscription = () => {
+    const ecdh = createECDH("prime256v1");
+    ecdh.generateKeys();
+    return { endpoint: ENDPOINT, keys: { p256dh: ecdh.getPublicKey().toString("base64url"), auth: randomBytes(16).toString("base64url") } };
+  };
+  const pushes = () => {
+    const sent: string[] = [];
+    const pushFetch: typeof fetch = async (input) => {
+      sent.push(String(input));
+      return new Response(null, { status: 201 });
+    };
+    return { sent, pushFetch };
+  };
+  const settled = () => new Promise((resolve) => setTimeout(resolve, 30));
+
+  it("subscribes over the session, and reaches the phone once its page is hidden", async () => {
+    const { sent, pushFetch } = pushes();
+    const s = await setup(undefined, { pushFetch });
+    const { client } = await connected(s);
+    const config = await client.request<{ publicKey: string; subscribed: boolean }>("push.config", {});
+    expect(config.subscribed).toBe(false);
+    expect(Buffer.from(config.publicKey, "base64url")).toHaveLength(65);
+    await client.request("push.subscribe", subscription());
+    s.service.notifyPhones(NOTE);
+    await settled();
+    expect(sent).toEqual([]);
+    await client.request("push.visible", { visible: false });
+    s.service.notifyPhones(NOTE);
+    await until(() => sent.length === 1);
+    expect(sent[0]).toBe(ENDPOINT);
+    await client.request("push.unsubscribe", {});
+    s.service.notifyPhones(NOTE);
+    await settled();
+    expect(sent).toHaveLength(1);
+  });
+
+  it("keeps what is meant for one teammate off the phone", async () => {
+    const { sent, pushFetch } = pushes();
+    const s = await setup(undefined, { pushFetch });
+    const { client } = await connected(s);
+    await client.request("push.subscribe", subscription());
+    await client.request("push.visible", { visible: false });
+    s.service.notifyPhones({ ...NOTE, forPerson: "someone" });
+    await settled();
+    expect(sent).toEqual([]);
+  });
+
+  it("refuses an address outside the push services", async () => {
+    const s = await setup();
+    const { client } = await connected(s);
+    await expect(client.request("push.subscribe", { ...subscription(), endpoint: "https://192.168.1.20/steal" })).rejects.toThrow();
+    await expect(client.request("push.nope", {})).rejects.toThrow();
+  });
+
+  it("stops at once when the phone is removed", async () => {
+    const { sent, pushFetch } = pushes();
+    const s = await setup(undefined, { pushFetch });
+    const { client } = await connected(s);
+    await client.request("push.subscribe", subscription());
+    s.service.revokeDevice(s.service.status().devices[0]!.id);
+    s.service.notifyPhones(NOTE);
+    await settled();
+    expect(sent).toEqual([]);
+  });
+
+  it("sends nothing while the organization has remote access off", async () => {
+    const { sent, pushFetch } = pushes();
+    let refusal: string | undefined;
+    const s = await setup(undefined, { pushFetch, remoteAccessRefusal: () => refusal });
+    const { client } = await connected(s);
+    await client.request("push.subscribe", subscription());
+    await client.request("push.visible", { visible: false });
+    refusal = "remote access is off";
+    s.service.notifyPhones(NOTE);
+    await settled();
+    expect(sent).toEqual([]);
+    await expect(client.request("push.config", {})).rejects.toThrow();
   });
 });
 

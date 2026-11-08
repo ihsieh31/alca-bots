@@ -50,6 +50,10 @@ export class LinkHttp {
     this.o = o;
   }
 
+  get connected(): boolean {
+    return this.current !== null;
+  }
+
   /** Each session that comes up. Null means no session is usable now. */
   setPeer(peer: HttpPeer | null, via?: string): void {
     if (!peer) {

@@ -4852,9 +4852,14 @@ const providerLabel = (provider: string): string => {
 const quietTurnThreads = new Set<string>(); const doneNotice = createDoneNotice({ awaitingTeammates: (threadId) => coordinator.awaitingTeammateThreads().has(threadId), queuedFollowUp: hasQueuedPersonMessage }); const personWaits = createPersonWaits({ store, notify, threadsWithCards: threadsWithCardsSince });
 const QUIET_TURN_NEWS: ReadonlySet<Notification["kind"]> = new Set(["done", "turn-failed", "incident"]);
 
+// Set once the phone link exists, which is after the first notifications can fire.
+let pushToPhones: ((notification: Notification) => void) | null = null;
 function notify(notification: Notification | null, how?: { routine?: boolean }) {
   if (notification && QUIET_TURN_NEWS.has(notification.kind) && quietTurnThreads.has(notification.threadId)) return;
-  const routed = notification && teamMessages.route(notification, how); if (routed) broadcast({ kind: "notify", notification: logNotification(routed) });
+  const routed = notification && teamMessages.route(notification, how); if (routed) {
+    broadcast({ kind: "notify", notification: logNotification(routed) });
+    pushToPhones?.(routed);
+  }
 }
 
 const roomTurnLevels = createRoomTurnLevels();
@@ -8775,6 +8780,7 @@ const phoneLink = new LinkService({
   dataDir: DATA_DIR, port: PORT, sessions, computerName: () => cfg.computerName || "AlcaBots", remoteAccessRefusal: () => managedPolicy.remoteAccessRefusal(), log: (message) => console.log(message),
 });
 ROUTES.push(linkRoutes(phoneLink));
+pushToPhones = (notification) => phoneLink.notifyPhones(notification);
 
 routines.clearFrozenResultsThreads(); proactive.ensureWatch(); startFirstHour({ hooks: firstHourHooks, fresh: firstHourFresh, store, bus, cfg, dataDir: DATA_DIR, proactive, briefOn: () => proactive.briefOn(), ensureBrief: () => { proactive.ensureWatch(); }, composio, sessions, phones: () => phoneLink.status().devices.length, routines: () => routines, mainThread: botMainThread, threadBusy, startTurn, notify, wrote: markTaskContextExternallyUpdated, stale: shouldIgnoreProviderEvent, welcomeDone: () => { adminActorScope.exit(() => saveConfig(welcomeDonePatch(cfg.onboarding))); Object.assign(cfg, loadConfig()); broadcast({ kind: "config", ...configStatus() }); } });
 orgLibrary = new OrgLibrary({

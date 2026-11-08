@@ -79,7 +79,8 @@ try {
   const pairing = await api("POST", "/api/link/pairings", { access: "full" });
 
   browser = await chromium.launch({ channel: "chrome", headless: true });
-  const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
   const problems = [];
   page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
   page.on("response", (response) => { if (response.status() >= 400) problems.push(`http ${response.status()}: ${response.url()}`); });
@@ -91,6 +92,7 @@ try {
   if (direct) await until(async () => (await api("GET", "/api/link")).devices[0]?.connection === "rtc", "direct path", 30_000);
   await page.getByText("Ledger").first().waitFor({ timeout: 60_000 });
   await page.screenshot({ path: join(shots, "phone-home.png") });
+  await page.getByText("Ledger").first().click();
   const box = page.locator("textarea, [contenteditable=true]").first();
   await box.waitFor({ timeout: 30_000 });
   await box.fill("hello from the phone");
@@ -103,7 +105,42 @@ try {
   await sleep(1500);
   await page.screenshot({ path: join(shots, "phone-chat.png") });
   const via = (await api("GET", "/api/link")).devices[0];
-  console.log(JSON.stringify({ ok: true, device: via, problems: problems.slice(0, 12) }, null, 2));
+  // XMLHttpRequest isn't moved onto the connection by the page, so it stands for an <img> or a <video>.
+  await until(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)), "service worker in control");
+  const media = await page.evaluate(() => new Promise((resolve) => {
+    const request = new XMLHttpRequest();
+    request.open("GET", "/api/bots");
+    request.onload = () => resolve({ status: request.status, bots: request.responseText.includes("Ledger") });
+    request.onerror = () => resolve({ status: 0 });
+    request.send();
+  }));
+  if (media.status !== 200 || !media.bots) throw new Error(`media through the service worker: ${JSON.stringify(media)}`);
+  await context.setOffline(true);
+  await page.reload();
+  await page.getByText("Ledger").first().waitFor({ timeout: 15_000 });
+  await page.screenshot({ path: join(shots, "phone-offline.png") });
+  await context.setOffline(false);
+  await until(async () => (await api("GET", "/api/link")).devices[0]?.connection, "phone reconnected", 45_000);
+  await context.grantPermissions(["notifications"]);
+  const cdp = await context.newCDPSession(page);
+  const registrationId = await new Promise((resolve) => {
+    cdp.on("ServiceWorker.workerRegistrationUpdated", ({ registrations }) => { if (registrations[0]) resolve(registrations[0].registrationId); });
+    void cdp.send("ServiceWorker.enable");
+  });
+  await cdp.send("ServiceWorker.deliverPushMessage", {
+    origin: new URL(page.url()).origin,
+    registrationId,
+    data: JSON.stringify({ title: "Ledger", body: "Needs you", tag: "approval:t", botId: "b", threadId: "t" }),
+  });
+  await until(() => page.evaluate(async () => {
+    const shown = await (await navigator.serviceWorker.ready).getNotifications();
+    return shown.some((note) => note.title === "Ledger" && note.body === "Needs you" && note.data?.threadId === "t");
+  }), "the push on screen");
+  const { bots } = await api("GET", "/api/bots?messages=0");
+  await page.goto(`${new URL(page.url()).origin}/?open.botId=${bots.find((bot) => bot.name === "Ledger").id}`);
+  await page.locator("textarea, [contenteditable=true]").first().waitFor({ timeout: 30_000 });
+  if (new URL(page.url()).search) throw new Error("the notification's target stayed in the address");
+    console.log(JSON.stringify({ ok: true, device: via, problems: problems.slice(0, 12) }, null, 2));
 } catch (error) {
   failed = true;
   console.error(error);
