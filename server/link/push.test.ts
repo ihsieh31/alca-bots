@@ -179,6 +179,18 @@ describe("LinkPush", () => {
     await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(2));
   });
 
+  it("still knows the app is on screen after notifications go off and on again", async () => {
+    const send = vi.fn<typeof fetch>(async () => new Response(null, { status: 201 }));
+    const push = new LinkPush({ dir: dir(), fetch: send });
+    push.sessionOpened("d1");
+    push.subscribe("d1", { endpoint: ENDPOINT, keys: phone().keys });
+    push.remove("d1");
+    push.subscribe("d1", { endpoint: ENDPOINT, keys: phone().keys });
+    push.notify(NOTE);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it("forgets a subscription the service says is gone", async () => {
     const send = vi.fn<typeof fetch>(async () => new Response(null, { status: 410 }));
     const push = new LinkPush({ dir: dir(), fetch: send });

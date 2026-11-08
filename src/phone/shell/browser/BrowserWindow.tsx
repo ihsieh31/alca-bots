@@ -256,8 +256,13 @@ export function BrowserWindow({ botId, botName, threadId, onClose }: { botId: st
     setAddress(null);
     if (!wanted) return;
     const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(wanted) ? wanted : `https://${wanted}`;
-    if (URL.canParse(url) && !/\s/.test(url)) run({ type: "navigate", url });
-    else setNotice(t("phone.browser.badAddress"));
+    try {
+      if (/\s/.test(url)) throw new TypeError("spaces");
+      void new URL(url);
+      run({ type: "navigate", url });
+    } catch {
+      setNotice(t("phone.browser.badAddress"));
+    }
   };
 
   const empty = unavailable || live.connected === false;

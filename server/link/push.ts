@@ -103,7 +103,6 @@ export class LinkPush {
 
   remove(deviceId: string): void {
     if (this.subscriptions.delete(deviceId)) this.save();
-    this.presence.delete(deviceId);
   }
 
   sessionOpened(deviceId: string): void {
