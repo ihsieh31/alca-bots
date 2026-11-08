@@ -105,7 +105,6 @@ use their own Boat key, and how many bots run on cloud computers, without sendin
 | `decider` | `jev`, `openrouter`, `off` | The decision model |
 | `decider_included` | true/false | The decision model comes with a Cloud plan |
 | `live_calls` | true/false | Live calls are set up |
-| `phones_paired` | count | Phones paired with the desktop app (desktop app only) |
 | `paired_devices` | count | Devices signed in to this server without an email, other than this one |
 | `phone_paired` | true/false | Either count above is more than zero |
 | `members` | count | People signed in to this server with an email, other than you |

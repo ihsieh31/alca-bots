@@ -197,7 +197,7 @@ posixOnly("mid-turn steering e2e", () => {
     let queued: Awaited<ReturnType<typeof api>>;
     const created = (await api("POST", "/api/bots")).body.bot;
     try {
-      await api("PATCH", `/api/bots/${created.id}`, { modelSelection: { instanceId: "claudeSteer", model: "claude-fake" } });
+      await api("PATCH", `/api/bots/${created.id}`, { modelSelection: { instanceId: "claudeSteer", model: "claude-fake" }, computer: "off" });
       expect((await api("POST", `/api/bots/${created.id}/messages`, { text: "first" })).status).toBe(202);
       await waitFor(async () => (await getBot(created.id)).messages.some((m: any) => m.kind === "activity"), "the tool chip");
       queued = await api("POST", `/api/bots/${created.id}/messages`, { text: "a new task for later", followUp: "queue" });

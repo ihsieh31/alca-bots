@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { LiveCallState, LiveSettings } from "../../shared/wire.ts";
 import { json, readBody } from "../harness/http.ts";
-import { LiveCallBusyError, LiveCallSignedOutError } from "../live-call-controller.ts";
+import { LiveCallBusyError } from "../live-call-controller.ts";
 import { LIVE_NEEDS_KEY, LiveSessionError } from "../live-call.ts";
 import { requiredScope } from "../request-auth.ts";
 import { createLiveRoutes, type LiveRouteDeps } from "./live.ts";
@@ -42,8 +42,6 @@ async function request(deps: LiveRouteDeps, method: string, path: string, body?:
   return { status: response.status, body: await response.json() };
 }
 
-const fromPhone = (device = "phone-1") => ({ "x-alcabots-companion": "1", "x-alcabots-companion-device": device });
-
 function deps(overrides: Partial<LiveRouteDeps> = {}): LiveRouteDeps & { saved: SettingsPatch[] } {
   const saved: SettingsPatch[] = [];
   const call: LiveCallState = { callId: "c1", botId: "bot1", threadId: "t1", client: "desktop", voice: "marin", startedAt: 1, status: "connecting" };
@@ -53,7 +51,6 @@ function deps(overrides: Partial<LiveRouteDeps> = {}): LiveRouteDeps & { saved: 
       start: vi.fn(async () => ({ call, sdp: "answer" })),
       end: vi.fn(async (id: string) => (id === "c1" ? { ...call, status: "ended" as const, endReason: "hung-up" as const } : null)),
       current: () => call,
-      deviceRevoked: vi.fn((device: string) => (device === "phone-1" ? { ...call, client: "ios" as const, status: "ending" as const } : null)),
     },
     resolveTarget: (botId, threadId) => (botId === "bot1" && (threadId ?? "t1") === "t1" ? { botId, botName: "Ada", threadId: threadId ?? "t1" } : null),
     settings: () => ({ configured: true, voice: "marin", readTypedReplies: true, idleMinutes: 5 }),
@@ -106,10 +103,8 @@ describe("live routes", () => {
   });
   it("says when a key is needed and when a call is already running", async () => {
     const noKey = deps({ calls: { ...deps().calls, start: vi.fn(async () => { throw new LiveSessionError(LIVE_NEEDS_KEY, 409); }) } });
-    for (const headers of [{}, fromPhone()]) {
-      expect(await request(noKey, "POST", "/api/live/session", { botId: "bot1", sdp: "v=0", client: "ios" }, headers))
-        .toEqual({ status: 409, body: { error: LIVE_NEEDS_KEY, needsKey: true } });
-    }
+    expect(await request(noKey, "POST", "/api/live/session", { botId: "bot1", sdp: "v=0", client: "ios" }))
+      .toEqual({ status: 409, body: { error: LIVE_NEEDS_KEY, needsKey: true } });
     const active = { callId: "c0", botId: "bot2", threadId: "t2", client: "android", voice: "marin", startedAt: 1, status: "live" } as const;
     const busy = deps({ calls: { ...deps().calls, start: vi.fn(async () => { throw new LiveCallBusyError(active); }) } });
     const refused = await request(busy, "POST", "/api/live/session", { botId: "bot1", sdp: "v=0", client: "ios" });
@@ -176,40 +171,6 @@ describe("live routes", () => {
     expect(requiredScope("POST", "/api/live/call/end")).toBe("admin");
     expect(requiredScope("GET", "/api/live/call")).toBe("admin");
     expect(requiredScope("PATCH", "/api/live/settings")).toBe("admin");
-    expect(requiredScope("POST", "/api/live/device-revoked")).toBe("admin");
   });
 
-  describe("a call from a paired phone", () => {
-    it("is bound to the phone the companion vouched for", async () => {
-      const d = deps();
-      await request(d, "POST", "/api/live/session", { botId: "bot1", sdp: "v=0", client: "ios" }, fromPhone());
-      expect(d.calls.start).toHaveBeenCalledWith(expect.objectContaining({ device: "phone-1", client: "ios" }));
-    });
-    it("is bound to no phone without the companion's word, or with a malformed id", async () => {
-      const d = deps();
-      await request(d, "POST", "/api/live/session", { botId: "bot1", sdp: "v=0", client: "desktop" });
-      await request(d, "POST", "/api/live/session", { botId: "bot1", sdp: "v=0", client: "ios" }, { "x-alcabots-companion-device": "phone-1" });
-      await request(d, "POST", "/api/live/session", { botId: "bot1", sdp: "v=0", client: "ios" }, fromPhone("../phone"));
-      for (const [input] of vi.mocked(d.calls.start).mock.calls) expect(input.device).toBeUndefined();
-    });
-    it("is refused once its phone was unpaired", async () => {
-      const refused = deps({ calls: { ...deps().calls, start: vi.fn(async () => { throw new LiveCallSignedOutError(); }) } });
-      expect(await request(refused, "POST", "/api/live/session", { botId: "bot1", sdp: "v=0", client: "ios" }, fromPhone()))
-        .toEqual({ status: 401, body: { error: "The sign-in that started this call has ended." } });
-    });
-    it("ends when the companion says its phone was unpaired", async () => {
-      const d = deps();
-      expect(await request(d, "POST", "/api/live/device-revoked", undefined, fromPhone()))
-        .toMatchObject({ status: 200, body: { call: { status: "ending" } } });
-      expect(d.calls.deviceRevoked).toHaveBeenCalledWith("phone-1");
-      expect(await request(d, "POST", "/api/live/device-revoked", undefined, fromPhone("phone-2"))).toEqual({ status: 200, body: { call: null } });
-    });
-    it("takes the unpairing only from the companion, for a well-formed phone", async () => {
-      const d = deps();
-      expect((await request(d, "POST", "/api/live/device-revoked", undefined, { "x-alcabots-companion-device": "phone-1" })).status).toBe(403);
-      expect((await request(d, "POST", "/api/live/device-revoked", undefined, { "x-alcabots-companion": "1" })).status).toBe(400);
-      expect((await request(d, "POST", "/api/live/device-revoked", undefined, fromPhone("a/b"))).status).toBe(400);
-      expect(d.calls.deviceRevoked).not.toHaveBeenCalled();
-    });
-  });
 });

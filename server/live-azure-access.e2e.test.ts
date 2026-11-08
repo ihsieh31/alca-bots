@@ -174,12 +174,6 @@ it("on a Team Cloud: a Super admin and an Admin get through; a User is refused i
   expect(s.liveSessions()).toEqual([SESSIONS, SESSIONS]);
 
   expect(await s.start(botId, member)).toEqual(REFUSED);
-  const made = await s.call("POST", "/api/team/phone-pairing", {}, member);
-  expect(made.status, JSON.stringify(made.body)).toBe(200);
-  const phone = await s.redeem(made.body.code);
-  expect(await s.start(botId, phone)).toEqual(REFUSED);
-  // The companion's header carries no authority.
-  expect(await s.start(botId, { ...member, "x-alcabots-companion": "1", "x-alcabots-companion-device": "phone-1" })).toEqual(REFUSED);
   expect(await s.start(botId)).toMatchObject({ status: 403, body: { error: expect.stringContaining("may only use the service routes") } });
   expect(s.liveSessions()).toHaveLength(2);
 

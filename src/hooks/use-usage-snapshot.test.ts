@@ -132,17 +132,16 @@ describe("useUsageSnapshot", () => {
 describe("what the snapshot asks this page's app", () => {
   const asked: string[] = [];
   const bridges = {
-    companion: { state: async () => { asked.push("companion"); return { devices: [{ id: "p1" }, { id: "p2" }] }; } },
     cloudAccount: { state: async () => { asked.push("cloudAccount"); return { status: "signed-out" }; } },
     cloudPlan: { state: async () => { asked.push("cloudPlan"); return { status: "paid", tier: "max" }; } },
   };
   beforeEach(() => { asked.length = 0; });
 
-  it("asks the desktop app's own window for paired phones and the Cloud account", async () => {
+  it("asks the desktop app's own window for the Cloud account", async () => {
     vi.stubGlobal("abot", { remoteClient: { active: false }, ...bridges });
     await draw(ready());
-    expect(asked.sort()).toEqual(["cloudAccount", "companion"]);
-    expect(sent()[0]![1]).toMatchObject({ phones_paired: 2, cloud_plan: "none", remote_client: false });
+    expect(asked.sort()).toEqual(["cloudAccount"]);
+    expect(sent()[0]![1]).toMatchObject({ cloud_plan: "none", remote_client: false });
   });
 
   it("asks a Cloud page shown in the desktop app for its own plan only", async () => {
@@ -150,7 +149,6 @@ describe("what the snapshot asks this page's app", () => {
     await draw(ready({ config: { ...ready().config!, cloudHome: true } }));
     expect(asked).toEqual(["cloudPlan"]);
     expect(sent()[0]![1]).toMatchObject({ cloud_plan: "max", cloud_home: true });
-    expect(sent()[0]![1]).not.toHaveProperty("phones_paired");
   });
 
   it("asks nothing of the desktop app as a remote client, and does not wait for webhooks it never loads", async () => {

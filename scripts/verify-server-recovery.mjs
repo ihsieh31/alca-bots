@@ -127,7 +127,7 @@ if (process.versions.electron && process.argv.includes(flag)) {
       supervisor.watch(proc);
       proc.once("spawn", () => {
         record("spawn", { pid: proc.pid, generation: children.length });
-        proc.postMessage({ type: "alcabots:desktop-mutation-token", token, companionToken: token });
+        proc.postMessage({ type: "alcabots:desktop-mutation-token", token });
       });
       proc.on("message", (message) => {
         if (supervisor.isCurrent(proc)) approval.receive(proc, message);

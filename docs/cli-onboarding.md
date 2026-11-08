@@ -37,14 +37,13 @@ A phone cannot connect to this computer's `localhost` address. The harness also 
 
 Choose one connection method:
 
-- **Managed HTTPS address:** setup asks explicit permission for a public endpoint through Cloudflare and a possible connector download. Device pairing protects chat and settings; the pairing page and basic server identity remain publicly reachable. Sign in to an **AlcaBots account** using an emailed code, or reuse this machine's saved account. This account is separate from ChatGPT, Claude, or an API-provider account. The connection stays active while AlcaBots runs.
 - **Existing Tailscale:** both computer and phone must already be signed in to the same tailnet, with HTTPS certificates enabled. Setup asks before enabling HTTPS serving to that tailnet; it does not install or sign in to Tailscale for you.
 - **Existing HTTPS address (advanced):** supply the origin of a reverse proxy you already configured, such as `https://alca.example.com`. Do not paste a password, path, query, or pairing code. Entering an address does not create the proxy or open a LAN listener.
 
 After the connection is ready:
 
-- **iPhone/iPad:** scan the QR with Camera to open Safari. If you already have the AlcaBots iOS app, use its pairing scanner or paste the full link there.
-- **Android:** the QR is an app link, so scan it inside the AlcaBots app. To use a browser instead, open the web address printed above it and type the code.
+- **iPhone/iPad:** scan the QR with Camera to open Safari.
+- **Android:** scan the QR with Camera or Chrome.
 
 Choose **Connect** on the phone. Scanning alone is not a successful pairing. The code is private, single-use, and expires after five minutes. Guided phone pairing grants client access for chat and approvals, not settings or pairing administration.
 
@@ -64,9 +63,9 @@ The examples below assume a global install; prefix them with `npx` otherwise.
 | `alcabots pair` | Create another phone invitation while the configured workspace and HTTPS connection are running. |
 | `alcabots sessions` | List paired devices; `alcabots sessions revoke ID` signs one out. |
 | `alcabots serve` | Start without onboarding prompts or automatic browser opening; specify remote-access flags explicitly for a service. |
-| `alcabots login` | Sign in to an AlcaBots account for `--tunnel`; this does not sign in to an AI provider or start the tunnel. |
+| `alcabots phone` | Turn phone access on and show a code for your phone's browser. `--daily` limits the phone to chat, approvals and reading. |
 
-`start` accepts the same server options as `serve`, including `--port`, `--data-dir`, `--tailscale`, `--tunnel`, and `--public-url`. Keep using your custom data directory and port when starting or pairing:
+`start` accepts the same server options as `serve`, including `--port`, `--data-dir`, `--tailscale`, and `--public-url`. Keep using your custom data directory and port when starting or pairing:
 
 ```sh
 alcabots setup --data-dir /path/to/alca-data --port 8799

@@ -31,7 +31,6 @@ export interface UsageInput {
   webhooks: number | null;
   apps: { services: Record<string, ConnectorStatus>; authoritative: boolean } | null;
   sessions: { sessions: ReadonlyArray<{ id?: unknown; email?: unknown }>; current: unknown } | null;
-  companionDevices: number | null;
   cloud: CloudPlanFacts | null;
   computers: { cloudComputers: unknown; teamComputers: unknown } | null;
   platform: "desktop" | "browser";
@@ -92,16 +91,14 @@ function appFacts(apps: UsageInput["apps"]): Record<string, PropValue> {
 
 const emailOf = (session: { email?: unknown }) => typeof session.email === "string" && session.email ? session.email.toLowerCase() : null;
 
-function deviceFacts(sessions: UsageInput["sessions"], companionDevices: number | null): Record<string, PropValue | undefined> {
-  const phones = count(companionDevices);
+function deviceFacts(sessions: UsageInput["sessions"]): Record<string, PropValue | undefined> {
   const others = sessions?.sessions.filter((session) => session.id !== sessions.current);
   const mine = emailOf(sessions?.sessions.find((session) => session.id === sessions.current) ?? {});
   const paired = others && tally(others, (session) => emailOf(session) === null);
   return {
-    phones_paired: phones,
     paired_devices: paired,
     members: others && new Set(others.map(emailOf).filter((email) => email !== null && email !== mine)).size,
-    phone_paired: phones === undefined && paired === undefined ? undefined : (phones ?? 0) + (paired ?? 0) > 0,
+    phone_paired: paired === undefined ? undefined : paired > 0,
   };
 }
 
@@ -144,7 +141,7 @@ export function buildUsageSnapshot(input: UsageInput): EventProps {
     decider: config.decider?.enabled ? allow(config.decider.provider, DECIDER) : "off",
     decider_included: config.decider?.included === true,
     live_calls: config.live?.configured === true,
-    ...deviceFacts(input.sessions, input.companionDevices),
+    ...deviceFacts(input.sessions),
     cloud_home: config.cloudHome === true,
     cloud_plan: input.cloud?.plan ?? "unknown",
     cloud_trial: input.cloud?.trial,
@@ -184,7 +181,6 @@ export function snapshotReady(
 export interface UsageSources {
   request<T>(path: string): Promise<T>;
   connectedApps(): Promise<{ services: Record<string, ConnectorStatus>; authoritative: boolean }>;
-  companion: { state(): Promise<{ devices?: unknown }> } | null;
   cloudAccount: { state(): Promise<CloudAccountState> } | null;
   cloudPlan: { state(): Promise<CloudPlanSnapshot> } | null;
   platform: "desktop" | "browser";
@@ -225,11 +221,10 @@ export async function sendDailySnapshot(state: SnapshotState, sources: UsageSour
   gathering = true;
   try {
     const config = state.config;
-    const { companion, cloudAccount, cloudPlan } = sources;
-    const [apps, sessions, companionDevices, cloud, computers] = await Promise.all([
+    const { cloudAccount, cloudPlan } = sources;
+    const [apps, sessions, cloud, computers] = await Promise.all([
       settle(() => sources.connectedApps()),
       settle(() => sources.request<{ sessions?: unknown; current?: unknown }>("/api/auth/sessions")),
-      companion ? settle(() => companion.state()) : null,
       cloudAccount ? settle(() => cloudAccount.state()).then(cloudPlanFromAccount)
         : cloudPlan ? settle(() => cloudPlan.state()).then(cloudPlanFromSnapshot)
         : null,
@@ -249,7 +244,6 @@ export async function sendDailySnapshot(state: SnapshotState, sources: UsageSour
       sessions: Array.isArray(sessions?.sessions)
         ? { sessions: sessions.sessions.filter((session) => session !== null && typeof session === "object"), current: sessions.current }
         : null,
-      companionDevices: Array.isArray(companionDevices?.devices) ? companionDevices.devices.length : null,
       cloud,
       computers: computers ? { cloudComputers: computers.cloudComputers, teamComputers: computers.teamComputers } : null,
       platform: sources.platform,

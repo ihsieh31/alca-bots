@@ -232,7 +232,6 @@ export type BotAvatarProps = Omit<AlcaAvatarProps, "color" | "gradient"> & {
 
 export type BotAvatarOutcome = "flatImage" | "gradientMascot";
 
-/** Mirrored name for name by resolveBotAvatarOutcome in ios/Sources/CompanionCore/BotAvatarRendering.swift. */
 export function resolveBotAvatarOutcome(params: {
   avatarCrop: BotAvatarCrop;
   hasUrl: boolean;

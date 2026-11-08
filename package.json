@@ -30,7 +30,6 @@
     "docs:dev": "pnpm --filter @alcabots/docs dev",
     "docs:build": "pnpm --filter @alcabots/docs build",
     "docs:preview": "pnpm --filter @alcabots/docs preview",
-    "companion": "node --experimental-strip-types companion/src/index.ts",
     "alca": "node --experimental-strip-types server/alcabots.ts",
     "pair": "node --experimental-strip-types server/alcabots.ts pair",
     "dev:server": "node --experimental-strip-types server/dev-server.ts",
@@ -53,8 +52,8 @@
     "preview": "vite preview",
     "gen:bodies": "node --experimental-strip-types scripts/gen-mascot-bodies.ts",
     "gen:halloween": "node --experimental-strip-types scripts/gen-halloween-bodies.ts",
+    "build:phone": "vite build --config vite.phone.config.ts",
     "build:server": "tsc -p tsconfig.server.build.json && node scripts/bundle-server.mjs",
-    "build:companion": "tsc -p tsconfig.companion.build.json && node scripts/mark-module-scope.mjs dist-companion",
     "build:speech": "node electron/build-speech-helper.mjs",
     "build:cua": "node scripts/prepare-cua.mjs",
     "build:cua:win": "node scripts/prepare-cua-win.mjs",
@@ -66,7 +65,7 @@
     "build:cua:linux": "node scripts/prepare-cua-linux.mjs",
     "build:cua:linux:offline": "node scripts/prepare-cua-linux.mjs --offline",
     "build:updater": "node scripts/bundle-updater.mjs",
-    "package:prepare": "pnpm build && pnpm build:server && pnpm build:companion && pnpm build:updater && pnpm build:android-tools && pnpm build:cloudflared && pnpm build:duckdb",
+    "package:prepare": "pnpm build && pnpm build:server && pnpm build:updater && pnpm build:android-tools && pnpm build:cloudflared && pnpm build:duckdb",
     "package:mac": "pnpm package:prepare && pnpm build:speech && pnpm build:cua && electron-builder --mac --publish never",
     "package:win": "pnpm package:prepare && pnpm build:cua:win && electron-builder --win --publish never",
     "package:linux": "pnpm package:prepare && pnpm build:cua:linux && electron-builder --linux --x64 --publish never",
@@ -96,9 +95,10 @@
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
-    "@hpke/core": "1.9.0",
     "@lezer/highlight": "1.2.5",
     "@muse-code/sdk": "1.4.6",
+    "@noble/curves": "2.3.0",
+    "@noble/hashes": "2.3.0",
     "@novnc/novnc": "1.7.0",
     "@resvg/resvg-js": "2.6.2",
     "@tanstack/react-virtual": "^3.14.13",
@@ -168,5 +168,8 @@
     "vite": "^7.1.0",
     "vitest": "^4.1.11",
     "wrangler": "4.123.0"
+  },
+  "optionalDependencies": {
+    "werift": "0.26.0"
   }
 }

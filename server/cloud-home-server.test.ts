@@ -209,7 +209,6 @@ const browserRequest = (body: Record<string, unknown>, cookie?: string) => fetch
 it("signs a browser in from the Cloud page's \"Use in your browser\" into an owner's session, once, and never logs it", async () => {
   const credential = await mintBrowserSignIn();
   expect((await api("POST", "/api/auth/pair", { remote: true, body: { code: credential } })).status).toBe(401);
-  expect((await api("POST", "/api/pair", { remote: true, body: { credential } })).status).toBe(401);
   expect((await api("POST", "/api/auth/pair", { remote: true, body: { code: credential, browser: true } })).status).toBe(400);
   for (let i = 0; i < 2; i++) {
     const preview = await browserRequest({ code: credential, browser: true, preview: true });

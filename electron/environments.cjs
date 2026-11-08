@@ -83,8 +83,7 @@ function workspaceSummary(state) {
 
 /** Native identity must not depend on a hosted renderer's version/title. `homeOrigin`: My Cloud once it is the person's
  * home: alone, it is simply the app; with a team or another place besides, the window names the place it shows. */
-function workspaceWindowTitle(state, companion, homeOrigin = null, t = englishText.t) {
-  if (companion) return t("native.title.connected", { server: companion.serverName, host: new URL(companion.endpoint).host });
+function workspaceWindowTitle(state, homeOrigin = null, t = englishText.t) {
   const active = activeEnvironment(state);
   if (listedPlace(active)) return `AlcaBots — ${active.name}`;
   if (active && active.kind !== "local" && active.origin !== homeOrigin) return t("native.title.hosted", { name: active.name, host: new URL(active.origin).host });

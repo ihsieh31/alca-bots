@@ -67,7 +67,7 @@ const installed = inContainer(
   [
     prepare,
     command,
-    'dpkg-query -W -f="INSTALLED=\\${Version} \\${db:Status-Abbrev}\\n" alcabots',
+    'dpkg-query -W -f="INSTALLED=\\${Version} \\${db:Status-Abbrev}\\n" alca-bots',
     'test -x /opt/AlcaBots/alcabots && echo "EXECUTABLE=yes"',
   ].join("\n"),
 );

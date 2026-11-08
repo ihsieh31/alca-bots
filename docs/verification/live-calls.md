@@ -43,7 +43,7 @@ unchanged. The desktop and web app show that sentence under the call button
 with **Open API keys**, which opens Settings at API keys.
 
 ```sh
-pnpm exec vitest run server/live-settings.test.ts server/live-call-controller.test.ts server/routes/live.test.ts companion/test/proxy-response.test.ts
+pnpm exec vitest run server/live-settings.test.ts server/live-call-controller.test.ts server/routes/live.test.ts
 pnpm exec vitest run src/lib/live-call-media.test.ts src/components/CallView.live-mode.test.ts src/components/LiveKeyNeeded.test.ts src/components/LiveCallBar.render.test.ts
 ```
 

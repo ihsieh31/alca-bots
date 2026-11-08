@@ -10,7 +10,7 @@ import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const TREES = ["server", "companion"];
+const TREES = ["server"];
 const resources = resolve(process.argv[2] ?? "");
 const stage = mkdtempSync(join(tmpdir(), "alca-module-scope-"));
 let bad = 0;

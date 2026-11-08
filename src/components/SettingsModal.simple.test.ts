@@ -51,9 +51,8 @@ const { marker } = vi.hoisted(() => ({
 vi.mock("./EnginesSettings", () => ({ EnginesSettings: marker("engines") }));
 vi.mock("./DecisionModelSettings", () => ({ DecisionModelSettings: marker("decisionModel") }));
 vi.mock("./keys/KeysPage", () => ({ KeysPage: marker("apiKey") }));
-vi.mock("./RemoteComputerSection", () => ({ RemoteComputerSection: marker("companion") }));
+vi.mock("./RemoteComputerSection", () => ({ RemoteComputerSection: marker("phone") }));
 vi.mock("./CustomDomainSettings", () => ({ CustomDomainSettings: () => null }));
-vi.mock("./CompanionSection", () => ({ CompanionSection: () => null }));
 vi.mock("./ServerPairingCard", () => ({ ServerPairingCard: () => null }));
 vi.mock("./ConnectedWorkspacesSettings", () => ({ ConnectedWorkspacesSettings: marker("desktopWorkspaces") }));
 vi.mock("./LocalComputerSection", () => ({ LocalComputerSection: marker("computer") }));
@@ -210,7 +209,7 @@ describe("Settings in Simple mode", () => {
       expect(placement(general, shown), shown).toBe("shown");
     }
     expect(placement(open("updates"), "MARKER:updatesConsent;")).toBe("shown");
-    const everyPage = ["general", "engines", "companion", "usage", "updates"].map((section) => open(section as AppSettingsSection)).join("");
+    const everyPage = ["general", "engines", "phone", "usage", "updates"].map((section) => open(section as AppSettingsSection)).join("");
     for (const gone of ["Effort for new bots", "Defaults for new bots", "Group turns", "MCP calls", "Parallel threads", "Automatic recovery", "Event log cleanup",
       "Interface font", "Chat width", "Pinned bots as circles", "Universal pins", "Tool calls", "This run", "Keep prompt cache warm"]) {
       expect(everyPage, gone).not.toContain(`>${gone}<`);
@@ -241,8 +240,8 @@ describe("Settings in Simple mode", () => {
     expect(placement(open("connections"), "MARKER:apiKey;")).toBe("shown");
     expect(placement(open("engines"), "MARKER:apiKey;")).toBe("folded");
     expect(placement(open("desktopWorkspaces"), "MARKER:desktopWorkspaces;")).toBe("shown");
-    expect(placement(open("remote"), "MARKER:companion;")).toBe("shown");
-    expect(placement(open("companion"), "MARKER:companion;")).toBe("folded");
+    expect(placement(open("remote"), "MARKER:phone;")).toBe("shown");
+    expect(placement(open("phone"), "MARKER:phone;")).toBe("folded");
     expect(SIMPLE_FOLDED).toEqual({ connections: "ai-keys", remote: "computer-elsewhere", desktopWorkspaces: "computer-elsewhere" });
   });
 
@@ -257,10 +256,10 @@ describe("Settings in Simple mode", () => {
   });
 
   it("orders Computer as your bots' computers, your devices, the browser, logins, then Connect from elsewhere", () => {
-    fixture.section = "companion";
+    fixture.section = "phone";
     const html = render();
     expect(currentPage(html)).toBe("computer");
-    expect(blocks(html)).toEqual(["computer", "companion", "browser", "elsewhere", "remote", "desktopWorkspaces"]);
+    expect(blocks(html)).toEqual(["computer", "phone", "browser", "elsewhere", "remote", "desktopWorkspaces"]);
     expect(groupLabels(html)).toEqual(["Your bots’ computers", "Your devices", "Browser (ego lite)"].map((label) => label.replace("’", "&#x27;")));
     expect(html).toContain('aria-label="Let bots browse with ego lite"');
   });
@@ -293,7 +292,7 @@ describe("Settings in Simple mode", () => {
     const html = render();
     expect(pages(html)).toEqual(["general", "computer"]);
     expect(currentPage(html)).toBe("computer");
-    expect(blocks(html)).toEqual(["companion", "elsewhere", "remote", "desktopWorkspaces"]);
+    expect(blocks(html)).toEqual(["phone", "elsewhere", "remote", "desktopWorkspaces"]);
     expect(html).not.toContain('aria-label="Let bots browse with ego lite"');
     fixture.section = "appearance";
     const general = render();
@@ -310,7 +309,7 @@ describe("Settings in Simple mode", () => {
     ["organization", "general"],
     ["engines", "ai"],
     ["connections", "ai"],
-    ["companion", "computer"],
+    ["phone", "computer"],
     ["remote", "computer"],
     ["desktopWorkspaces", "computer"],
     ["computer", "computer"],

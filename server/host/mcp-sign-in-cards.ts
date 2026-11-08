@@ -137,12 +137,7 @@ export function createMcpSignInCards(deps: McpSignInCardDeps) {
 
   /** Where the person's browser comes back after the provider's page: this computer's loopback listener, or this home's
    * public https address. */
-  function browserFor(auth: RequestAuth, req: IncomingMessage, label: string, language: string | undefined): McpSignInBrowser | Refusal {
-    if (auth.kind === "loopback" && auth.companionDevice) {
-      // A phone paired to this computer reaches it only through the companion, so its browser can never reach a loopback port.
-      const origin = mcpCallbackOrigin(null, deps.publicOrigins());
-      return origin ? { remote: true, origin } : { status: 409, error: serverLine(language, "server.mcp.signIn.onYourMac", { label }) };
-    }
+  function browserFor(auth: RequestAuth, req: IncomingMessage): McpSignInBrowser | Refusal {
     if (auth.kind !== "session" || (!isProxied(req) && isLoopbackHost(req.headers.host))) return { remote: false };
     return { remote: true, origin: mcpCallbackOrigin(provesSameOrigin(req) ? requestOrigin(req) : null, deps.publicOrigins()) };
   }
@@ -155,7 +150,7 @@ export function createMcpSignInCards(deps: McpSignInCardDeps) {
     if (denied) return { status: 409, body: { error: denied } };
     const server = current(name);
     if ("reason" in server) return unreachable(threadId, card, server);
-    const browser = browserFor(auth, req, label, language);
+    const browser = browserFor(auth, req);
     if ("error" in browser) return { status: browser.status, body: { error: browser.error } };
     // Paste-back needs the address bar of the browser that signed in, which only Settings asks for. A browser elsewhere
     // needs this home's https address, and a pre-registered app always comes back to a fixed loopback port.

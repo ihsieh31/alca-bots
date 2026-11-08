@@ -90,7 +90,6 @@ if (process.versions.electron && process.argv.includes(flag)) {
     return entry?.settingsOpened() ?? false;
   });
   ipcMain.handle("update:get-state", () => ({ status: "idle" }));
-  ipcMain.handle("companion:state", () => ({ running: false, enabled: false, devices: [], bind: null, publicUrl: null }));
   ipcMain.handle("perm:status", () => ({}));
   ipcMain.handle("window:state", () => ({ maximized: false, fullscreen: false }));
   ipcMain.handle("desktop:capabilities", event => createRequire(import.meta.url)("../electron/capabilities.cjs").desktopCapabilities({
@@ -219,13 +218,11 @@ if (process.versions.electron && process.argv.includes(flag)) {
     let restartIntent = false;
     const confirmations = [];
     entry = createOrganizationEntry({
-      readState: () => ({ environments: readEnvironments(), remoteAccess: null, restartIntent }),
+      readState: () => ({ environments: readEnvironments(), restartIntent }),
       confirm: async options => { confirmations.push(options); return confirmLocal; },
       saveEnvironments: next => writeFileSync(environmentsFile, serializeEnvironments(next)),
-      disconnectAndRemember: () => { throw new Error("Legacy hosted entry must not clear companion credentials"); },
       clearRestartIntent: () => { restartIntent = false; },
       openLocalSettings: () => win.loadURL(`${url}?app=1&desktop-settings=organization`),
-      relaunch: () => { throw new Error("Legacy hosted entry needs no restart"); },
     });
     await win.loadURL(activeEnvironment(readEnvironments()).origin);
     await until(() => evaluate("document.body.textContent.includes('Old hosted workspace')"), "saved old server restored");
@@ -257,8 +254,7 @@ if (process.versions.electron && process.argv.includes(flag)) {
     await until(() => evaluate("document.body.textContent.includes('Meet AlcaBots')"), "local choice survives recreated renderer");
     assert.equal(await evaluate("typeof window.abot.organization"), "object");
     assert.equal(new URL(win.webContents.getURL()).origin, localOrigin);
-    // Simulate the already-confirmed companion disconnect's one-bit restart
-    // intent; only the actual local panel's acknowledgement consumes it.
+    // Only the actual local panel's acknowledgement consumes the restart intent.
     restartIntent = true;
     writeFileSync(environmentsFile, serializeEnvironments(hostedState));
     await entry.restore();

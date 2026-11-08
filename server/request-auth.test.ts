@@ -159,7 +159,6 @@ describe("scopes", () => {
       ["POST", "/api/bots/x/slack-management"], ["GET", "/api/bots/x/slack-management/extra"],
       ["PUT", "/api/config"], ["POST", "/api/auth/pairing"], ["GET", "/api/auth/sessions"], ["DELETE", "/api/auth/sessions/abc"],
       ["POST", "/api/live/session"], ["POST", "/api/live/call/end"], ["GET", "/api/live/call"], ["PATCH", "/api/live/settings"],
-      ["POST", "/api/live/device-revoked"],
       ["POST", "/api/auth/pair"],
       ["GET", "/api/something-new"],
       ["POST", "/api/bots/x/sign-in-cards/m/provide"], ["POST", "/api/browser-engine/install"],
@@ -243,55 +242,6 @@ describe("resolveRequestAuth", () => {
   });
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-  it("accepts authenticated relay mutations without exposing the desktop owner capability", () => {
-    const headers = {
-      host: "127.0.0.1:8799",
-      "x-alcabots-companion": "1",
-      "x-alcabots-companion-device": "phone-1",
-      "x-alcabots-companion-auth": "relay-secret",
-    };
-    const check = (method: string, path: string, overrides: Record<string, string> = {}, relay = "relay-secret") =>
-      resolveRequestAuth(request({ ...headers, ...overrides }, method), {
-        sessions, cookieName, streamPath: "/api/events", url: new URL(path, "http://localhost"),
-        loopbackMutationToken: "desktop-secret", companionMutationToken: relay,
-      });
-    for (const [method, path] of [
-      ["POST", "/api/bots"], ["POST", "/api/bots/b/messages"],
-      ["POST", "/api/bots/b/read"], ["POST", "/api/bots/b/respond"],
-      ["POST", "/api/bots/b/secret-cards/card/provide"],
-      ["GET", "/api/events"], ["PATCH", "/api/bots/b/profile"],
-      ["GET", "/api/bots/b/browser/live"], ["POST", "/api/bots/b/browser/action"],
-    ]) expect(check(method, path).auth?.kind, path).toBe("loopback");
-    expect(check("GET", "/api/phones/self/jobs").auth).toEqual({ kind: "loopback", scopes: ["admin", "client"], companionDevice: "phone-1" });
-    const plain = resolveRequestAuth(request({ host: "127.0.0.1:8799", "x-alcabots-companion": "1", "x-alcabots-companion-device": "phone-1" }, "GET"), {
-      sessions, cookieName, streamPath: "/api/events", url: new URL("/api/phones/self/jobs", "http://localhost"),
-      loopbackMutationToken: "desktop-secret", companionMutationToken: "relay-secret",
-    });
-    expect(plain.auth).toEqual({ kind: "loopback", scopes: ["admin", "client"] });
-    for (const [method, path] of [
-      ["POST", "/api/bots/b/browser/live"], ["GET", "/api/bots/b/browser/action"],
-      ["POST", "/api/bots/b/browser/restart"],
-    ]) expect(check(method, path).auth?.kind, path).not.toBe("loopback");
-    const forged: Record<string, string>[] = [
-      { "x-alcabots-companion-auth": "" },
-      { "x-alcabots-companion-auth": "desktop-secret" },
-      { "x-alcabots-companion-device": "" },
-      { "x-alcabots-companion": "0" },
-      { origin: "https://evil.example" },
-      { "x-forwarded-for": "203.0.113.1" },
-      { host: "remote.example" },
-    ];
-    for (const overrides of forged) expect(check("POST", "/api/bots/b/read", overrides).auth).toBeNull();
-    expect(check("POST", "/api/bots/b/read", {}, "").auth).toBeNull();
-    for (const [method, path] of [
-      ["PUT", "/api/config"], ["POST", "/api/auth/pairing"],
-      ["POST", "/api/internal/anything"], ["GET", "/api/auth/sessions"],
-      ["POST", "/api/not-yet-supported"],
-    ]) expect(check(method, path).auth, path).toBeNull();
-    expect(check("POST", "/api/live/device-revoked").auth?.kind).toBe("loopback");
-    for (const overrides of forged) expect(check("POST", "/api/live/device-revoked", overrides).auth).toBeNull();
-    expect(check("GET", "/api/live/device-revoked").auth).toBeNull();
-  });
 
   function pairedToken(scopes: Array<"admin" | "client"> = ["admin", "client"]): string {
     const { code } = sessions.openPairing({ scopes });
@@ -719,7 +669,7 @@ describe("a browser on this machine is not the owner", () => {
   const check = (headers: Record<string, string>, path = "/api/bots", method = "GET", options: { desktopToken?: string; trust?: "owner" | "service"; localBrowsers?: boolean } = {}) =>
     resolveRequestAuth(request(headers, method), {
       sessions, cookieName, streamPath: "/api/events", url: new URL(path, "http://x"),
-      ...(options.desktopToken !== undefined ? { loopbackMutationToken: options.desktopToken, companionMutationToken: "relay-secret" } : {}),
+      ...(options.desktopToken !== undefined ? { loopbackMutationToken: options.desktopToken } : {}),
       ...(options.trust ? { loopbackTrust: options.trust } : {}),
       ...(options.localBrowsers ? { trustLocalBrowser: true } : {}),
     });
@@ -771,10 +721,8 @@ describe("a browser on this machine is not the owner", () => {
     }
     // Before the desktop app has sent its capability, nothing a browser sends matches.
     expect(check({ ...ownUi, "x-alcabots-desktop-owner": "" }, "/api/bots", "GET", { desktopToken: "" }).auth).toBeNull();
-    // The app's main process and the companion send no Sec-Fetch-*.
+    // The app's main process sends no Sec-Fetch-*.
     expect(check({ host: "127.0.0.1:8799" }, "/api/bots", "GET", desktop).auth?.kind).toBe("loopback");
-    const relay = { host: "127.0.0.1:8799", "x-alcabots-companion": "1", "x-alcabots-companion-device": "phone-1", "x-alcabots-companion-auth": "relay-secret" };
-    expect(check(relay, "/api/bots/b/messages", "POST", desktop).auth?.kind).toBe("loopback");
   });
 
   it("does not lend the owner header to another page in the desktop window's session", () => {

@@ -6,7 +6,6 @@ import {
   Check,
   CircleUserRound,
   Cloud,
-  Download,
   FolderOpen,
   Gauge,
   Info,
@@ -28,7 +27,6 @@ import { AccountMoveStatus, useAccountMove, type AccountMoveKind } from "./Accou
 import { InitialsAvatar } from "./Avatar";
 import { DiscordIcon } from "./DiscordIcon";
 import { AboutDialog } from "./AboutDialog";
-import { PhoneAppDialog } from "./lazy-screens";
 import { CloudTile } from "./cloud-buy/parts";
 import { usageBridge } from "./CloudUsageMeter";
 import { useCloudPlanSnapshot } from "./CloudTrialNotice";
@@ -302,15 +300,12 @@ export function phoneMenuItems({
   destinations,
   connected,
   onConnect,
-  onGetApp,
 }: {
   destinations: PhoneDestination[];
   connected: boolean;
   onConnect: (destination: PhoneDestination) => void;
-  onGetApp: () => void;
 }): SidebarMenuItem[] {
-  return [
-    ...destinations.map((destination) => ({
+  return destinations.map((destination) => ({
       key: destination.id === "cloud" ? "connect-phone-cloud" : "connect-phone",
       label: t("sidebar.menu.connectPhone"),
       subtitle: destination.team ? t("sidebar.menu.connectPhone.team", { team: destination.team }) : t(destination.subtitleKey),
@@ -321,14 +316,7 @@ export function phoneMenuItems({
           <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-success" />
         ) : undefined,
       onSelect: () => onConnect(destination),
-    } satisfies SidebarMenuItem)),
-    {
-      key: "phone-app",
-      label: t("sidebar.menu.getPhoneApp"),
-      icon: <Download size={18} />,
-      onSelect: onGetApp,
-    },
-  ];
+    } satisfies SidebarMenuItem));
 }
 
 export function toolMenuItems({ activeView, automationsNeedYou, onAutomations, onTeamMap, onFiles, archived }: {
@@ -390,13 +378,13 @@ export function placeMenuItems(place: Pick<WorkspacePlace, "bridge" | "current" 
   ];
 }
 
-export function simplePhoneItems({ connected, onGetApp }: { connected: boolean; onGetApp: () => void }): SidebarMenuItem[] {
+export function simplePhoneItems({ connected, onOpen }: { connected: boolean; onOpen: () => void }): SidebarMenuItem[] {
   return [{
-    key: "phone-app",
-    label: t("sidebar.menu.getPhoneApp"),
+    key: "connect-phone",
+    label: t("sidebar.menu.connectPhone"),
     icon: <Smartphone size={18} />,
     trailing: connected ? <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-success" /> : undefined,
-    onSelect: onGetApp,
+    onSelect: onOpen,
   }];
 }
 
@@ -566,7 +554,6 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
   const serverUpdate = useServerUpdateItem(!window.abot?.updater);
   const update = desktopUpdate ?? serverUpdate;
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [phoneAppOpen, setPhoneAppOpen] = useState(false);
   const [session, setSession] = useState<SessionState | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
 
@@ -591,12 +578,11 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
 
   const items = profileMenuItems({
     phone: simple
-      ? simplePhoneItems({ connected: phone.kind === "connected", onGetApp: () => setPhoneAppOpen(true) })
+      ? simplePhoneItems({ connected: phone.kind === "connected", onOpen: () => { if (destinations[0]) connectTo(destinations[0]); } })
       : phoneMenuItems({
         destinations,
         connected: phone.kind === "connected",
         onConnect: connectTo,
-        onGetApp: () => setPhoneAppOpen(true),
       }),
     usage: !remote,
     usageSummary: cloudUsage ?? engineUsage,
@@ -701,15 +687,6 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
       />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       {accounts.sheet && <AccountsSheet adding={accounts.sheet.email} note={accounts.sheet.note} onClose={accounts.closeSheet} />}
-      {phoneAppOpen && <PhoneAppDialog
-        open
-        onClose={() => setPhoneAppOpen(false)}
-        connect={destinations.map((destination) => ({
-          key: destination.id,
-          subtitle: destination.team ? t("sidebar.menu.connectPhone.team", { team: destination.team }) : t(destination.subtitleKey),
-          onSelect: () => connectTo(destination),
-        }))}
-      />}
     </>
   );
 }

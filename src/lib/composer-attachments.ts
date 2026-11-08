@@ -356,7 +356,7 @@ export async function imageAttachmentFromFile(
   };
 }
 
-/** Copied into the private store so the companion route never sees an arbitrary Finder path. */
+/** Copied into the private store so a remote route never sees an arbitrary Finder path. */
 export async function fileAttachmentFromFile(file: File): Promise<FileAttachment | null> {
   const declared = file.type.split(";", 1)[0]!.trim().toLowerCase();
   const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";

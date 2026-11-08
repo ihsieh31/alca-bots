@@ -64,10 +64,6 @@ extraResources:
     to: licenses/cloudflared-LICENSE.txt
   - from: third_party/cloudflared/README.md
     to: licenses/cloudflared-README.md
-  - from: third_party/hpke-js/core-LICENSE.txt
-    to: licenses/hpke-core-LICENSE.txt
-  - from: third_party/hpke-js/common-LICENSE.txt
-    to: licenses/hpke-common-LICENSE.txt
   # The model provider catalog: models.dev data and OpenCode's refresh logic.
   - from: third_party/models-dev/LICENSE
     to: licenses/models-dev-LICENSE.txt
@@ -80,10 +76,6 @@ extraResources:
     to: ui
   - from: dist-server
     to: server
-  # the companion sidecar — a separate process because it is the only part
-  # of the app that listens off this machine, and it stays off until asked
-  - from: dist-companion
-    to: companion
   - from: skills
     to: skills
   - from: dist-native/android-platform-tools

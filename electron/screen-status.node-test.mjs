@@ -25,7 +25,6 @@ test("a PC lends its apps and screen once its own embedded computer control runs
   for (const broken of [embedded({ socketPath: "" }), embedded({ mcpArgs: ["serve"] }), embedded({ mcpEnv: { CUA_DRIVER_EMBEDDED: 1 } }), embedded({ status: "error" })]) {
     assert.equal(screenStatus({ platform: "win32", connection: broken }).lent, false, JSON.stringify(broken));
   }
-  assert.equal(screenStatus({ platform: "win32", connection: embedded(), remote: true }).lent, false, "a remote companion lends nothing of this computer");
 });
 
 test("why a PC's apps and screen aren't lent, and the one fix", () => {

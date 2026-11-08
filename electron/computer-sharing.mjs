@@ -187,6 +187,7 @@ class Paused extends Error {}
 
 const LENT_PLATFORMS = new Set(["darwin", "win32", "linux"]);
 const RECONNECT_EVERY_MS = 15 * 60_000;
+const LINK_RETRY_MS = [2_000, 5_000, 15_000, 60_000];
 /** Outbound HTTPS only: no local listening port, and pairing cookies and the connector secret stay in Electron. */
 /** `reconnect(origin)`: signs this app back in to the person's own Cloud when its session there has ended, so lending
  * resumes by itself; at most every 15 minutes. `myCloud()`: the saved server that is the person's own My Cloud, which the move's

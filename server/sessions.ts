@@ -144,7 +144,6 @@ export function generatePairingCode(): string {
 /** A credential is matched byte for byte; only a typed code is normalized. */
 export const PAIRING_CREDENTIAL_PREFIX = "alca_pair_";
 
-/** 9 + 43 characters: the Android companion checks that length exactly. */
 export function generatePairingCredential(): string {
   return `${PAIRING_CREDENTIAL_PREFIX}${randomBytes(32).toString("base64url")}`;
 }
@@ -225,7 +224,7 @@ export class SessionRegistry {
   private tickets = new Map<string, { sessionId: string; expiresAt: number }>();
   private failures = new Map<string, { count: number; windowStart: number; lockedUntil: number }>();
   private replays: Array<{ codeHash: string; attemptId: string; browser: boolean; result: ExchangeResult; expiresAt: number }> = [];
-  private readonly onRevoked = new Set<(sessionId: string) => void>();
+  private readonly onRevoked = new Set<(sessionId: string, why: "revoked" | "expired") => void>();
   private readonly onIssued = new Set<(session: Pick<SessionRecord, "id" | "scopes" | "email" | "teamRole" | "membershipAuthority">) => void>();
   private lastSeenWrites = new Map<string, number>();
   private readonly now: () => number;
@@ -306,7 +305,7 @@ export class SessionRegistry {
     const expired = this.sessions.filter((s) => s.expiresAt <= now);
     if (expired.length) {
       this.sessions = this.sessions.filter((s) => s.expiresAt > now);
-      for (const s of expired) this.forget(s.id);
+      for (const s of expired) this.forget(s.id, "expired");
       try {
         this.persist();
       } catch {
@@ -322,15 +321,15 @@ export class SessionRegistry {
     return () => this.onIssued.delete(listener);
   }
 
-  onSessionRevoked(listener: (sessionId: string) => void): () => void {
+  onSessionRevoked(listener: (sessionId: string, why: "revoked" | "expired") => void): () => void {
     this.onRevoked.add(listener);
     return () => this.onRevoked.delete(listener);
   }
 
-  private forget(sessionId: string): void {
+  private forget(sessionId: string, why: "revoked" | "expired" = "revoked"): void {
     this.lastSeenWrites.delete(sessionId);
     for (const [hash, ticket] of this.tickets) if (ticket.sessionId === sessionId) this.tickets.delete(hash);
-    for (const listener of this.onRevoked) listener(sessionId);
+    for (const listener of this.onRevoked) listener(sessionId, why);
   }
 
   /** From now on nothing without admin scope is opened, redeemed, issued or accepted; the caller revokes stored sessions. */

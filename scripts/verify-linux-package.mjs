@@ -420,9 +420,9 @@ const fields = execFileSync(
   { encoding: "utf8" },
 );
 for (const expected of [
-  "Package: alcabots",
+  "Package: alca-bots",
   "Architecture: amd64",
-  "Maintainer: Milind Soni",
+  "Maintainer: ihsieh31",
   "Section: utils",
   "Priority: optional",
 ]) {

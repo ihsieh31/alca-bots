@@ -49,9 +49,7 @@ describe("remote connection Settings", () => {
   const environments = { addFromLink: vi.fn() };
 
   it("defaults to server pairing and explains how to obtain a fresh full link", () => {
-    const html = render({ environments, remoteClient: { active: false } });
-    expect(html).toContain('<option value="server" selected="">Self-hosted server</option>');
-    expect(html).toContain('<option value="companion">Desktop companion</option>');
+    const html = render({ environments });
     expect(html).toContain("Server pairing link");
     // Full access first: only it can make a server you own your bots' home; chat-only says what it can't do.
     expect(html.indexOf('data-pair-access="full"')).toBeLessThan(html.indexOf('data-pair-access="client"'));
@@ -63,30 +61,6 @@ describe("remote connection Settings", () => {
     expect(html).toContain("Server menu");
     expect(html).not.toContain('placeholder="000000"');
     expect(environments.addFromLink).not.toHaveBeenCalled();
-  });
-
-  it("allows a server-only bridge without presenting a companion option", () => {
-    const html = render({ environments });
-    expect(html).toContain("Server pairing link");
-    expect(html).not.toContain("<select");
-  });
-
-  it("preserves six-digit companion pairing when the server bridge is unavailable", () => {
-    const html = render({ remoteClient: { active: false } });
-    expect(html).toContain("Companion address");
-    expect(html).toContain("Six-digit companion code");
-    expect(html).toContain('placeholder="000000"');
-    expect(html).toContain("managed AlcaBot HTTPS address");
-    expect(html).toContain("Tailscale name ending in .ts.net");
-    expect(html).not.toContain("<select");
-    expect(html).not.toContain("Server pairing link");
-  });
-
-  it("keeps an active companion connection on its disconnect screen", () => {
-    const html = render({ environments, remoteClient: { active: true } });
-    expect(html).toContain("Disconnect and use this computer");
-    expect(html).not.toContain("<form");
-    expect(html).not.toContain("<select");
   });
 
   it.each([undefined, { platform: "darwin" }])("hides unavailable actions on browser and remote server pages", (bridge) => {

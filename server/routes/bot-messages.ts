@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
 
@@ -22,7 +21,6 @@ import type { ProviderRegistry } from "../harness/registry.ts";
 import { spokenLineFields } from "../live-call-record.ts";
 import { messageTextRefusal } from "../message-text.ts";
 import { stopReachesLiveTurn } from "../person-stops.ts";
-import type { PhoneSecretSubmissionRegistry } from "../phone-secret.ts";
 import type { ReplyTarget } from "../replies.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import type { RoutineManager } from "../routines.ts";
@@ -61,7 +59,6 @@ export interface BotMessageRouteDeps {
   handoffs: Pick<Handoffs, "current" | "steered">;
   /** The turn running in a thread now, as its runtime events name it. */
   liveTurn(threadId: string): string | undefined;
-  phoneSecretSubmissions: Pick<PhoneSecretSubmissionRegistry, "hasThread">;
   directTurnDispatchClaims: { get(threadId: string): { threadId: string } | undefined };
   groupSpeakers: ReadonlyMap<string, { botId: string }>;
   desktopManaged: boolean;
@@ -123,9 +120,6 @@ export interface BotMessageRouteDeps {
   /** The conversation an answer to this card belongs to: a run's own, for the copy its automation posted in a chat. */
   answeredIn(threadId: string, requestId: string): string;
   /** The request came from one of the owner's registered phones. */
-  fromPhone(auth: RequestAuth): boolean;
-  /** Records a send a registered phone made, so the turn it starts knows the person is talking from the phone. */
-  notePhoneSend(sendId: string): void;
   goals: Pick<OneOnOneGoals, "start">;
   /** A Team Cloud: the person's reply to a line in their own inbox goes back where that line came from, with no turn
    * here; null for any other message. */
@@ -160,7 +154,7 @@ const guardedSendSchema = z.object({
 
 export function createBotMessageRoutes(deps: BotMessageRouteDeps): RouteHandler {
   const {
-    store, registry, handoffs, liveTurn, phoneSecretSubmissions, directTurnDispatchClaims, groupSpeakers,
+    store, registry, handoffs, liveTurn, directTurnDispatchClaims, groupSpeakers,
     desktopManaged: DESKTOP_MANAGED, cloudHome: CLOUD_HOME, DirectSendRefused,
     acceptDirectSend, directSendRefusal, startTurn, usageTriggerFor, messageSender, cloudGuestSendRefusal, cloudThreadRefusal,
     cardAnswerRefusal, commandRememberRefusal, requestBehavior, requestedTaskBot, botForThread, threadBusy,
@@ -168,7 +162,7 @@ export function createBotMessageRoutes(deps: BotMessageRouteDeps): RouteHandler 
     turnSelection, policyModelRefusal, clearUnattended, drainQueuedSends, answeringCardAs, resolveAndSendTrust, resolveAndSendTeamSetup, resolveAndSendMcp,
     resolveAndSendRoutine, resolveAndSendProfile, resolveAndSendModel, resolveSkillRequest, sendSkillResolution, answerRequest,
     deliverLateQuestionAnswer, stopThreadForPerson, cancelDirectTurnDispatch, revokeInternalCapabilitiesForThread,
-    cancelGroupTurnOperations, closeOpenApprovals, harnessCardOutcome, pressRecords, serverPress, relayedReaction, answeredIn, fromPhone, notePhoneSend, goals,
+    cancelGroupTurnOperations, closeOpenApprovals, harnessCardOutcome, pressRecords, serverPress, relayedReaction, answeredIn, goals,
   } = deps;
   const pinnedClientThread = pinnedClientThreadGuard(store);
   /** Security: a bot's own shell must never approve its own card, so a local request counts only from the desktop app, or
@@ -250,9 +244,7 @@ export function createBotMessageRoutes(deps: BotMessageRouteDeps): RouteHandler 
         : usageTriggerFor(auth);
       // Security invariant: another bot's thread answers like a missing one, before anything reads a widget in it.
       if (pressed && !store.taskByThread(bot.id, threadId)) return json(res, 409, { error: "the bot switched tasks before it could receive the message" });
-      const phone = fromPhone(auth);
-      // A phone's send without an id gets one, so the turn it starts can be known as the phone's.
-      const sendId = parseSendId(body.sendId) ?? (phone ? randomUUID() : undefined);
+      const sendId = parseSendId(body.sendId);
       const press = pressed ? prepareWidgetPress(store, threadId, body.widgetAction, sendId) : null;
       if (press && !press.ok) return json(res, press.status, { error: press.error });
       const answered = press ? serverPress(bot, threadId, press.messageId, press.action, auth) : null;
@@ -322,7 +314,6 @@ export function createBotMessageRoutes(deps: BotMessageRouteDeps): RouteHandler 
             return { ok: true as const, threadId, message };
           }
         : undefined;
-      if (phone && sendId) notePhoneSend(sendId);
       // The bot's own shell reaches this route on a headless server (loopback is the owner), so only a
       // paired session or the desktop capability proves a person and lifts the webhook block.
       const personPresent = auth.kind === "session" || DESKTOP_MANAGED;
@@ -491,9 +482,6 @@ export function createBotMessageRoutes(deps: BotMessageRouteDeps): RouteHandler 
       }
       // Synchronous from here: startTurn flips busy before the next request, so two racing edits cannot both pass.
       if (threadBusy(bot.id, bot.threadId)) return json(res, 409, userError("serverError.chat.busyEdit"));
-      if (phoneSecretSubmissions.hasThread(bot.threadId)) {
-        return json(res, 409, userError("serverError.chat.savingCredential"));
-      }
       const rerunSelection = turnSelection(bot.id, bot.threadId) ?? bot.modelSelection;
       if (!registry.get(rerunSelection.instanceId)) {
         const noAi = deps.noAiRefusal?.(bot.threadId, messageSender(auth), rerunSelection.instanceId);
@@ -521,9 +509,6 @@ export function createBotMessageRoutes(deps: BotMessageRouteDeps): RouteHandler 
       const notYours = cloudThreadRefusal(auth, bot.threadId);
       if (notYours) return json(res, 403, { error: notYours });
       if (threadBusy(bot.id, bot.threadId)) return json(res, 409, userError("serverError.chat.busyVersion"));
-      if (phoneSecretSubmissions.hasThread(bot.threadId)) {
-        return json(res, 409, userError("serverError.chat.savingCredential"));
-      }
       const leaf = store.setActiveLeaf(bot.threadId, String(body.messageId ?? ""));
       if (!leaf) return json(res, 404, { error: "no such message" });
       store.patchTask(bot.id, bot.threadId, { rewound: true });

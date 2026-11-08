@@ -99,19 +99,6 @@ await build({
   plugins: [serverLocalePlugin],
 });
 
-// `alcabots serve --tunnel` spawns the connector guardian as its own
-// process, so it must exist as a file beside the server.
-await build({
-  entryPoints: [join(root, "electron", "managed-companion-guardian-main.mjs")],
-  bundle: true,
-  platform: "node",
-  target: "node20",
-  format: "esm",
-  outfile: join(root, "dist-server", "tunnel-guardian.js"),
-  allowOverwrite: true,
-  logLevel: "info",
-});
-
 // Runs itself when executed directly, so it must never be inlined into another
 // entry.
 await build({

@@ -47,7 +47,7 @@ function mainRule() {
   const context = vm.createContext({
     ipcMain: { handle: () => {}, on: (channel, listener) => listeners.set(channel, listener) },
     senderIsLocal: localOriginModule.isLocalSender, workspaceSenderAllowed: environments.workspaceSenderAllowed, cloudPageSenderAllowed, myCloudOrigin, otherOwnClouds,
-    activeEnvironment: environments.activeEnvironment, rendererOrigin: () => LOCAL, desktopRemoteAccess: false,
+    activeEnvironment: environments.activeEnvironment, rendererOrigin: () => LOCAL,
     mainWindow: window,
     environmentsState: { environments: [], activeId: environments.LOCAL_ID },
     cloudAccount: { homeTarget: () => ({ origin: CLOUD }), state: () => ({ status: "connected", account: { id: "a1" } }), isOwnCloud: () => false },
@@ -191,10 +191,8 @@ it("another server's page never gets the update bridge; My Cloud's does, even wh
 
   rule.signedIn({ status: "connected", account: { id: "a1" }, machine: { origin: CLOUD, status: "ready" } });
   expect(has(CLOUD, "cloud")).toBe(true);
-  rule.context.desktopRemoteAccess = { endpoint: "https://companion.example.test" };
-  expect(has(CLOUD, "cloud")).toBe(false);
   rule.context.cloudSignInRestored = false;
-  expect(has(CLOUD, "cloud")).toBe(false);
+  expect(has(CLOUD, "cloud")).toBe(true);
 
   expect("updater" in bridgeFor(CLOUD).bridge).toBe(false);
 });
@@ -350,10 +348,6 @@ it("My Cloud's page reads and drives the update channels, and another server's p
   rule.context.rememberedHome = { accountId: "someone-else", origin: CLOUD };
   expect(() => handlers.get("update:get-state")(cloud.event)).toThrow(/only available/);
   rule.context.cloudAccount = { homeTarget: () => ({ origin: CLOUD }), state: () => ({ status: "connected", account: { id: "a1" } }), isOwnCloud: () => false };
-
-  rule.context.desktopRemoteAccess = { endpoint: "https://companion.example.test" };
-  for (const channel of handlers.keys()) expect(() => handlers.get(channel)(cloud.event), channel).toThrow(/only available/);
-  rule.context.desktopRemoteAccess = false;
 
   const other = page(OTHER);
   rule.show(other, "vps");

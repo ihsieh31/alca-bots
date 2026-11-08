@@ -17,7 +17,7 @@ const json = body => Promise.resolve(new Response(JSON.stringify(body), { status
 const names = windows => windows.map(win => win?.name ?? null);
 const englishLabels = { labels: TALK_LABELS, dismiss: "Dismiss", release: "Let go to send" };
 
-function harness({ packaged = true, appleSpeech = true, remote = false, register, serve = () => undefined } = {}) {
+function harness({ packaged = true, appleSpeech = true, register, serve = () => undefined } = {}) {
   const h = { handlers: new Map(), guards: new Map(), started: [], stopped: [], finished: [], requests: [], links: [], reveals: 0, log: [],
     registered: new Map(), windows: [], busy: false, fail: {}, away: false, starting: false };
   const owners = new Map();
@@ -66,7 +66,7 @@ function harness({ packaged = true, appleSpeech = true, remote = false, register
     unregister: accelerator => { h.registered.delete(accelerator); },
   };
   const screen = { getCursorScreenPoint: () => ({ x: 0, y: 0 }), getDisplayNearestPoint: () => ({ workArea: { x: 0, y: 25, width: 1440, height: 875 } }) };
-  h.start = () => h.talk.start({ globalShortcut, screen, prefs: createDesktopPrefs({ read: () => null, write: () => {} }), remote: () => remote,
+  h.start = () => h.talk.start({ globalShortcut, screen, prefs: createDesktopPrefs({ read: () => null, write: () => {} }),
     away: failing("away", () => h.away), starting: () => h.starting,
     localRequest: route => { h.requests.push(["local", route]); return answer(route); }, dataDir: () => "/Users/a/.alcabots" });
   h.handle = (channel, event, ...args) => h.handlers.get(channel)(event, ...args);
@@ -88,7 +88,7 @@ test("every list of the app's windows leaves the talk box out", () => {
 test("main hands the talk wiring its speech sinks, this computer's own server and window, and closes it first on quit", () => {
   assert.match(main, /const talk = installTalk\(\{ ipcMain, localOnly, localOrHome, BrowserWindow, appleSpeech: nativeActions\.appleSpeech,\s*speech: \{ start: startSpeech, stop: stopSpeech, finish: finishSpeech, busy: speechBusy \},/);
   assert.match(main, /packaged: app\.isPackaged, devUrl: DEV_URL, nativeImage, iconPath: APP_ICON, openLink: queueChatLink, reveal: revealForLink, log: slog, t: nativeT \}\);/);
-  assert.match(main, /talk\.start\(\{ globalShortcut, screen, prefs: desktopPrefs, remote: \(\) => Boolean\(desktopRemoteAccess\), away: \(\) => homeWindow\.current\(\)\.kind !== "computer", starting: \(\) => !serverReady, localRequest: localServerRequest, dataDir: \(\) => runningDataDir \}\);/);
+  assert.match(main, /talk\.start\(\{ globalShortcut, screen, prefs: desktopPrefs, away: \(\) => homeWindow\.current\(\)\.kind !== "computer", starting: \(\) => !serverReady, localRequest: localServerRequest, dataDir: \(\) => runningDataDir \}\);/);
   assert.match(main, /app\.on\("before-quit", \(e\) => \{\s*talk\.close\(\);/);
   assert.doesNotMatch(main, /ipcMain\.handle\("(?:speech|talk-shortcut|call):/);
 });
@@ -137,13 +137,11 @@ test("a page's speech stop and finish name that page's own window, so they touch
   assert.deepEqual([elsewhere.started, elsewhere.stopped, elsewhere.finished], [[], [], []]);
 });
 
-test("the shortcut is offered only with Apple speech, on a desktop that is not a remote client of another computer", () => {
-  for (const options of [{ appleSpeech: false }, { remote: true }]) {
-    const h = harness(options);
-    h.start();
-    assert.equal(h.handle("talk-shortcut:state", {}).available, false);
-    assert.deepEqual([...h.registered.keys()], []);
-  }
+test("the shortcut is offered only with Apple speech", () => {
+  const without = harness({ appleSpeech: false });
+  without.start();
+  assert.equal(without.handle("talk-shortcut:state", {}).available, false);
+  assert.deepEqual([...without.registered.keys()], []);
   const h = harness();
   h.start();
   assert.equal(h.handle("talk-shortcut:state", {}).available, true);

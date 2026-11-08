@@ -71,7 +71,7 @@ function fixture() {
     companyBackupSchedule: null, companyBackupClientStateRequest: null, companyRestoreCommitting: false, desktopShutdownStarted: false, companyBackupConfigurationRevision: 0,
     desktopDataDir: () => "/synthetic-fixture-workspace",
     companyBackupState: { busy: false }, serverProc: {}, serverReady: true,
-    desktopRemoteAccess: null, mainWindow: { webContents: contents, isDestroyed: () => false },
+    mainWindow: { webContents: contents, isDestroyed: () => false },
     rendererOrigin: () => ORIGIN, environmentsState: { environments: [], activeId: "local" },
     activeEnvironment: environments.activeEnvironment, activeRemote: environments.activeRemote, workspaceSenderAllowed: environments.workspaceSenderAllowed,
     localOnly: localOrigin.localOnly, ipcMain: { handle: (channel, handler) => handlers.set(channel, handler), on: (channel, handler) => handlers.set(channel, handler) },

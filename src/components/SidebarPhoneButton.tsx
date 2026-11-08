@@ -5,16 +5,18 @@ import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import { phonePairingSettingsAction } from "@/lib/phone-pairing";
 import type { SidebarDensity } from "@/lib/sidebar-preferences";
-import { companionBridge } from "@/lib/companion-bridge";
-import type { CompanionState } from "./PhoneSetupFlow";
+import { api } from "@/state/api";
+import type { LinkStatus } from "../../shared/link";
 
 export const SIDEBAR_PHONE_RECENT_MS = 2 * 60_000;
 const SIDEBAR_PHONE_POLL_MS = 15_000;
 
-type SidebarPhoneSnapshot = Pick<
-  CompanionState,
-  "enabled" | "devices" | "connectedDeviceIds" | "error"
->;
+interface SidebarPhoneSnapshot {
+  enabled: boolean;
+  devices: ReadonlyArray<{ id: string; lastSeenAt: number }>;
+  connectedDeviceIds?: string[];
+  error?: string | null;
+}
 
 export type SidebarPhoneStatusKind =
   | "checking"
@@ -115,20 +117,21 @@ export function useSidebarPhoneStatus(): SidebarPhoneStatus {
   const [snapshot, setSnapshot] = useState<SidebarPhoneSnapshot | null>();
 
   useEffect(() => {
-    const companion = companionBridge();
-    if (!companion) {
-      setSnapshot(null);
-      return;
-    }
-
     let disposed = false;
     let refreshing = false;
     const refresh = async () => {
       if (refreshing) return;
       refreshing = true;
       try {
-        const next = await companion.state();
-        if (!disposed) setSnapshot(next);
+        const next = await api<LinkStatus>("/api/link", { background: true });
+        if (!disposed) {
+          setSnapshot({
+            enabled: next.enabled,
+            devices: next.devices,
+            connectedDeviceIds: next.devices.filter((device) => device.connection).map((device) => device.id),
+            error: next.error,
+          });
+        }
       } catch {
         if (!disposed) setSnapshot(null);
       } finally {

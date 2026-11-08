@@ -12,8 +12,7 @@ export function DataResultChip({ message }: { message: Message }) {
   if (!result) return null;
   const chart = result.kind === "chart";
   const Icon = chart ? ChartNoAxesCombined : Table2;
-  const companion = window.abot?.remoteClient?.active === true;
-  const available = !companion && state.bots.some((bot) => bot.id === result.botId);
+  const available = state.bots.some((bot) => bot.id === result.botId);
   return (
     <div data-data-result={result.cardId} className="w-full max-w-[min(var(--chat-prose-max),var(--chat-card-pct))] overflow-hidden rounded-xl border border-hairline/40 bg-panel text-sm">
       <div className="flex items-center gap-3 px-3 py-2">
@@ -26,7 +25,6 @@ export function DataResultChip({ message }: { message: Message }) {
         <button
           type="button"
           disabled={!available}
-          title={companion ? t("data.openInWorkspace") : undefined}
           onClick={() => dispatch({ type: "openDataResult", botId: result.botId, cardId: result.cardId })}
           className={`ml-auto flex shrink-0 items-center gap-1 text-xs hover:underline disabled:opacity-40 ${chart ? "text-ink-tertiary hover:text-accent" : "text-accent"}`}
         >

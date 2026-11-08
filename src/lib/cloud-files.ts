@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CloudFilesBridge, CloudFilesState } from "../../electron/cloud-sync.mjs";
 
-/** Files lives in this computer's own window: a companion connected to another computer has none. */
+/** Files lives in this computer's own window. */
 export function cloudFilesBridge(): CloudFilesBridge | undefined {
   return window.abot?.remoteClient?.active ? undefined : window.abot?.cloudAccount?.files;
 }

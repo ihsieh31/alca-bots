@@ -41,6 +41,7 @@ function cloudHome() {
     if (route === "/api/shared-computers/connect") { state.connects.push(body); return json({ ok: true }); }
     if (route === "/api/shared-computers/asks") {
       state.polls.push(body);
+      if (state.failAsks > 0) { state.failAsks--; return { ok: false, status: 500, headers: { get: () => null }, body: (async function* () { yield Buffer.from("{}"); })() }; }
       if (body.heard === state.version) await delay(40, undefined, { signal: init?.signal }).catch(() => {});
       init?.signal?.throwIfAborted();
       return json({ version: state.version, asks: state.asks });
@@ -171,6 +172,16 @@ test("a prompt closes when the ask was answered elsewhere, and doesn't come up w
   const mac = createAskPrompt({ dialog, window: () => null, platform: "darwin" });
   assert.equal(await mac({ id: "client", name: "Client A", origin: "https://alca-c-a.fly.dev" }, ask(), new AbortController().signal), null,
     "on a Mac only a window's sheet can be closed again, so no window, no prompt");
+});
+
+test("a Cloud that fails an ask poll is polled again after a wait", async t => {
+  const home = cloudHome();
+  home.failAsks = 1;
+  const sharing = await computer(t, { homes: { [HOME]: home } });
+  sharing.start();
+  await until(() => home.polls.length >= 1 && home.failAsks === 0, "the first poll to fail");
+  const failedAt = home.polls.length;
+  await until(() => home.polls.length > failedAt, "the next poll", 8000);
 });
 
 test("a Team Cloud never hears this computer", async t => {

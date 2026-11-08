@@ -26,7 +26,7 @@ cache. Screenshots and browser results are saved beside the fixture server log.
 browser profile nor live AlcaBots data is used.
 
 These automated checks do not prove physical phone installation. Follow the
-[phone installation guide](../phone-web-app.md) in a disposable workspace for
+[phone installation guide](../phone-link.md) in a disposable workspace for
 device qualification:
 
 - iPhone Safari: Add to Home Screen, verify the icon and name, then launch a

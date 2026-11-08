@@ -9,7 +9,7 @@ import { toolBudgetOf } from "../tool-budgets.ts";
 import { isLoopbackHost, isProxied, provesSameOrigin, requestOrigin } from "../request-auth.ts";
 import { PASS, type RouteHandler } from "./table.ts";
 import type { json } from "../harness/http.ts";
-import { sessionMember } from "./team-phone.ts";
+import { sessionMember } from "./session-member.ts";
 
 type ListedMcpServer = { name: string; enabled: boolean; bot?: string; offFor?: readonly string[] };
 

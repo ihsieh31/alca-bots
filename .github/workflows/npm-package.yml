@@ -9,7 +9,6 @@ on:
   pull_request:
     paths:
       - server/cli.ts
-      - server/tunnel.ts
       - server/tailscale.ts
       - server/pair-cli.ts
       - scripts/build-npm-package.mjs
@@ -42,7 +41,7 @@ jobs:
           cd /tmp/alca-pack/package
           # Every check below is a silent grep/test; say which one failed, and what the server said.
           set -x
-          trap 'echo "--- serve.log"; cat serve.log 2>/dev/null; echo "--- tunnel.log"; cat tunnel.log 2>/dev/null' ERR
+          trap 'echo "--- serve.log"; cat serve.log 2>/dev/null' ERR
           test ! -d node_modules
           node cli.js --help | grep -q "alcabots serve"
           HOME=/tmp/alca-pack/home node cli.js serve --no-pair --port 18799 --data-dir /tmp/alca-pack/data --label ci --public-url https://ci.example > serve.log 2>&1 &
@@ -59,12 +58,8 @@ jobs:
           ALCA_PORT=1 node dist-server/pair-cli.js > pair.out 2>&1 || true
           cat pair.out
           grep -q "no AlcaBots server" pair.out
-          # --tunnel ships its own processes and fails closed without an account
-          test -f dist-server/tunnel-guardian.js && test -f dist-server/prepare-cloudflared.js
           # the enterprise layer ships bundled (inert without a key) so a white-label key works on an npm install
           test -f enterprise/server/index.js && test -f enterprise/LICENSE
-          if HOME=/tmp/alca-pack/home node cli.js serve --tunnel --port 18798 --data-dir /tmp/alca-pack/data2 > tunnel.log 2>&1; then echo "serve --tunnel should refuse without login"; exit 1; fi
-          grep -q "run \`alcabots login\` first" tunnel.log
           kill %1; wait %1 || true
       - name: Prove an npm install brings the Data engine's native modules
         working-directory: /tmp/alca-pack/package

@@ -5,14 +5,19 @@
 // falls back to the start-of-message rule.
 import { createHash } from "node:crypto";
 
-import { createPhoneSends } from "./phones/sends.ts";
-
-const sends = createPhoneSends();
+const SENDS_KEPT = 500;
+const sends = new Set<string>();
 const proof = (threadId: string, sendId: string, text: string): string =>
   createHash("sha256").update(JSON.stringify([threadId, sendId, text])).digest("base64");
 
 export function noteTypedSend(threadId: string, sendId: string, text: string): void {
-  sends.note(proof(threadId, sendId, text));
+  const key = proof(threadId, sendId, text);
+  sends.delete(key);
+  sends.add(key);
+  for (const oldest of sends) {
+    if (sends.size <= SENDS_KEPT) break;
+    sends.delete(oldest);
+  }
 }
 
 /** What the person typed themselves among a turn's own lines; empty when they typed none of them. */

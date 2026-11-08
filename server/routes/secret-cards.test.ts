@@ -43,7 +43,7 @@ describe("POST /api/bots/<bot>/secret-cards/<card>/save", () => {
     const saveCustomSecret = vi.fn(() => ({ status: 200, body: { provided: true, resumed: true } }));
     const cards = { secretMessage: vi.fn(() => ({ id: "card-1" })), saveCustomSecret } as unknown as SecretCards;
     const handler = createSecretCardRoutes({
-      cards, phoneSecretSubmissions: { has: () => false },
+      cards,
       threadVisible: () => over.visible ?? true,
       answerContext: () => over.context ?? team("p:ada", "p:ada"),
     });

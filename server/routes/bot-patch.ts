@@ -3,7 +3,6 @@ import { z } from "zod";
 import { approvalModeFor, isApprovalMode, type ApprovalMode } from "../../shared/approval-mode.ts";
 import { normalizeConnectorScopes } from "../../shared/connector-scopes.ts";
 import { normalizeOutboundPolicy } from "../../shared/outbound.ts";
-import { normalizePhoneApps } from "../../shared/phone-apps.ts";
 import { parseToolScope, toolScopeWidens } from "../../shared/tool-scope.ts";
 import { isMausColor, ALCA_COLOR_NAMES, type WireBot, type WireGroup } from "../../shared/wire.ts";
 import { validateBotCwd } from "../bot-cwd.ts";
@@ -20,7 +19,6 @@ import type { ProviderRegistry } from "../harness/registry.ts";
 import type { hostedModelPolicy } from "../hosted-models.ts";
 import { MAX_MCP_SERVERS, mcpServerNameError } from "../mcp-registry.ts";
 import type { MemoryUpkeep } from "../memory-upkeep.ts";
-import { phoneAppsFor } from "../phones/access.ts";
 import { profileSnapshot } from "../profile-revision.ts";
 import { recordProfileChange } from "../profile-versions.ts";
 import { memberBotPatchViolation, requestSource, type RequestAuth } from "../request-auth.ts"; import { defaultBotPatchRefusal, ownsDefaultBot } from "../default-bot.ts";
@@ -94,16 +92,13 @@ export function createBotPatchRoutes(deps: BotPatchRouteDeps): RouteHandler {
       if (!body || typeof body !== "object" || Array.isArray(body)) {
         return json(res, 400, { error: "body must be a JSON object" });
       }
-      const pairedDevice = req.headers["x-alcabots-companion"] === "1";
-      if ((auth.kind === "session" && !auth.scopes.includes("admin")) || pairedDevice) {
+      if (auth.kind === "session" && !auth.scopes.includes("admin")) {
         const session = auth.kind === "session" ? auth.session : undefined;
-        const level = pairedDevice ? "chat" : deps.levelOf(auth, m[1]);
+        const level = deps.levelOf(auth, m[1]);
         const field = memberBotPatchViolation(body, level === "none" ? "chat" : level, ownsDefaultBot(store.bot(m[1]), session?.email), session?.membershipAuthority === "team");
         if (field) {
           return json(res, 403, {
-            error: pairedDevice
-              ? `forbidden: a paired device may change how a bot looks, not "${field}"; change it on the host computer`
-              : level === "edit" ? `forbidden: "${field}" is an admin's to change`
+            error: level === "edit" ? `forbidden: "${field}" is an admin's to change`
                 : level === "view" ? `forbidden: you can view this bot, not change "${field}"`
                   : `forbidden: this session may change how a bot looks, not "${field}" (needs the admin scope)`,
           });
@@ -243,14 +238,6 @@ export function createBotPatchRoutes(deps: BotPatchRouteDeps): RouteHandler {
           const scopes = normalizeConnectorScopes(body.connectorScopes);
           if (!scopes) return json(res, 400, { error: "connectorScopes must be { apps: { <toolkit>: read | write } } or null" });
           patch.connectorScopes = scopes;
-        }
-      }
-      if (body.phoneApps !== undefined) {
-        if (body.phoneApps === null) patch.phoneApps = undefined;
-        else {
-          const apps = normalizePhoneApps(body.phoneApps);
-          if (!apps) return json(res, 400, { error: "phoneApps must be { <calendar|reminders|contacts|location|home|messages>: read | write } or null" });
-          patch.phoneApps = apps;
         }
       }
       if (body.outbound !== undefined) {
@@ -572,12 +559,6 @@ export function createBotPatchRoutes(deps: BotPatchRouteDeps): RouteHandler {
       if (body.connectorScopes !== undefined && existingBot?.connectorScopes &&
           (!trustPatch.connectorScopes || Object.entries(trustPatch.connectorScopes.apps).some(([slug, scope]) =>
             !existingBot.connectorScopes!.apps[slug] || (scope === "write" && existingBot.connectorScopes!.apps[slug] === "read")))) loosened.push("connectorScopes");
-      if (body.phoneApps !== undefined && existingBot) {
-        // Compare effective grants: clearing falls back to every app.
-        const before = phoneAppsFor(existingBot);
-        const after = phoneAppsFor({ ...existingBot, phoneApps: (patch as Pick<Partial<BotRecord>, "phoneApps">).phoneApps });
-        if (Object.entries(after).some(([cap, grant]) => !before[cap as keyof typeof before] || (grant === "write" && before[cap as keyof typeof before] === "read"))) loosened.push("phoneApps");
-      }
       if (body.fallback !== undefined && trustPatch.fallback?.some(candidate =>
           !existingBot?.fallback?.some(previous => previous.instanceId === candidate.instanceId && previous.model === candidate.model))) loosened.push("fallback");
       if (Array.isArray(patch.managedSections) && patch.managedSections.some(section => !(existingBot?.managedSections ?? []).includes(section))) {

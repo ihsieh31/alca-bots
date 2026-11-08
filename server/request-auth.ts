@@ -6,7 +6,6 @@ import { isIP } from "node:net";
 
 import { BOT_PROFILE_PATCH_FIELDS } from "./bot-profile.ts";
 import type { Scope, SessionRecord, SessionRegistry } from "./sessions.ts";
-import { denyReason as companionDenial, isCompanionNotice } from "../companion/src/routes.ts";
 
 /** `owner`: the machine's owner. `service`: a shared server where every bot's shell is a loopback caller too,
  * so loopback without a session may reach only SERVICE_ALLOW. */
@@ -15,8 +14,6 @@ export type LoopbackTrust = "owner" | "service";
 export type RequestAuth =
   | {
     kind: "loopback"; scopes: readonly Scope[]; trust?: "service";
-    /** Set only on the verified companion-token path: the sidecar's id for the phone that authenticated. */
-    companionDevice?: string;
   }
   | { kind: "session"; session: SessionRecord; via: "bearer" | "cookie" | "ticket"; scopes: readonly Scope[] };
 
@@ -133,7 +130,7 @@ export function isLoopbackHost(host: string | undefined): boolean {
 
 /** Browsers send Sec-Fetch-Site and Sec-Fetch-Dest on every request to a loopback address and Origin on every WebSocket
  * handshake (Chrome 155 sends no Sec-Fetch-* there); a page can remove none of them. Node's fetch (undici) sends
- * Sec-Fetch-Mode alone, so it does not count; curl, the companion and the desktop app's main process send none. */
+ * Sec-Fetch-Mode alone, so it does not count; curl and the desktop app's main process send none. */
 export function fromBrowser(req: IncomingMessage): boolean {
   const headers = req.headers;
   if (headers["sec-fetch-site"] !== undefined || headers["sec-fetch-dest"] !== undefined) return true;
@@ -283,11 +280,6 @@ export const CLIENT_ALLOW: ReadonlyArray<{ methods: readonly string[]; path: Reg
   { methods: ["GET"], path: /^\/api\/updates\/check$/ },
   { methods: ["POST"], path: /^\/api\/auth\/stream-ticket$/ },
   { methods: ["POST"], path: /^\/api\/auth\/logout$/ },
-  // A Team Cloud member's own phone: the code carries their address and role, never more (routes/team-phone.ts).
-  { methods: ["POST"], path: /^\/api\/team\/phone-pairing$/ },
-  // The phones those codes opened: a member lists and removes their own only (routes/team-phone.ts visiblePhones).
-  { methods: ["GET"], path: /^\/api\/team\/phones$/ },
-  { methods: ["DELETE"], path: /^\/api\/team\/phones\/[\w-]+$/ },
   // Own desktop connector, bound to a private secret; listed only while features.sharedComputers is on.
   { methods: ["POST"], path: /^\/api\/shared-computers\/(?:connect|[\w-]+\/(?:poll|lease|result|disconnect))$/, feature: "sharedComputers" },
   { methods: ["GET"], path: /^\/api\/shared-computers$/, feature: "sharedComputers" },
@@ -499,7 +491,6 @@ export interface ResolveOptions {
   url: URL;
   /** Desktop capability over Electron's private child port: with it, every public loopback mutation must come through the desktop's web session. */
   loopbackMutationToken?: string;
-  companionMutationToken?: string;
   features?: { sharedComputers?: boolean };
   /** Absent is `owner`; ignored while loopbackMutationToken is in force. */
   loopbackTrust?: LoopbackTrust;
@@ -535,8 +526,7 @@ function mutatingPublicRoute(method: string, path: string): boolean {
   // Internal routes carry their own per-boot authorization; pairing-code exchange is public (the one-time code is its authorization).
   return !path.startsWith("/api/internal/") &&
     path !== "/api/testing/internal-capability" &&
-    path !== "/api/auth/pair" &&
-    path !== "/api/pair";
+    path !== "/api/auth/pair";
 }
 
 function secureTokenMatch(actual: string | undefined, expected: string): boolean {
@@ -595,16 +585,6 @@ export function resolveRequestAuth(req: IncomingMessage, options: ResolveOptions
   const proxied = isProxied(req);
   const loopback = !proxied && isLoopbackHost(headerValue(req.headers.host)) && isAllowedOrigin(headerValue(req.headers.origin));
   if (loopback) {
-    const companionToken = headerValue(req.headers["x-alcabots-companion-auth"]);
-    if (companionToken && options.loopbackMutationToken !== undefined) {
-      if (
-        !secureTokenMatch(companionToken, options.companionMutationToken ?? "") ||
-        req.headers["x-alcabots-companion"] !== "1" ||
-        !/^[\w-]{1,128}$/.test(headerValue(req.headers["x-alcabots-companion-device"]) ?? "") ||
-        (companionDenial({ path, method, authenticated: true }) && !isCompanionNotice(method, path))
-      ) return deny(403, "forbidden: invalid companion request");
-      return { auth: { kind: "loopback", scopes: LOOPBACK_SCOPES, companionDevice: headerValue(req.headers["x-alcabots-companion-device"]) }, status: 401, error: "" };
-    }
     const desktopOwner = options.loopbackMutationToken !== undefined &&
       secureTokenMatch(headerValue(req.headers[DESKTOP_OWNER_HEADER]), options.loopbackMutationToken) && fromOwnPage(req);
     if (fromBrowser(req) && !desktopOwner && !options.trustLocalBrowser) return deny(401, BROWSER_SIGN_IN);

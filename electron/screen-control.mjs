@@ -4,8 +4,8 @@ import { screenStatus } from "./screen-status.mjs";
 
 /** `connection()`: computer control's state as cua.mjs last published it (a promise). `request()`: start it again, which
  * on a Mac asks macOS for what it never asked, and on Linux turns local control on. */
-export function createScreenControl({ connection, remote = () => false, request, log = () => {}, platform = process.platform }) {
-  const now = async () => screenStatus({ platform, connection: await Promise.resolve().then(connection).catch(() => null), remote: remote() });
+export function createScreenControl({ connection, request, log = () => {}, platform = process.platform }) {
+  const now = async () => screenStatus({ platform, connection: await Promise.resolve().then(connection).catch(() => null) });
   return {
     now,
     /** Its state once it started again. */

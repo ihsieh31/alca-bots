@@ -21,9 +21,8 @@
       "node"
     ]
   },
-  "include": [
+  "include": [ "link/**/*.ts",
     "server",
-    "companion",
     "enterprise",
     "connector"
   ],

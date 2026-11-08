@@ -64,6 +64,8 @@ const reportableAppVersion = (value) => {
 
 const MAX_RETRY_AFTER_MS = 24 * 60 * 60 * 1_000;
 
+export const DEFAULT_CONTROL_PLANE_URL = "https://bots-accounts.alca-corp.me";
+
 export class ControlPlaneError extends Error {
   constructor(code, status = 0, requestId = "", retryAfterMs = 0) {
     super(code);
@@ -130,6 +132,11 @@ export function normalizeControlPlaneURL(value) {
     return "";
   }
   return parsed.origin;
+}
+
+export function resolveControlPlaneURL({ isPackaged, environment = process.env } = {}) {
+  if (Object.hasOwn(environment, "ALCA_CONTROL_PLANE_URL")) return normalizeControlPlaneURL(environment.ALCA_CONTROL_PLANE_URL);
+  return isPackaged ? DEFAULT_CONTROL_PLANE_URL : "";
 }
 
 export function normalizeAccountEmail(value) {

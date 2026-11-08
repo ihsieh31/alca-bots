@@ -50,7 +50,7 @@ test("a new language redraws main's menu, both trays, the window title and the b
     refreshApplicationMenu: () => calls.push(["menu", text.t("native.menu.server")]),
     applyUnreadBadge: () => calls.push(["badge", text.t("native.badge.none")]),
     mainWindow: { isDestroyed: () => false, setTitle: (title) => calls.push(["title", title]) },
-    environmentsState: { environments: [office], activeId: "o" }, desktopRemoteAccess: null,
+    environmentsState: { environments: [office], activeId: "o" },
     homeWindow: { cloudOrigin: () => null }, workspaceWindowTitle: environments.workspaceWindowTitle,
   });
   const start = MAIN.indexOf("function mainWindowTitle() {"), end = MAIN.indexOf("async function workspaceMenuAction(", start);

@@ -141,10 +141,8 @@ During the later phone step, it keeps the AI setup already saved and exits
 without starting a server. Completed installs and sign-ins remain; run
 \`alcabots setup\` to continue without deleting your data.
 
-For a service, use \`serve --tunnel\` after \`login\` for managed HTTPS,
-\`serve --tailscale\` for your tailnet, or your own reverse proxy. The
-\`login\` command signs in to an AlcaBots account, not an AI provider;
-it does not start the tunnel itself.
+For a service, use \`serve --tailscale\` for your tailnet or your own reverse
+proxy. For your phone, run \`alcabots phone\`: nothing needs a public port.
 
 Scripts, CI and other agents can drive a running workspace without a screen:
 set a team up from a file, give a bot one job and wait until it and every
