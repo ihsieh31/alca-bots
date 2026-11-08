@@ -38,7 +38,6 @@ const include = [
   "electron/**/*.test.mjs",
   "src/**/*.test.ts",
   "shared/**/*.test.ts",
-  "companion/**/*.test.ts",
   "enterprise/**/*.test.ts",
   "connector/**/*.test.ts",
   "link/**/*.test.ts",

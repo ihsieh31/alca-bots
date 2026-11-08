@@ -12,8 +12,6 @@ import {
   provisionManagedEndpoint,
   sweepManagedEndpointCleanup,
 } from "./endpoints";
-import { registerPushDevice, sendPush, unregisterPushDevice } from "./push";
-import { issueRelayToken, relayAdoption } from "./relay";
 import { capacityHealth, reportEndpointAccountProblems, scanTunnelCapacity } from "./tunnel-capacity";
 import {
   createInstallation,
@@ -71,7 +69,6 @@ async function route(
   config: ControlPlaneConfig,
   requestId: string,
   cloudflareFetch: CloudflareFetch,
-  apnsFetch: typeof fetch,
 ) {
   const url = new URL(request.url);
   if (request.method === "OPTIONS") return preflight(request, config);
@@ -133,20 +130,6 @@ async function route(
     }
   }
 
-  if (request.method === "POST" && url.pathname === "/v1/installations/self/relay-token") {
-    return issueRelayToken(request, env);
-  }
-
-  if (request.method === "POST" && url.pathname === "/v1/installations/self/push/register") {
-    return registerPushDevice(request, env);
-  }
-  if (request.method === "POST" && url.pathname === "/v1/installations/self/push/unregister") {
-    return unregisterPushDevice(request, env);
-  }
-  if (request.method === "POST" && url.pathname === "/v1/installations/self/push/send") {
-    return sendPush(request, env, apnsFetch, requestId);
-  }
-
   const rotate = url.pathname.match(ROTATE_ROUTE);
   if (request.method === "POST" && rotate) {
     return rotateInstallationCredential(request, rotate[1], env, auth);
@@ -174,7 +157,6 @@ async function route(
 
 export function createWorker(
   cloudflareFetch: CloudflareFetch = fetch,
-  apnsFetch: typeof fetch = fetch,
 ) {
   return {
     async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -191,12 +173,10 @@ export function createWorker(
         // gate hosted sign-in on it. Provider capacity is reported beside it
         // so a full quota never hides sign-in, recovery, or local pairing.
         const capacity = await capacityHealth(env, healthConfig, ctx).catch(() => null);
-        const adoption = await relayAdoption(env).catch(() => null);
         return secureResponse(json({
           ok: true,
           service: "alcabots-control-plane",
           ...(capacity === null ? {} : { capacity }),
-          ...(adoption === null ? {} : { relayAdoption: adoption }),
         }), request, null, requestId);
       }
 
@@ -209,7 +189,7 @@ export function createWorker(
         }
         const boundedRequest = await withBoundedRequestBody(request);
         return secureResponse(
-          await route(boundedRequest, env, ctx, config, requestId, cloudflareFetch, apnsFetch),
+          await route(boundedRequest, env, ctx, config, requestId, cloudflareFetch),
           request,
           config,
           requestId,

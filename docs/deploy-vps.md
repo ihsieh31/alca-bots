@@ -2,11 +2,11 @@
 
 From a blank Linux server to AlcaBots running on it around the clock, reachable from your laptop, the desktop app and your phone, with your bots working while every laptop is closed. It assumes nothing beyond being able to open a terminal and paste commands. About twenty minutes, most of it waiting.
 
-Three ways to make the server reachable are covered. Pick one; the rest of the guide is the same.
+Three ways to reach the server are covered. Pick one; the rest of the guide is the same.
 
 | | You need | Who can reach it | Best for |
 |---|---|---|---|
-| **A. Public address, no domain** (`serve --tunnel`) | an AlcaBots account (email code) | anyone with a pairing code, over HTTPS | the fastest path; a phone on cellular |
+| **A. Phone link, no domain** (`serve`, then `phone`) | nothing else | phones you pair, end-to-end encrypted through a relay | the fastest path; a phone on cellular |
 | **B. Your own domain** (Docker + Caddy) | a domain name, ports 80/443 | anyone with a pairing code, over HTTPS | a permanent address you own |
 | **C. Your Tailscale network** (`serve --tailscale`) | Tailscale on the server and your devices | only your tailnet | the most private; nothing public at all |
 
@@ -68,23 +68,17 @@ Run the `npx` commands and engine sign-ins below in this account. Keep a separat
 administrator shell for system packages and systemd. If you already signed in as
 root, sign in again as `alca`; those accounts have different homes and credentials.
 
-## Path A: a public address with one command
+## Path A: a phone link
 
-No domain, no proxy, no open port. The server gets an address like `https://c-7f3a9c.alca-corp.me` through a Cloudflare tunnel; only traffic through the tunnel reaches it, and that traffic still has to pair.
+No domain, no proxy, no open port. The server connects outward to a relay, and your phone meets it there with an end-to-end encrypted link.
 
 ```sh
-npx alcabots setup          # once: choose AI access, connect, and choose a model
-npx alcabots login          # once: an emailed code signs this machine in and reserves its address
-npx alcabots serve --tunnel # runs the server there and prints the pairing link with a QR code
+npx alcabots setup   # once: choose AI access, connect, and choose a model
+npx alcabots serve   # keep it running
+npx alcabots phone   # in another terminal: prints a code for your phone's browser
 ```
 
-`setup` connects an AI provider; it is separate from the AlcaBots account.
-Use Codex's device-code option over SSH, or enter a hidden API key for a
-chat-only connection. More engines can be added later. See [CLI setup](cli-onboarding.md).
-
-`login` asks for your email, sends an 8-digit code, and prints the address it reserved for this machine. `serve --tunnel` downloads `cloudflared` on the first run (a pinned version with a verified digest, into `~/.alcabots`), starts the server, connects the tunnel, and after a few seconds prints `tunnel: live at https://…`. Leave it running; see "Keep it running" for a service.
-
-The account credentials live in `~/.alcabots/tunnel-account.json`, readable only by your user. `npx alcabots logout` releases the address.
+Use Codex's device-code option over SSH, or enter a hidden API key for a chat-only connection. More engines can be added later. See [CLI setup](cli-onboarding.md) and [Use AlcaBots from your phone](phone-link.md).
 
 Skip to "Install and sign the engines in".
 
@@ -210,7 +204,7 @@ User=alca
 WorkingDirectory=/home/alca
 Environment=HOME=/home/alca
 Environment=PATH=/home/alca/.local/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/alca/.local/bin/alcabots serve --tunnel --no-pair
+ExecStart=/home/alca/.local/bin/alcabots serve --no-pair
 Restart=always
 RestartSec=5
 
@@ -220,10 +214,10 @@ WantedBy=multi-user.target
 
 ```sh
 sudo systemctl daemon-reload && sudo systemctl enable --now alcabots
-journalctl -u alcabots -f            # the server's log, including "tunnel: live at …"
+journalctl -u alcabots -f            # the server's log
 ```
 
-Use `--tailscale` instead of `--tunnel` for path C. `--no-pair` skips printing a code at every restart; mint one with `npx alcabots pair` when you need it. Docker (path B) restarts on its own (`restart: unless-stopped`).
+Add `--tailscale` for path C. `--no-pair` skips printing a code at every restart; mint one with `npx alcabots pair` when you need it. Docker (path B) restarts on its own (`restart: unless-stopped`).
 
 Adjust the account, home, and PATH if yours differ; Node 24 must be available on
 that PATH. The service runs the installed CLI directly, so a restart uses the
@@ -242,7 +236,7 @@ same release without an npm install prompt or an implicit upgrade.
 
   Check that installation succeeded before starting. A service restart by itself
   does not update the installed package. For foreground `npx` usage, specify the
-  desired release as `npx --yes alcabots@X.Y.Z serve --tunnel`.
+  desired release as `npx --yes alcabots@X.Y.Z serve`.
 - **Path B:** `cd AlcaBots/deploy && docker compose pull alca && docker compose up -d`.
 
 Routines and queued work survive a restart. A teammate turn running at that moment runs again once at the next start, told to check what it already did, and the bot that asked for it is told. A person's own turn and a running routine are not run again: the conversation says it was interrupted. Update between runs where you can.
@@ -295,10 +289,6 @@ Read this before putting anything else in front of the server.
 - The one thing a stranger can read is `/.well-known/alcabots/environment` (the server's id, label, version, capabilities) and `/api/health` (only the app name). Everything else answers "pair this device".
 
 ## Troubleshooting
-
-**`serve --tunnel` says "no account on this machine yet".** Run `npx alcabots login` on this machine first; the credentials are per machine.
-
-**The tunnel stays on "retrying".** The server is running and usable locally; the public hop is not verified yet. Wait a minute (Cloudflare needs a moment on a fresh address), then check `journalctl`/the terminal for the reason. If it never comes up, `npx alcabots logout && npx alcabots login` issues a fresh address.
 
 **Path B: the page never loads or shows a certificate error.** Caddy could not get a certificate. Check that the name resolves to the server and that ports 80 and 443 are open; `docker compose logs caddy` shows the reason.
 

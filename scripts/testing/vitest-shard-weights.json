@@ -1,7 +1,5 @@
 {
   "darwin": {
-    "companion/test/mdns.test.ts": 5,
-    "companion/test/proxy.test.ts": 6,
     "electron/cua-launch.test.mjs": 9,
     "evals/evals.test.ts": 71,
     "evals/runners/run-skill-bench.test.ts": 18,
@@ -278,8 +276,6 @@
     "src/components/ComputerPanel.takeover.test.ts": 6
   },
   "linux": {
-    "companion/test/mdns.test.ts": 5,
-    "companion/test/proxy.test.ts": 6,
     "evals/evals.test.ts": 74,
     "evals/runners/run-skill-bench.test.ts": 20,
     "scripts/mascot-bodies/halloween.test.mjs": 8,
@@ -389,7 +385,6 @@
     "server/cloud-team-open-reach.e2e.test.ts": 11,
     "server/cloud-team-owners.e2e.test.ts": 14,
     "server/cloud-team-people.e2e.test.ts": 7,
-    "server/cloud-team-phones.e2e.test.ts": 9,
     "server/cloud-team-pictures.e2e.test.ts": 7,
     "server/cloud-team-preference.e2e.test.ts": 6,
     "server/cloud-team-private.e2e.test.ts": 12,
@@ -522,8 +517,6 @@
     "server/peer-approval.e2e.test.ts": 5,
     "server/person-stop.e2e.test.ts": 5,
     "server/phone-claim.e2e.test.ts": 6,
-    "server/phones-member-routine.e2e.test.ts": 13,
-    "server/phones.e2e.test.ts": 8,
     "server/place-view.e2e.test.ts": 24,
     "server/post-to-room.test.ts": 12,
     "server/postiz.e2e.test.ts": 5,
@@ -619,8 +612,6 @@
     "src/components/ComputerPanel.takeover.test.ts": 5
   },
   "win32": {
-    "companion/test/mdns.test.ts": 5,
-    "companion/test/proxy.test.ts": 7,
     "evals/evals.test.ts": 81,
     "evals/golden/golden.test.ts": 5,
     "evals/runners/run-skill-bench.test.ts": 25,

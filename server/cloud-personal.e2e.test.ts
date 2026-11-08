@@ -295,7 +295,7 @@ it("no route mints or accepts a session without admin scope: pairing, email sign
   }
   const own = await api("POST", "/api/auth/pairing", { token: owner, body: { label: "My phone", scopes: ["admin", "client"] } });
   expect(own.status).toBe(200);
-  const paired = await api("POST", "/api/pair", { body: { credential: own.body.credential, deviceName: "My phone" } });
+  const paired = await api("POST", "/api/auth/pair", { body: { code: own.body.code, label: "My phone" } });
   expect(paired.status, JSON.stringify(paired.body)).toBe(200);
 }, 30_000);
 

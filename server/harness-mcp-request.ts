@@ -2,27 +2,25 @@
 // stdio proxy an engine starts and the HTTP endpoint an engine reaches both answer through it.
 import { DATA_INSTRUCTIONS } from "./data/instructions.ts";
 import { EMAIL_INSTRUCTIONS } from "./email/instructions.ts";
-import { PHONE_INSTRUCTIONS, PHONE_RECOVERY } from "./phones/instructions.ts";
 import { HARNESS_PROXY_TIMEOUT_MS, HARNESS_PROXY_TIMEOUTS_MS } from "./harness-budget.ts";
 import { capToolListResult } from "./tool-count-limit.ts";
 
 export const MAX_INPUT_BYTES = 1_048_576;
 export const MAX_OUTPUT_BYTES = 16_777_216;
 export type RpcId = string | number | null;
-export type HarnessMcpKind = "browser" | "computer" | "data" | "email" | "device";
+export type HarnessMcpKind = "browser" | "computer" | "data" | "email";
 
-const NAMES: Record<HarnessMcpKind, string> = { browser: "Browser", computer: "Cloud computer", data: "Data", email: "Email", device: "Phone" };
-const INSTRUCTIONS: Partial<Record<HarnessMcpKind, string>> = { data: DATA_INSTRUCTIONS, email: EMAIL_INSTRUCTIONS, device: PHONE_INSTRUCTIONS };
+const NAMES: Record<HarnessMcpKind, string> = { browser: "Browser", computer: "Cloud computer", data: "Data", email: "Email" };
+const INSTRUCTIONS: Partial<Record<HarnessMcpKind, string>> = { data: DATA_INSTRUCTIONS, email: EMAIL_INSTRUCTIONS };
 const RECOVERY: Record<HarnessMcpKind, string> = {
   browser: " This failure does not establish that all browsers are unavailable. Inspect available connections with select_computer if that tool is present. Keep the requested computer and account; do not bypass a permission refusal or human takeover, and do not repeat an uncertain action without checking its result.",
   computer: " Keep working on the assigned cloud computer only; do not bypass a person's control of it, and take a fresh screenshot before repeating an action whose result is uncertain.",
   data: " The tables already loaded are unchanged; check with data_describe or SHOW TABLES before repeating a load, and do not repeat a statement whose result is uncertain.",
   email: " A send may or may not have gone; look in the Sent folder (EMAIL_SEARCH_MESSAGES) before repeating one.",
-  device: PHONE_RECOVERY,
 };
 
 export function parseHarnessMcpKind(value: unknown): HarnessMcpKind | null {
-  return value === "browser" || value === "computer" || value === "data" || value === "email" || value === "device" ? value : null;
+  return value === "browser" || value === "computer" || value === "data" || value === "email" ? value : null;
 }
 
 /** Node's fetch (undici) rejects with the socket error as its `cause`: refused before anything was sent, reset or closed after. */

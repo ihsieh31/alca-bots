@@ -3,7 +3,7 @@ import { schedulePlace } from "./RoutineScheduleNote";
 
 describe("where a routine runs, said where it is scheduled", () => {
   const free = { kind: "free" } as const, paid = { kind: "paid", label: "Pro", checking: false } as const;
-  it("My Cloud runs it 24/7; another server, a browser or companion mode while that server runs", () => {
+  it("My Cloud runs it 24/7; another server, a browser while that server runs", () => {
     expect(schedulePlace({ cloudHome: true, local: false, plan: null, ready: false, offersAllowed: true })).toEqual({ kind: "cloud" });
     expect(schedulePlace({ cloudHome: false, local: false, plan: free, ready: false, offersAllowed: true })).toEqual({ kind: "server" });
   });

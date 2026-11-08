@@ -1,5 +1,4 @@
-// Types for control-plane-client.mjs as the headless server uses it
-// (server/tunnel.ts). Keep in step with the implementation.
+// Types for control-plane-client.mjs as the headless server uses it.
 export declare class ControlPlaneError extends Error {
   readonly code: string;
   readonly status: number;
@@ -10,6 +9,7 @@ export declare class ControlPlaneError extends Error {
 }
 
 export declare function normalizeControlPlaneURL(value: unknown): string;
+export declare function resolveControlPlaneURL(options: { isPackaged: boolean; environment?: Record<string, string | undefined> }): string;
 export declare function normalizeAccountEmail(value: unknown): string;
 
 export interface ControlPlaneUser {

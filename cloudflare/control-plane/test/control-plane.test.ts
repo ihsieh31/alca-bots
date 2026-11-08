@@ -294,7 +294,6 @@ describe("control-plane migrations and health", () => {
         providerRejectedAt: null,
         reclaim: { mode: "on", pending: 0 },
       },
-      relayAdoption: { e2eDevices: 0, legacyDevices: 0, installs: 0 },
     });
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("access-control-allow-origin")).toBeNull();
@@ -392,14 +391,6 @@ describe("control-plane migrations and health", () => {
       ALCA_TUNNEL_RECLAIM: env.ALCA_TUNNEL_RECLAIM,
       ALCA_TUNNEL_OFFLINE_RECLAIM_DAYS: env.ALCA_TUNNEL_OFFLINE_RECLAIM_DAYS,
       ALCA_CLEANUP_SWEEP_LIMIT: env.ALCA_CLEANUP_SWEEP_LIMIT,
-      RELAY_NODES: env.RELAY_NODES,
-      RELAY_NODES_AMERICAS: env.RELAY_NODES_AMERICAS,
-      RELAY_TOKEN_KID: env.RELAY_TOKEN_KID,
-      RELAY_ROLLOUT_PERCENT: env.RELAY_ROLLOUT_PERCENT,
-      RELAY_ALLOW_INSTALLATIONS: env.RELAY_ALLOW_INSTALLATIONS,
-      RELAY_DISABLED: env.RELAY_DISABLED,
-      RELAY_CAPABLE_MIN_VERSION: env.RELAY_CAPABLE_MIN_VERSION,
-      RELAY_TOKEN_SIGNING_KEY: "",
       BETTER_AUTH_SECRET: "too-short",
     };
     const request = new Request(`${BASE_URL}/healthz`);

@@ -22,7 +22,7 @@ afterEach(async () => {
 });
 
 async function serve(keptAttachments: () => ReadonlySet<string> | null): Promise<string> {
-  const deps = { store: new Store(() => sonnet), viewerFor: () => ({}), visibleTo: () => ({ bot: () => true, group: () => true }), workspaceAccess: () => null, desktopMutationToken: () => undefined, companionMutationToken: () => undefined, cliOwnerToken: () => undefined, userName: () => "Milind", keptAttachments } as unknown as ThreadRouteDeps;
+  const deps = { store: new Store(() => sonnet), viewerFor: () => ({}), visibleTo: () => ({ bot: () => true, group: () => true }), workspaceAccess: () => null, desktopMutationToken: () => undefined, cliOwnerToken: () => undefined, userName: () => "Milind", keptAttachments } as unknown as ThreadRouteDeps;
   const routes = [createThreadRoutes(deps)];
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");

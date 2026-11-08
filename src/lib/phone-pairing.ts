@@ -11,18 +11,17 @@ export type PhonePairingTarget = "computer" | "cloud" | "server";
 export const phonePairingSettingsAction = (): Extract<Action, { type: "toggleAppSettings" }> => ({
   type: "toggleAppSettings",
   open: true,
-  section: "companion",
+  section: "phone",
   phonePairing: true,
 });
 
 export function currentPhonePairingTarget(cloudHome: boolean): PhonePairingTarget {
-  const abot = typeof window === "undefined" ? undefined : (window.abot as { companion?: unknown; remoteClient?: { active?: boolean } } | undefined);
-  return phonePairingTarget({ companion: Boolean(abot?.companion), remoteClient: abot?.remoteClient?.active === true, cloudHome });
+  return phonePairingTarget({ desktopApp: typeof window !== "undefined" && Boolean(window.abot?.environments), cloudHome });
 }
 
-export function phonePairingTarget(input: { companion: boolean; remoteClient: boolean; cloudHome: boolean }): PhonePairingTarget {
+export function phonePairingTarget(input: { desktopApp: boolean; cloudHome: boolean }): PhonePairingTarget {
   if (input.cloudHome) return "cloud";
-  return input.companion && !input.remoteClient ? "computer" : "server";
+  return input.desktopApp ? "computer" : "server";
 }
 
 export interface PhonePairingAccess {

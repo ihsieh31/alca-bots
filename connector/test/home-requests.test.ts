@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { createConnection, type AddressInfo } from "node:net";
 import type { Duplex } from "node:stream";
@@ -114,8 +113,4 @@ describe("the Admin's requests to the home", () => {
     expect(() => box.openStream()).toThrow("yamux: computer_open");
   });
 
-  it("is the phone relay's yamux profile, byte for byte", () => {
-    const relay = readFileSync(new URL("../../companion/src/e2e/yamux.ts", import.meta.url), "utf8");
-    expect(readFileSync(new URL("../src/yamux.ts", import.meta.url), "utf8")).toBe(relay);
-  });
 });

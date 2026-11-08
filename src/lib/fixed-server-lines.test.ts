@@ -15,8 +15,6 @@ import { parseConfigPatchForPerson } from "../../server/decider/config-errors";
 import { engineFailure, plainFailure } from "../../server/drivers/engine-errors";
 import { inboxWhy, inboxNoteWords } from "../../server/host/inbox-words";
 import { briefCard } from "../../server/host/brief-cards";
-import { phoneWriteSummary } from "../../server/phones/summary";
-import { phoneAccess } from "../../server/phones/access";
 import { exportedGoalWords, restoredGoalWords } from "../../server/team-backup-words";
 import { createGoalCards } from "../../server/host/goal-cards";
 import { GoalRunCard } from "../components/GoalRunCard";
@@ -220,27 +218,6 @@ describe("inbox reasons on the brief", () => {
   });
 });
 
-describe("phone summaries", () => {
-  it("keeps tool names as data but words fixed decisions and known writes", () => {
-    const allowed = phoneAccess({ id: "b", name: "Bot" }, { calendar: "full" }, "PHONE_CREATE_EVENT").rows[0]!;
-    const denied = phoneAccess({ id: "b", name: "Bot" }, {}, "PHONE_CREATE_EVENT").rows[0]!;
-    const written = phoneWriteSummary("PHONE_CREATE_EVENT", "iPhone");
-    expect(written.summary).toBe("Create event on iPhone");
-    setLocale("pt-br");
-    expect(routineLineText(allowed.summaryCode, allowed.summary!, allowed.summaryParams)).toBe("permitido: PHONE_CREATE_EVENT");
-    expect(routineLineText(denied.summaryCode, denied.summary!, denied.summaryParams)).toBe("Sem permissão para acessar o Calendário no celular");
-    expect(routineLineText(written.summaryCode, written.summary, written.summaryParams)).toBe("Criar evento em iPhone");
-    expect(routineLineText(written.summaryCode, "Later summary", written.summaryParams)).toBe("Later summary");
-  });
-
-  it("fits long phone names and removes secrets before truncating them", () => {
-    const written = phoneWriteSummary("PHONE_CREATE_EVENT", `Device ${secret} ${"x".repeat(300)}`);
-    expect(written.summary.length).toBeLessThanOrEqual(240);
-    expect(JSON.stringify(written)).not.toContain(secret);
-    setLocale("pt-br");
-    expect(routineLineText(written.summaryCode, written.summary, written.summaryParams)).toMatch(/^Criar evento em Device /);
-  });
-});
 
 describe("exported goal history", () => {
   it.each(["constructor", "__proto__", "serverError.owner.choose", "chat.notice.approve", "chat.notice.exportedGoal.fake"])("drops the non-goal code %s before re-export", (textCode) => {

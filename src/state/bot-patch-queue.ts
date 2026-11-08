@@ -47,7 +47,6 @@ export type BotUpdatePatch = Partial<
   computer?: Bot["computer"] | null;
   connectorTools?: Bot["connectorTools"] | null;
   connectorScopes?: Bot["connectorScopes"] | null;
-  phoneApps?: Bot["phoneApps"] | null;
   /** null: talks to every bot again. */
   peers?: string[] | null;
   /** The server's proof the local-auto warning was shown: wire-only, never folded into bot state. */
@@ -62,14 +61,13 @@ export type BotUpdatePatch = Partial<
 
 export type BotStatePatch = Omit<
   BotUpdatePatch,
-  "computer" | "connectorTools" | "connectorScopes" | "phoneApps" | "peers" | "acknowledgeLocalAuto" | "applyToAllThreads" | "keepThreadModels" | "threadId" | "mainThreadChoice"
+  "computer" | "connectorTools" | "connectorScopes" | "peers" | "acknowledgeLocalAuto" | "applyToAllThreads" | "keepThreadModels" | "threadId" | "mainThreadChoice"
 > & {
   mainThreadId?: string;
   peers?: string[];
   computer?: Bot["computer"];
   connectorTools?: Bot["connectorTools"];
   connectorScopes?: Bot["connectorScopes"];
-  phoneApps?: Bot["phoneApps"];
 };
 
 interface BotPatchQueueEntry {
@@ -127,7 +125,6 @@ const stateOverlay = (patch: BotUpdatePatch): BotStatePatch => {
     computer,
     connectorTools,
     connectorScopes,
-    phoneApps,
     peers,
     ...fields
   } = patch;
@@ -138,8 +135,6 @@ const stateOverlay = (patch: BotUpdatePatch): BotStatePatch => {
   else if (connectorTools !== undefined) normalized.connectorTools = connectorTools;
   if (connectorScopes === null) normalized.connectorScopes = undefined;
   else if (connectorScopes !== undefined) normalized.connectorScopes = connectorScopes;
-  if (phoneApps === null) normalized.phoneApps = undefined;
-  else if (phoneApps !== undefined) normalized.phoneApps = phoneApps;
   if (peers !== undefined) normalized.peers = peers ?? undefined;
   // A pending choice shows as the bot's main thread, so a broadcast during the save does not revert it.
   if (typeof mainThreadChoice === "string") normalized.mainThreadId = mainThreadChoice;

@@ -265,10 +265,10 @@ export async function signInCloudSession({ origin, mine, pair, fetch: fetchImpl 
 /** The one rule for "this page is my Cloud".
  *
  * @param {{ account: { homeTarget(): { origin: string } | null, state(): { account?: { id: string } } } | null,
- *   remembered: { accountId: string, origin: string } | null, remoteAccess: unknown }} known
+ *   remembered: { accountId: string, origin: string } | null }} known
  * @returns {string | null} */
-export function myCloudOrigin({ account, remembered, remoteAccess }) {
-  if (remoteAccess || !account) return null;
+export function myCloudOrigin({ account, remembered }) {
+  if (!account) return null;
   const verified = account.homeTarget()?.origin;
   if (verified) return verified;
   const accountId = account.state()?.account?.id;

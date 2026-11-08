@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 import { LINK_DEFAULT_ICE_SERVERS, type LinkAccess, type LinkDeviceView, type LinkStatus } from "../../shared/link";
 import { t } from "@/lib/i18n";
+import { revealPhonePairing } from "@/lib/phone-pairing";
 import { api } from "@/state/api";
 import { Card, Switch } from "./SettingsPrimitives";
 
@@ -27,7 +28,9 @@ export function serviceLabel(status: LinkStatus["status"]): string {
 
 const secondsLeft = (expiresAt: string, now: number) => Math.max(0, Math.round((Date.parse(expiresAt) - now) / 1000));
 
-export function PhoneAccessSection() {
+/** `focusRequest` counts the requests to show pairing: each new one scrolls here and focuses the connect button. */
+export function PhoneAccessSection({ focusRequest = 0 }: { focusRequest?: number }) {
+  const root = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<LinkStatus | null>(null);
   const [access, setAccess] = useState<LinkAccess>("full");
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +63,11 @@ export function PhoneAccessSection() {
     }
   };
 
+  const loaded = status !== null;
+  useEffect(() => {
+    if (focusRequest && loaded) revealPhonePairing(root.current);
+  }, [focusRequest, loaded]);
+
   if (!status) return null;
   const on = status.enabled;
   const pairing = status.pairing;
@@ -69,6 +77,7 @@ export function PhoneAccessSection() {
   const field = "mt-1 w-full rounded-md border border-hairline/40 bg-inset px-3 py-2 text-[13px] text-ink outline-none focus:border-accent";
 
   return (
+    <div ref={root} tabIndex={-1} className="outline-none">
     <Card title={t("phone.settings.title")} subtitle={t("phone.settings.subtitle")}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -189,5 +198,6 @@ export function PhoneAccessSection() {
 
       {error || status.error ? <p role="alert" className="mt-3 text-[12px] text-danger">{error ?? status.error}</p> : null}
     </Card>
+    </div>
   );
 }

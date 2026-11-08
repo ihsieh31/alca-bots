@@ -448,12 +448,6 @@ function preload(origin, { home = false, activation = false, pairedElsewhere = f
   return { bridge, invoked, synced, tell };
 }
 
-test("My Cloud's page in the app is the Cloud's own page, never a remote client: only a desktop paired to another computer is one", () => {
-  assert.equal(preload(CLOUD, { home: true }).bridge.remoteClient, undefined, "a Cloud's own page isn't told it is remote at all");
-  assert.equal(preload(LOCAL).bridge.remoteClient?.active, false);
-  assert.equal(preload(LOCAL, { pairedElsewhere: true }).bridge.remoteClient?.active, true);
-});
-
 test("My Cloud's own page, once it is home, gets this app's chat links, diagnostics and its session renewal; any other server's page doesn't", async () => {
   const keys = ["home", "onChatLink", "onPackageInstall", "exportDiagnostics", "openLogsFolder"];
   const home = preload(CLOUD, { home: true });
@@ -511,7 +505,7 @@ function pageIpc(overrides = {}) {
   const context = vm.createContext({
     ipcMain: { handle: (channel, handler) => handlers.set(channel, handler), on: () => {} },
     senderIsLocal: localOrigin.isLocalSender, workspaceSenderAllowed: environments.workspaceSenderAllowed, cloudPageSenderAllowed, otherOwnClouds,
-    activeEnvironment: environments.activeEnvironment, rendererOrigin: () => LOCAL, desktopRemoteAccess: false,
+    activeEnvironment: environments.activeEnvironment, rendererOrigin: () => LOCAL,
     mainWindow: { isDestroyed: () => false, webContents: cloudContents },
     environmentsState: { environments: [{ id: "cloud", name: "My Cloud", origin: CLOUD }], activeId: "cloud" },
     cloudAccount: { homeTarget: () => ({ origin: CLOUD }), state: () => account, isOwnCloud: (origin) => origin === CLOUD }, cloudPlanSnapshot, installCloudPlanIpc, myCloudOrigin, rememberedHome: null,

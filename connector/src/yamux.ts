@@ -1,5 +1,5 @@
 // The yamux profile carried inside the records: one frame per record, phone-opened streams only, 2 MiB windows.
-// Wire spec: companion/src/e2e/README.md, "Multiplexing". This module does no I/O, so every rule is testable.
+// This module does no I/O, so every rule is testable.
 
 export const VERSION = 0;
 export const TYPE = { data: 0, windowUpdate: 1, ping: 2, goAway: 3 } as const;

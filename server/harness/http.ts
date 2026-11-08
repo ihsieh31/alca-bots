@@ -1,8 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { sendTunnelJson } from "./tunnel-gzip.ts";
-
-export { gzipTunnelReplies } from "./tunnel-gzip.ts";
 
 const jsonHooks = new WeakMap<ServerResponse, (body: unknown) => unknown>();
 const parsedBodies = new WeakMap<IncomingMessage, unknown>();
@@ -30,7 +27,6 @@ export function json(res: ServerResponse, status: number, body: unknown) {
   const hook = jsonHooks.get(res);
   const data = JSON.stringify(hook ? hook(body) : body);
   const headers = { "content-type": "application/json" };
-  if (sendTunnelJson(res, status, headers, data)) return;
   res.writeHead(status, headers);
   res.end(data);
 }

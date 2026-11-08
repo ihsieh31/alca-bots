@@ -22,7 +22,6 @@ export const STATUS_INTERVAL_MS = 30_000;
 export const GOODBYE_MS = 4_000;
 const SOCKET_OPEN = 1;
 const MAX_ERRORS = 5;
-const MAX_REVOKED_DEVICES = 200;
 /** GPT-Live's own delegation of a spoken yes/no may land this far past the decision on the session timeline. */
 const DECISION_ECHO_MS = 3_000;
 
@@ -146,7 +145,6 @@ const CLOSE_REASONS: Record<string, LiveEndReason> = {
 export class LiveCallController {
   private readonly deps: LiveCallDeps;
   private call: Call | null = null;
-  private readonly revokedDevices = new Set<string>();
 
   constructor(deps: LiveCallDeps) {
     this.deps = deps;
@@ -167,7 +165,6 @@ export class LiveCallController {
       }
     }
     if (this.call && this.call.state.status !== "ended") throw new LiveCallBusyError({ ...this.call.state });
-    if (input.device && this.revokedDevices.has(input.device)) throw new LiveCallSignedOutError();
     const key = settings.key.trim();
     const endpoint = settings.endpoint;
     if (settings.setupProblem || !key || !endpoint) throw new LiveSessionError(settings.setupProblem || LIVE_NEEDS_KEY, 409);
@@ -221,14 +218,6 @@ export class LiveCallController {
     if (!call || call.state.status === "ended") return;
     this.command(call, { type: "session.close" });
     this.finish(call, "shutdown");
-  }
-
-  deviceRevoked(deviceId: string): LiveCallState | null {
-    this.revokedDevices.add(deviceId);
-    if (this.revokedDevices.size > MAX_REVOKED_DEVICES) this.revokedDevices.delete(this.revokedDevices.values().next().value!);
-    const call = this.call;
-    if (!call || call.device !== deviceId) return null;
-    return this.endSignedOut(call, null, LIVE_COPY.unpaired) ? { ...call.state } : null;
   }
 
   sessionRevoked(sessionId: string): LiveCallState | null {

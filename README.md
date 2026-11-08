@@ -279,7 +279,6 @@ See [Run AlcaBots from scripts and CI](docs/headless-cli.md).
 | **Ubuntu 24.04** (x64) | [AlcaBots-amd64.deb](https://github.com/ihsieh31/alca-bots/releases/latest/download/AlcaBots-amd64.deb) · [AlcaBots.AppImage](https://github.com/ihsieh31/alca-bots/releases/latest/download/AlcaBots.AppImage) | Install the `.deb` with APT (recommended), or make the AppImage executable and run it. Beta; GNOME is the supported desktop. |
 
 See the [Ubuntu Desktop guide](docs/linux-desktop.md) for installation, capabilities, and troubleshooting.
-Any desktop build can also pair as a client to another Windows, macOS, or Ubuntu host over Tailscale; see [desktop-to-desktop companion mode](docs/desktop-companion.md).
 
 
 **From source:**
@@ -423,18 +422,9 @@ a model, and optionally connect a phone. Next time, the same command reuses your
 saved setup and opens AlcaBots on this computer. Keep the terminal open; Ctrl-C stops
 the server, not your saved work. Use `--no-open` to skip opening the browser.
 
-Phone access is optional and defaults to skipping. Choose an explicitly
-approved managed public HTTPS endpoint protected by pairing, an existing
-Tailscale connection, or your own HTTPS reverse proxy. Both native apps pair from
-this flow: the QR is an app link when you are connecting an Android phone, and the
-iOS app takes either that or the web link. A browser works on either phone. A phone
-cannot use a localhost link. `--local` ignores saved remote access for one launch;
-`--no-pair` suppresses phone prompts and invitations but does not disable a saved
-remote connection.
-
-The web UI can also be installed from Safari or Chrome as a standalone phone
-app. See [Install the phone web app](docs/phone-web-app.md) for Home Screen
-installation and pairing.
+Phones use a web page, with no app to install: turn on phone access in Settings, or run
+`alcabots phone` on a machine with no screen, and scan the code. The connection is end-to-end
+encrypted through a relay you can host yourself. See [Use AlcaBots from your phone](docs/phone-link.md).
 
 Run `alcabots setup` to reconfigure without resetting bots or conversations;
 the saved model default applies only to new bots. Native setup confirms provider
@@ -444,9 +434,8 @@ See the [short setup guide](docs/cli-onboarding.md) for account differences,
 phone choices, credential storage, and cancellation.
 
 For a background service on a VPS or an always-on computer, use
-`npx alcabots serve` with explicit remote options: `--tunnel` after
-`npx alcabots login` for a managed public address, `--tailscale` for your
-tailnet, or the Docker stack for your own domain. These are separate from
+`npx alcabots serve` with explicit remote options: `--tailscale` for your
+tailnet, or the Docker stack for your own domain. `alcabots phone` needs neither. These are separate from
 AI-provider sign-in. Devices pair once with a short code. The deployment guide is
 [docs/deploy-vps.md](docs/deploy-vps.md); the reference is
 [docs/self-hosting.md](docs/self-hosting.md).

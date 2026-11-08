@@ -265,9 +265,9 @@ host → 裝置（事件，頻道 `http`）：
 - [x] 1.3 host 生命週期
 - [x] 1.4 HTTP bridge
 - [x] 1.5 routes 與設定
-- [ ] 1.6 手機端
-- [ ] 1.7 桌面端 UI
-- [ ] 1.8 撤除舊連線
+- [x] 1.6 手機端
+- [x] 1.7 桌面端 UI
+- [x] 1.8 撤除舊連線
 - [ ] 1.9 真機檢查表
 - [ ] 第二階段
 - [ ] 第三階段
@@ -275,7 +275,22 @@ host → 裝置（事件，頻道 `http`）：
 
 ### 交接筆記
 
-（接手時需要知道、但還不在程式碼裡的事寫在這裡。）
+- 無螢幕主機：`alcabots phone [--daily]`（`server/cli-phone.ts`）開啟手機存取並印 QR 碼。
+- `LinkClient.moveGraceMs`：手機用 30 秒，讓中繼換直連時舊連線上的請求能走完。
+- 端對端驗證：`pnpm build:phone && PLAYWRIGHT_CORE=<playwright-core 路徑> SMOKE_SHOTS=<截圖目錄> node scripts/smoke-phone-link.mjs [--direct]`。
+- 組織政策 `remoteAccess` 關閉時：擋 `POST /api/link/pairings`，也擋已配對手機的每個請求（bridge 的 `remoteAccessRefusal`）。
+- 使用者文件：`docs/phone-link.md`。
+- 全套測試還剩 4 個在這項工作之前就失敗的項目，都不是手機連線造成的：`server/saved-steps/store.test.ts`（refuses a bot id…）、`src/lib/schedule-label.test.ts`、`src/lib/transcript-derivations.test.ts`、`src/components/SidebarThreadRow.test.ts`（後三個是機器語系為中文、測試預期英文）。`server/outbound-hold.test.ts` 高負載時偶爾在清暫存目錄失敗（ENOTEMPTY），單獨跑會過。
+- 全套測試要用 `ALCA_VITEST_WORKERS=6 pnpm exec vitest run --reporter=dot`，預設一次只跑一個檔案，要跑很久。
+
+**1.8 刻意留下、之後再清（都無害，但都是死碼或多餘資產）：**
+
+- 前端 `window.abot?.remoteClient`：本機頁面的 preload 一律提供 `{ active: false }`，別台機器的頁面沒有這個物件。`localDesktopPage()` 靠它判斷「這是本機頁面」，所以**不能移除**。`active` 不會再是 true，散在 `src/` 的 `remoteClient?.active` 分支是死碼，可逐處刪除，但要保留本機判斷。
+- 安裝包仍帶 `cloudflared`（`electron-builder.yml`、`scripts/after-pack.mjs`、`scripts/verify-linux-package.mjs`、release 工作流程）。Docker 映像的雲端主機 tunnel 還在用同一份 pin（`scripts/prepare-cloudflared.mjs`）。要實際打包驗證才能拆。
+- `deviceMcp` / `integrations.device` / `DEVICE_PROXY_TIMEOUT_MS`：舊手機裝置工具的管線，已無來源。
+- `cloudflare/control-plane` 的 managed endpoint（`endpoints.ts`、`tunnel-*.ts`）：relay 與 push 已刪，但這段留著，因為線上若有舊 endpoint 需要排程回收。刪之前要先確認線上狀態並問使用者。`0012_relay.sql`、push 資料表也留著，改 schema 要部署。
+- `scripts/gen-app-fixtures.ts`、`gen-mascot-bodies.ts`、`gen-halloween-bodies.ts` 還會寫 `ios/`、Android 路徑，這個 repo 沒有這些目錄。
+- `.oss-scanner/threat_model.md` 與 `docs/verification/*`、`docs/design/*` 仍提到 companion，第四階段更新 threat model 時一起處理。
 
 - 設定不放 config，改放 `<DATA_DIR>/link/settings.json`，同目錄有 `identity.json`、`devices.json`（權限 0600，含手機的 session token）。
 - `SessionRegistry.onSessionRevoked` 的 listener 多了第二個參數 `why`：過期只重發 session，被撤銷才視同移除手機。

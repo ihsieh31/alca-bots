@@ -32,22 +32,18 @@ afterEach(() => {
 
 describe("where Connect your phone pairs", () => {
   it("pairs with this computer only in the desktop app's own window", () => {
-    expect(phonePairingTarget({ companion: true, remoteClient: false, cloudHome: false })).toBe("computer");
-    expect(phonePairingTarget({ companion: false, remoteClient: false, cloudHome: false })).toBe("server");
-    expect(phonePairingTarget({ companion: true, remoteClient: true, cloudHome: false })).toBe("server");
+    expect(phonePairingTarget({ desktopApp: true, cloudHome: false })).toBe("computer");
+    expect(phonePairingTarget({ desktopApp: false, cloudHome: false })).toBe("server");
   });
 
   it("pairs with the Cloud wherever the window shows the person's own Cloud", () => {
-    expect(phonePairingTarget({ companion: false, remoteClient: false, cloudHome: true })).toBe("cloud");
-    expect(phonePairingTarget({ companion: true, remoteClient: true, cloudHome: true })).toBe("cloud");
-    expect(phonePairingTarget({ companion: true, remoteClient: false, cloudHome: true })).toBe("cloud");
+    expect(phonePairingTarget({ desktopApp: false, cloudHome: true })).toBe("cloud");
+    expect(phonePairingTarget({ desktopApp: true, cloudHome: true })).toBe("cloud");
   });
 
   it("reads the window's bridges", () => {
-    vi.stubGlobal("window", { abot: { companion: {} } });
+    vi.stubGlobal("window", { abot: { environments: {} } });
     expect(currentPhonePairingTarget(false)).toBe("computer");
-    vi.stubGlobal("window", { abot: { companion: {}, remoteClient: { active: true } } });
-    expect(currentPhonePairingTarget(false)).toBe("server");
     vi.stubGlobal("window", { abot: { cloudPlan: {} } });
     expect(currentPhonePairingTarget(true)).toBe("cloud");
     vi.stubGlobal("window", {});
@@ -119,7 +115,7 @@ describe("asking the server", () => {
 
 describe("opening Settings on the phone pairing", () => {
   it("is Remote access, asking for the pairing to be revealed", () => {
-    expect(phonePairingSettingsAction()).toEqual({ type: "toggleAppSettings", open: true, section: "companion", phonePairing: true });
+    expect(phonePairingSettingsAction()).toEqual({ type: "toggleAppSettings", open: true, section: "phone", phonePairing: true });
   });
 
   type Focusable = { focus: (options?: FocusOptions) => void };

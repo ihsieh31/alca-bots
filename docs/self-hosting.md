@@ -73,30 +73,8 @@ account setup and engine installation. Three ways to make the server reachable f
   own certificate and the link uses this machine's MagicDNS name, so only
   devices on your tailnet can reach it. Needs Tailscale signed in and HTTPS
   certificates enabled for the tailnet (admin console → DNS).
-- **A public address, no domain, no proxy, no open port:**
-
-  ```sh
-  npx alcabots login          # once: an emailed code signs this machine in
-  npx alcabots serve --tunnel
-  ```
-
-  `login` reserves an address like `https://c-….alca-corp.me` for this
-  machine; `serve --tunnel` connects it through a Cloudflare tunnel (the same
-  one the desktop app uses for its companion) and prints the pairing link at
-  that address. The first run downloads `cloudflared` (pinned version and
-  digest) into the data dir. Only traffic through the tunnel reaches the
-  server, and it still has to pair: the tunnel lands on a separate listener
-  the server treats as "through a proxy", never as the owner. That listener
-  also gzips JSON replies of 1 KB or more when the client accepts gzip, since
-  the hop to Cloudflare runs on this machine's upload uncompressed; the
-  loopback port never compresses. `npx alcabots logout` releases the
-  address. The account credentials live in
-  `~/.alcabots/tunnel-account.json` (mode 0600).
-  Starting it from a fleet or a container, where nobody can type an emailed
-  code? Set `ALCA_INSTALLATION_CREDENTIAL` to the installation credential the
-  fleet issued and skip `login`: the address and connector token are fetched
-  at every start and nothing is written to disk. A rejected credential stops
-  the start with a clear message rather than serving locally.
+- **A phone only, no domain, no proxy, no open port:** run `npx alcabots phone`.
+  See [Use AlcaBots from your phone](phone-link.md).
 - **Your own domain, still one command:**
 
   ```sh
@@ -185,9 +163,8 @@ address for **new server pairing links**. Removing it restores that fallback
 address, if any; neither action changes DNS, the proxy, bots, conversations, or
 existing sessions. A different browser origin needs its own pairing, so keep
 your original tab open until the new one works. The setting does not change
-`ALCA_WEBHOOK_PUBLIC_URL`, existing webhook URLs, or the desktop companion's
-managed connection. This feature is for self-hosted servers, not the desktop
-app's managed phone endpoint.
+`ALCA_WEBHOOK_PUBLIC_URL` or existing webhook URLs. This feature is for
+self-hosted servers.
 
 ## Docker (with HTTPS on your own domain)
 
@@ -272,7 +249,7 @@ ALCA_DATA_DIR="$HOME/.alcabots" ALCA_PORT=8799 \
 For something durable, let the CLI write the service for you:
 
 ```sh
-npx alcabots service install --domain alca.example.com   # or --tunnel, --tailscale, or nothing
+npx alcabots service install --domain alca.example.com   # or --tailscale, or nothing
 ```
 
 It renders a systemd unit (Linux) or a launchd agent (macOS) that runs the
@@ -430,9 +407,7 @@ on the server page. The app stays signed in across restarts. The workspace
 dropdown switches between **This computer** and saved hosted workspaces, without
 moving bots or chats. The **Server** menu and **Add Server from Copied Pairing
 Link…** remain available there too (on Windows and Linux press Alt to show
-the menu bar). The separate **Desktop companion** option in Settings is for
-the six-digit code from another desktop app, not a self-hosted server's
-12-character code. Older hosted UIs may not show the dropdown; use the native
+the menu bar). Older hosted UIs may not show the dropdown; use the native
 Server menu to switch back until the server is updated.
 
 After pairing, **Share this computer?** offers **Choose access** or **Not now**.
@@ -527,7 +502,7 @@ the `Sec-Fetch-Site` or `Sec-Fetch-Dest` header (every browser sends them to a
 loopback address, and a page cannot remove them), or a WebSocket handshake
 with an `Origin`, needs a session: a web page is not the person who owns the
 server, even when it runs on the same machine. Programs are unaffected: the
-CLI, scripts, `curl` and the companion send neither header.
+CLI, scripts and `curl` send neither header.
 
 So the first time you open the web UI in a browser on the server's own
 machine, it shows the sign-in page. `alcabots serve` and `alcabots pair`
@@ -839,50 +814,23 @@ with the desktop; clipboard edits sync automatically. The desktop fits the
 window, with fullscreen available when the browser supports it. Hosted Cloud
 keeps its provider-issued viewer in its own window or tab.
 
-These controls are in the web app. The native phone apps have their own
+These controls are in the web app.
 computer viewers; use a paired browser for interactive Local VM or VPS access.
 For the proxy boundary and offline regression checks, see the
 [viewer verification recipe](verification/desktop-viewer.md).
 
 ## Using it from your phone
 
-Signed in on a hosted server as an admin (with a pairing code or your
-email)? Settings → Remote access → **Pair a phone or another computer**
-creates a one-time code with a QR right in the browser, and lists every
-paired device with a sign-out button. Nobody needs the command line.
+Run `npx alcabots phone` on the server and scan the code: see
+[Use AlcaBots from your phone](phone-link.md). Phones get a session of their
+own, listed and removed under Settings → Remote access → Phone. Nothing needs
+a public address.
 
-The iOS app pairs with a server the same way a laptop does: scan the QR
-code that `alcabots serve` (or `alcabots pair`) prints, paste the
-whole `https://host/pair#code=…` link into the address field on the pairing
-screen, or type the address and then the code. The phone gets a session of
-its own, listed and revocable with `alcabots sessions`. What it may do is
-the code's scope: a code from `alcabots pair` carries `admin` and the app
-shows everything; a code from `alcabots pair --client` (also what the
-guided phone setup mints) can chat, approve and read, and the app hides
-creating bots and sections, changing models, generating avatars, connecting
-apps and cloud desktops — those stay with the owner. A server reinstalled at
-the same address has a new identity; the app then asks to pair again rather
-than present the old session to it.
-
-Both native apps pair this way. `alcabots pair --phone android` prints the
-app-scheme QR that Android's scanner needs, and the iOS app accepts either
-that QR or the web link. Pass `--phone` whenever nothing is watching the
-terminal, such as `docker compose exec alca node dist-server/alcabots.js
-pair --phone android --public-url https://your-domain`, since a scripted run
-never reaches the question the interactive command asks. Nothing extra to install, and the phone becomes a
-session like any other.
-
-Older way, still supported, and only useful on a LAN or a tailnet: run the
-companion sidecar next to the harness and pair by its own QR. It advertises
-on your private networks (Tailscale-aware) and issues its own per-device
-credentials, which are **not** `alcabots sessions` and are revoked from
-its own page at the `127.0.0.1:8811/#token=…` link it prints. It also serves phones over cleartext HTTP
-on port 8810, so do not expose it from a public server. It ships only in a
-git checkout: neither the npm package nor the Docker image contains it.
-
-```sh
-node --experimental-strip-types companion/src/index.ts
-```
+A browser can also pair directly when the server has an HTTPS address.
+Settings → Remote access → **Pair a phone or another computer** creates a
+one-time code with a QR, and lists every paired device with a sign-out button.
+A code from `alcabots pair` carries `admin`; one from `alcabots pair --client`
+can chat, approve and read.
 
 ## Usage and costs
 
@@ -1277,7 +1225,7 @@ settings do not change it.
 
 For the npm service, [install the chosen new version](deploy-vps.md#update)
 as the service user while the server is stopped, then start it again.
-For a foreground invocation, `npx --yes alcabots@X.Y.Z serve --tunnel`
+For a foreground invocation, `npx --yes alcabots@X.Y.Z serve`
 selects a particular published release; replace `X.Y.Z` with that version.
 
 ```sh

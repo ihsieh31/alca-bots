@@ -89,7 +89,7 @@ describe("optional desktop Organisation settings", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it("does not acknowledge local Settings from a companion renderer", async () => {
+  it("does not acknowledge local Settings from a remote client renderer", async () => {
     vi.stubGlobal("window", { abot: { organization: bridge, remoteClient: { active: true } } });
     render(); fixture.effects[0](); await flush();
     expect(bridge.settingsOpened).not.toHaveBeenCalled();

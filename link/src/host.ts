@@ -497,7 +497,7 @@ export class LinkHost {
     this.ws = undefined;
     for (const w of this.channels.values()) w.end("relay connection lost");
     this.channels.clear();
-    for (const n of [...this.pairings.keys()]) this.cancelPairing(n, "relay connection lost");
+    for (const n of Array.from(this.pairings.keys())) this.cancelPairing(n, "relay connection lost");
     this.pongWaiters = [];
     if (this.state !== "closed") this.setStatus("offline");
   }

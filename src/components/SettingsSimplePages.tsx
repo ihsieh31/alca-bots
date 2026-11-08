@@ -125,16 +125,16 @@ export function SimpleAiPage({ has, disclose, connections }: { has: Has; disclos
   );
 }
 
-export type RemoteAccessCards = Record<"client" | "domain" | "pairing" | "companion", ReactNode>;
+export type RemoteAccessCards = Record<"client" | "domain" | "pairing" | "phone", ReactNode>;
 
 export function SimpleComputerPage({ has, remoteAccess, servers, disclose }: { has: Has; remoteAccess: RemoteAccessCards; servers: ReactNode; disclose: Disclose }) {
   return (
     <>
       {has("computer") && <SettingsGroup label={t("settings.simple.computer.bots")} block="computer"><AdminOnly><LocalComputerSection /></AdminOnly></SettingsGroup>}
-      {has("companion") && (
-        <SettingsGroup label={t("settings.simple.computer.devices")} block="companion">
+      {has("phone") && (
+        <SettingsGroup label={t("settings.simple.computer.devices")} block="phone">
           {remoteAccess.pairing}
-          {remoteAccess.companion}
+          {remoteAccess.phone}
         </SettingsGroup>
       )}
       {has("computer") && (
@@ -142,9 +142,9 @@ export function SimpleComputerPage({ has, remoteAccess, servers, disclose }: { h
           <SettingsRows><BuiltInBrowserRow /></SettingsRows>
         </SettingsGroup>
       )}
-      {(has("companion") || has("desktopWorkspaces")) && (
+      {(has("phone") || has("desktopWorkspaces")) && (
         <SettingsDisclosureRow title={t("settings.simple.computer.elsewhere")} block="elsewhere" {...disclose("computer-elsewhere")}>
-          {has("companion") && <div data-settings-block="remote" className="flex scroll-mt-4 flex-col gap-4 empty:hidden">{remoteAccess.client}{remoteAccess.domain}</div>}
+          {has("phone") && <div data-settings-block="remote" className="flex scroll-mt-4 flex-col gap-4 empty:hidden">{remoteAccess.client}{remoteAccess.domain}</div>}
           {has("desktopWorkspaces") && <div data-settings-block="desktopWorkspaces" className="flex scroll-mt-4 flex-col gap-4">{servers}</div>}
         </SettingsDisclosureRow>
       )}

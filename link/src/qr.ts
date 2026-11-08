@@ -66,7 +66,7 @@ const gmul = (a: number, b: number) =>
 function rsGenerator(degree: number): number[] {
   let g = [1];
   for (let i = 0; i < degree; i++) {
-    const next = new Array<number>(g.length + 1).fill(0);
+    const next = Array.from({ length: g.length + 1 }, () => 0);
     for (let j = 0; j < g.length; j++) {
       next[j] = (next[j] as number) ^ (g[j] as number);
       next[j + 1] = (next[j + 1] as number) ^ gmul(g[j] as number, EXP[i] as number);
@@ -78,7 +78,7 @@ function rsGenerator(degree: number): number[] {
 
 function rsRemainder(data: number[], degree: number): number[] {
   const gen = rsGenerator(degree);
-  const rem = new Array<number>(degree).fill(0);
+  const rem = Array.from({ length: degree }, () => 0);
   for (const b of data) {
     const factor = b ^ (rem.shift() as number);
     rem.push(0);
@@ -152,8 +152,8 @@ class Matrix {
   constructor(version: number) {
     this.version = version;
     this.size = version * 4 + 17;
-    this.m = Array.from({ length: this.size }, () => new Array<boolean>(this.size).fill(false));
-    this.fn = Array.from({ length: this.size }, () => new Array<boolean>(this.size).fill(false));
+    this.m = Array.from({ length: this.size }, () => Array.from({ length: this.size }, () => false));
+    this.fn = Array.from({ length: this.size }, () => Array.from({ length: this.size }, () => false));
   }
   set(x: number, y: number, dark: boolean) {
     (this.m[y] as boolean[])[x] = dark;

@@ -3,7 +3,6 @@
 export {};
 
 interface TestEnvAdditions {
-  RELAY_TOKEN_SIGNING_KEY?: string;
   CLOUDFLARE_ENDPOINT_ACCOUNTS?: unknown;
   CLOUDFLARE_API_TOKEN_ALCABOT_SI?: string;
 }

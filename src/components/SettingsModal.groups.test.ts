@@ -112,7 +112,7 @@ describe("Settings rail groups", () => {
     for (const label of ["You", "AI", "Devices", "Account"]) expect(html).toContain(`>${label}</div>`);
     expect(html).toContain("glass-surface");
     expect(rail(html)).toEqual({
-      you: ["general", "appearance", "companion"],
+      you: ["general", "appearance", "phone"],
       ai: ["engines", "connections", "decisionModel", "imageGeneration"],
       computers: ["desktopWorkspaces", "computer"],
       account: ["cloudAccount", "organization", "usage", "backups", "import", "experimental"],
@@ -141,13 +141,13 @@ describe("Settings rail groups", () => {
 
   it("shows a paired remote client only Appearance, Remote access and Servers", () => {
     vi.stubGlobal("window", { abot: { remoteClient: { active: true }, environments: {}, organization: {}, cloudAccount: {} } });
-    expect(rail(render())).toEqual({ you: ["appearance", "companion"], computers: ["desktopWorkspaces"] });
+    expect(rail(render())).toEqual({ you: ["appearance", "phone"], computers: ["desktopWorkspaces"] });
   });
 
   it("keeps the old deep links landing on the same page", () => {
     vi.stubGlobal("window", { abot: { environments: {} } });
     fixture.section = "remote" as AppSettingsSection;
-    expect(render()).toContain('data-settings-section="companion" aria-current="page"');
+    expect(render()).toContain('data-settings-section="phone" aria-current="page"');
     fixture.section = "connections";
     expect(render()).toContain('data-settings-section="connections" aria-current="page"');
   });

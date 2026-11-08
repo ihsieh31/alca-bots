@@ -71,7 +71,7 @@ try {
   await until(async () => (await fetch(`${base}/api/health`)).ok, "server start");
   await api("PATCH", "/api/link", { enabled: true, iceServers: direct ? ["stun:127.0.0.1:9"] : [] });
   await until(async () => (await api("GET", "/api/link")).status === "online", "computer on the relay");
-  const { bot } = await api("POST", "/api/bots", { name: "Ledger", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } });
+  await api("POST", "/api/bots", { name: "Ledger", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } });
   await api("PUT", "/api/config", { onboarding: { completedAt: new Date().toISOString(), version: 99 } });
   const pairing = await api("POST", "/api/link/pairings", { access: "full" });
 
@@ -79,6 +79,7 @@ try {
   const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();
   const problems = [];
   page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
+  page.on("response", (response) => { if (response.status() >= 400) problems.push(`http ${response.status()}: ${response.url()}`); });
   page.on("console", (message) => { if (message.type() === "error") problems.push(`console: ${message.text()}`); });
   await page.goto(pairing.url);
   await page.locator("button[type=submit]").click();

@@ -15,7 +15,7 @@ const LIVE = "/api/live/session";
 const COOKIE = "alca_session_test";
 const REMOTE = { host: "bots.example.com", "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https" };
 const LOCAL = { host: "127.0.0.1:8799" };
-const DESKTOP = { loopbackMutationToken: "desktop-secret", companionMutationToken: "relay-secret" };
+const DESKTOP = { loopbackMutationToken: "desktop-secret" };
 
 let dir: string, sessions: SessionRegistry;
 beforeEach(() => {
@@ -62,12 +62,8 @@ describe("an Azure Live call", () => {
     it("goes to the app's own window", () => {
       expect(verdict({ ...LOCAL, "x-alcabots-desktop-owner": "desktop-secret" }, place)).toBe(CALL);
     });
-    it("goes to the owner's phone, through the companion that authenticated it", () => {
-      expect(verdict({ ...LOCAL, "x-alcabots-companion": "1", "x-alcabots-companion-device": "phone-1", "x-alcabots-companion-auth": "relay-secret" }, place)).toBe(CALL);
-    });
-    it("is refused to a bot's shell and to a forged companion", () => {
+    it("is refused to a bot's shell", () => {
       expect(verdict(LOCAL, place)).toMatch(/^sign-in gate 403: forbidden: this change must come from the desktop app/);
-      expect(verdict({ ...LOCAL, "x-alcabots-companion": "1", "x-alcabots-companion-device": "phone-1", "x-alcabots-companion-auth": "guessed" }, place)).toMatch(/^sign-in gate 403: forbidden: invalid companion/);
     });
     it("is refused to a remote device paired chat-only", () => {
       expect(verdict(device(["client"]), place)).toBe(AT_SIGN_IN);
@@ -177,7 +173,7 @@ describe("the words for a session without the admin scope", () => {
     expect(liveScopeRefusal({}, "POST", LIVE)).toBeNull();
   });
   it("change no one's scope: every Live route stays closed to a client session", () => {
-    for (const [method, path] of [["POST", LIVE], ["POST", "/api/live/call/end"], ["GET", "/api/live/call"], ["PATCH", "/api/live/settings"], ["POST", "/api/live/device-revoked"]] as const) {
+    for (const [method, path] of [["POST", LIVE], ["POST", "/api/live/call/end"], ["GET", "/api/live/call"], ["PATCH", "/api/live/settings"]] as const) {
       expect(requiredScope(method, path), `${method} ${path}`).toBe("admin");
     }
   });

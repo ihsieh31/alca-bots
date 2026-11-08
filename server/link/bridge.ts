@@ -22,6 +22,8 @@ export interface BridgePeer {
 }
 
 export interface BridgeOptions {
+  /** Set while an organization forbids remote access: every request from a phone is refused until it lifts. */
+  remoteAccessRefusal?(): string | undefined;
   peer: BridgePeer;
   /** Over the relay, replies are paced below its per-connection byte budget; a direct path is not. */
   overRelay: boolean;
@@ -102,6 +104,8 @@ export function createHttpBridge(o: BridgeOptions): Record<string, HttpOp> {
       const path = String(args.path ?? "");
       const refusal = linkRequestRefusal(method, path);
       if (refusal) throw new RpcError(refusal.code, refusal.message);
+      const forbidden = o.remoteAccessRefusal?.();
+      if (forbidden) throw new RpcError("forbidden", forbidden);
       const headers = {
         ...requestHeadersFor(args.headers),
         authorization: `Bearer ${o.sessionToken()}`,

@@ -1,5 +1,5 @@
 {
   "title": "Mobile",
   "icon": "Smartphone",
-  "pages": ["ios-companion", "android-control"]
+  "pages": ["android-control"]
 }

@@ -107,13 +107,6 @@ const __APP_VERSION__: string;
     at: number | null;
     onBattery: boolean;
   }
-  interface DesktopRemoteClientState {
-    active: boolean;
-    endpoint?: string;
-    serverName?: string;
-    deviceId?: string;
-  }
-
   interface Window {
     abot?: {
       platform: NodeJS.Platform;
@@ -273,25 +266,12 @@ const __APP_VERSION__: string;
       onCapabilitiesChanged(cb: (capabilities: DesktopCapabilities) => void): () => void;
       remoteClient?: {
         active: boolean;
-        state(): Promise<DesktopRemoteClientState>;
-        pair(endpoint: string, code: string): Promise<DesktopRemoteClientState>;
-        disconnect(): Promise<DesktopRemoteClientState>;
       };
       /** Keep this computer awake for scheduled routines; absent on remote
        * server pages and in older desktop builds. */
       routines?: {
         wakeState(): Promise<DesktopRoutineWake>;
         keepAwake(enabled: boolean): Promise<DesktopRoutineWake>;
-      };
-      companionAccount?: {
-        state(): Promise<CompanionAccountState>;
-        requestCode(email: string): Promise<CompanionAccountState>;
-        verifyCode(email: string, code: string): Promise<CompanionAccountState>;
-        retry(): Promise<CompanionAccountState>;
-        /** Create or repair this computer's HTTPS address because a person
-         * is pairing now. Absent in older desktop builds. */
-        prepare?(): Promise<CompanionAccountState>;
-        signOut(): Promise<CompanionAccountState>;
       };
       /** Local-shell-only bridge for trusted approval-mode transitions. It is
        * absent on remote server pages and in older desktop builds. */
@@ -504,17 +484,6 @@ export interface UpdaterState {
   installsByItself?: boolean;
   /** the version the app updated itself to while the person was away, until they have seen it said */
   updated?: string;
-}
-
-export interface CompanionAccountState {
-  available: boolean;
-  status: "signed-out" | "connecting" | "ready" | "error";
-  email?: string;
-  endpoint?: string;
-  message?: string;
-  /** The HTTPS address was given back after 30 days with no paired phone
-   * seen. Opening the phone page calls prepare(), which brings it back. */
-  paused?: boolean;
 }
 
 export type AndroidUsbDevice = {

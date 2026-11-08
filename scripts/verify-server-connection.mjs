@@ -34,7 +34,6 @@ if (process.versions.electron && process.argv.includes(fixtureFlag)) {
   });
   ipcMain.handle("sharing:revoke", () => { shared = { ...shared, enabled: false, connected: false }; return shared; });
   ipcMain.handle("update:get-state", () => ({ status: "idle" }));
-  ipcMain.handle("companion:state", () => ({ running: false, enabled: false, devices: [], bind: null, publicUrl: null }));
   ipcMain.handle("desktop:capabilities", () => createRequire(import.meta.url)("../electron/capabilities.cjs").desktopCapabilities({ platform: process.platform }));
   const chooseWorkspace = (id) => { calls.push({ kind: "switch", id }); saved = withActive(saved, id); };
   ipcMain.handle("environments:state", () => ({ ...saved, localOrigin: new URL(url).origin, remote: false }));
@@ -52,11 +51,6 @@ if (process.versions.electron && process.argv.includes(fixtureFlag)) {
     }));
     // Select the production native MenuItem; no fixture-only renderer dropdown.
     menu.getMenuItemById(menuChoice).click();
-  });
-  ipcMain.handle("desktop-remote:state", () => ({ active: false }));
-  ipcMain.handle("desktop-remote:pair", (_event, endpoint, code) => {
-    calls.push({ kind: "companion", endpoint, code });
-    throw new Error("Fixture companion pairing rejected");
   });
   ipcMain.handle("environments:add-from-link", (_event, link, name) => {
     const parsed = parseHostedWorkspaceLink(link);
@@ -105,7 +99,6 @@ if (process.versions.electron && process.argv.includes(fixtureFlag)) {
     const fill = async (label, value) => {
       await evaluate(`(() => { const el = ${input(label)}; if (!el) throw new Error('Missing input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, ${JSON.stringify(value)}); el.dispatchEvent(new Event('input', { bubbles: true })); })()`);
     };
-    const selectMode = (value) => evaluate(`(() => { const el = document.querySelector('select'); el.value = ${JSON.stringify(value)}; el.dispatchEvent(new Event('change', { bubbles: true })); })()`);
     const connect = button("Connect to server");
     await until(() => evaluate(`Boolean(${connect})`), "server form rendered");
     assert.equal(await evaluate(`${connect}.disabled`), true);
@@ -132,18 +125,7 @@ if (process.versions.electron && process.argv.includes(fixtureFlag)) {
     await until(() => evaluate(`!${connect}.disabled && !document.querySelector('[role=alert]')`), "successful response reset");
     writeFileSync(join(output, "server-form.png"), (await win.webContents.capturePage()).toPNG());
 
-    await selectMode("companion");
-    await until(() => evaluate(`Boolean(${input("Companion address")})`), "companion form rendered");
-    await fill("Companion address", "computer.tailnet.ts.net");
-    await fill("Six-digit companion code", "12a34567");
-    await until(() => evaluate(`${input("Six-digit companion code")}.value === '123456'`), "six-digit companion normalization");
-    await evaluate(`${button("Pair and switch to client mode")}.click()`);
-    await until(() => calls.length === 4, "companion IPC received");
-    assert.deepEqual(calls[3], { kind: "companion", endpoint: "computer.tailnet.ts.net", code: "123456" });
-    await until(() => evaluate(`document.querySelector('[role=alert]')?.textContent === 'Fixture companion pairing rejected'`), "companion error rendered");
     win.setSize(390, 700);
-    await selectMode("server");
-    await until(() => evaluate(`Boolean(${connect})`), "server mode restored");
     assert.equal(await evaluate("document.documentElement.scrollWidth <= innerWidth"), true, "narrow layout overflow");
     writeFileSync(join(output, "server-form-narrow.png"), (await win.webContents.capturePage()).toPNG());
 
@@ -258,8 +240,8 @@ if (process.versions.electron && process.argv.includes(fixtureFlag)) {
     await until(() => evaluate("document.body.textContent.includes('Connect to a server') && document.querySelector('input[aria-label=\"Search settings\"]').value === ''"), "native connection request clears Settings search");
 
     const remote = await open(false);
-    assert.deepEqual(await remote.webContents.executeJavaScript("({ server: typeof window.abot?.environments, companion: typeof window.abot?.remoteClient, sharing: typeof window.abot?.computerSharing, node: typeof window.require, workspaceMethods: Object.keys(window.abot?.workspaces ?? {}) })"),
-      { server: "undefined", companion: "undefined", sharing: "undefined", node: "undefined", workspaceMethods: ["state", "menu"] });
+    assert.deepEqual(await remote.webContents.executeJavaScript("({ server: typeof window.abot?.environments, sharing: typeof window.abot?.computerSharing, node: typeof window.require, workspaceMethods: Object.keys(window.abot?.workspaces ?? {}) })"),
+      { server: "undefined", sharing: "undefined", node: "undefined", workspaceMethods: ["state", "menu"] });
     assert.deepEqual(blockedRequests, [], "unexpected external request attempted");
     // Exercise Chromium's actual HttpOnly cookie jar and main-process fetch.
     // The server is the isolated fake-engine fixture, never the user's app.
@@ -280,7 +262,7 @@ if (process.versions.electron && process.argv.includes(fixtureFlag)) {
       assert.equal(sharing.state(nativeEnv.id).enabled, false);
     } finally { sharing.close(); }
     const receipt = { passed: true, renderer: ["RemoteComputerSection", "ConnectedWorkspacesSettings", "DesktopWorkspaceSwitcher"], preload: "electron/preload.cjs", calls,
-      checks: ["full custom HTTPS link unchanged", "pending submit disabled", "cancel reset", "rejection and retry", "companion six-digit routing", "390px overflow", "remote-safe bridge", "native connect menu item requests Settings", "hosted URL validation", "optional name", "pairing code excluded from saved list", "switch local/cloud", "cancel/confirm forget", "real app Settings deep link", "native Settings event and search reset", "feature-off hides sharing controls and stale deep link", "explicit opt-in enables fixture sharing", "sharing off by default", "read-only folder selection", "cancel/save sharing", "immediate revoke", "post-pair access deep link", "no sharing bridge in remote renderer"],
+      checks: ["full custom HTTPS link unchanged", "pending submit disabled", "cancel reset", "rejection and retry", "390px overflow", "remote-safe bridge", "native connect menu item requests Settings", "hosted URL validation", "optional name", "pairing code excluded from saved list", "switch local/cloud", "cancel/confirm forget", "real app Settings deep link", "native Settings event and search reset", "feature-off hides sharing controls and stale deep link", "explicit opt-in enables fixture sharing", "sharing off by default", "read-only folder selection", "cancel/save sharing", "immediate revoke", "post-pair access deep link", "no sharing bridge in remote renderer"],
       nativeConnector: "Real HttpOnly pairing cookie → session.defaultSession.fetch → real fixture registration → revoke",
       limitation: "UI IPC replaces native dialogs, workspace persistence and navigation. Native sharing authentication tested against isolated HTTP server; no public DNS/TLS or live screen control tested." };
     writeFileSync(join(output, "receipt.json"), `${JSON.stringify(receipt, null, 2)}\n`);

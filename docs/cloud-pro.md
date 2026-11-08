@@ -1200,12 +1200,8 @@ no port is published on `[::]` (Docker's proxy sends IPv6 clients from there
 too). Only the named peers are believed, and only the last address they add,
 so a client's own `X-Forwarded-For` or `Cf-Connecting-IP` changes nothing.
 
-**No inbound port: a Cloudflare tunnel.** The same managed tunnel as
-`alcabots serve --tunnel`, one per server: the control plane's
-`ensureEndpoint`, called with the server's installation credential
-(`fleetAccess` in `server/tunnel.ts`), returns the address
-(`https://c-<32 hex>.<zone>`) and the connector token, which go into
-`ALCA_PUBLIC_URL` and `ALCA_CLOUD_TUNNEL_TOKEN`. The home then runs the pinned
+**No inbound port: a Cloudflare tunnel.** One per server: the address and the
+connector token go into `ALCA_PUBLIC_URL` and `ALCA_CLOUD_TUNNEL_TOKEN`. The home then runs the pinned
 `cloudflared` from its image (`/usr/local/bin/cloudflared`, the release
 `scripts/prepare-cloudflared.mjs` checks) as its own user, `alca-tunnel`: the
 token rides that process's environment, which `alca`, and so no bot or engine,

@@ -1048,7 +1048,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     await recorder.until((e) => e.type === "session.started");
 
     const conn = await connectSocket(permissionSocketPath("t-perm-lbl"));
-    // The companion maps every label but "Allow" to a denial, so model-authored labels would all deny.
+    // Every label but "Allow" maps to a denial, so model-authored labels would all deny.
     conn.write(
       JSON.stringify({
         t: "ask",

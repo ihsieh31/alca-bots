@@ -19,7 +19,7 @@ export interface EgoLiveRouteDeps {
 /** Who is watching, as a name that is safe to keep on disk: a portal session's id is its membership grant. */
 export function liveOwner(auth: RequestAuth): string {
   const who = auth.kind === "loopback"
-    ? auth.companionDevice ? `phone:${auth.companionDevice}` : "local-owner"
+    ? "local-owner"
     : auth.session.userId && !auth.session.userId.startsWith("portal:") ? `user:${auth.session.userId}` : `session:${auth.session.id}`;
   return createHash("sha256").update(who).digest("hex").slice(0, 24);
 }

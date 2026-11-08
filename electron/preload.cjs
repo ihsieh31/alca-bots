@@ -2,7 +2,6 @@
 const { contextBridge, ipcRenderer, webFrame, webUtils } = require("electron");
 
 // Sandboxed preloads get Electron's restricted `require`, which cannot load sibling CommonJS files.
-const desktopRemoteClient = process.argv.includes("--alcabots-remote-client");
 
 let pendingPackageInstallUrl = null;
 const packageInstallListeners = new Set();
@@ -111,7 +110,7 @@ const COMPANY_BACKUP_CLIENT_KEYS = [
   "alcabots.sidebarCollapsedSections.v1", "alcabots.sidebarSectionOrder.v1",
   "alca-analytics-opt-out", "alcabots.remote-voice.v1",
 ];
-if (isLocalPage && !desktopRemoteClient && process.argv.includes("--alca-company-desktop=1")) {
+if (isLocalPage && process.argv.includes("--alca-company-desktop=1")) {
   ipcRenderer.on("company-backups:collect-client-state", (_event, request) => {
     if (!request || typeof request.requestId !== "string" || !/^[a-f0-9-]{36}$/.test(request.requestId)) return;
     try {
@@ -251,38 +250,11 @@ const bridge = {
     ipcRenderer.on("desktop:capabilities-changed", handler);
     return () => ipcRenderer.removeListener("desktop:capabilities-changed", handler);
   },
-  /** The bearer stays in the main process and is never returned over this bridge. */
-  remoteClient: {
-    active: desktopRemoteClient,
-    state: () => ipcRenderer.invoke("desktop-remote:state"),
-    pair: (endpoint, code) => ipcRenderer.invoke("desktop-remote:pair", endpoint, code),
-    disconnect: () => ipcRenderer.invoke("desktop-remote:disconnect"),
-  },
-  companion: {
-    state: () => ipcRenderer.invoke("companion:state"),
-    start: () => ipcRenderer.invoke("companion:start"),
-    stop: () => ipcRenderer.invoke("companion:stop"),
-    keepAwake: (enabled) => ipcRenderer.invoke("companion:keep-awake", enabled),
-    refreshTailscale: () => ipcRenderer.invoke("companion:refresh-tailscale"),
-    pairing: (open, expectedToken) => ipcRenderer.invoke("companion:pairing", open, expectedToken),
-    cloudDesktop: (deviceId, allowed) => ipcRenderer.invoke("companion:cloud-desktop", deviceId, allowed),
-    browserControl: (deviceId, allowed) => ipcRenderer.invoke("companion:browser-control", deviceId, allowed),
-    revoke: (deviceId) => ipcRenderer.invoke("companion:revoke", deviceId),
-    renewPairing: () => ipcRenderer.invoke("companion:pairing-renew"),
-    routes: (deviceId, routes) => ipcRenderer.invoke("companion:routes", deviceId, routes),
-  },
+  /** Its presence marks this computer's own page; pages from any other origin never get it. */
+  remoteClient: { active: false },
   routines: {
     wakeState: () => ipcRenderer.invoke("routines:wake-state"),
     keepAwake: (enabled) => ipcRenderer.invoke("routines:keep-awake", enabled),
-  },
-  /** Secrets stay in the main process; the renderer sees only status and narrow actions. */
-  companionAccount: {
-    state: () => ipcRenderer.invoke("companion-account:state"),
-    requestCode: (email) => ipcRenderer.invoke("companion-account:request-code", email),
-    verifyCode: (email, code) => ipcRenderer.invoke("companion-account:verify-code", email, code),
-    retry: () => ipcRenderer.invoke("companion-account:retry"),
-    prepare: () => ipcRenderer.invoke("companion-account:prepare"),
-    signOut: () => ipcRenderer.invoke("companion-account:sign-out"),
   },
   /** Full/Custom never go through the loopback API, only the embedded server's private utilityProcess port. */
   approvals: {

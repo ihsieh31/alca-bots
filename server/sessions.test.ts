@@ -40,7 +40,6 @@ afterEach(() => { vi.restoreAllMocks(); rmSync(dir, { recursive: true, force: tr
 describe("the native-app encoding of a pairing window", () => {
   it("redeems the same window as the typed code, and consumes it", () => {
     const { code, credential } = registry.openPairing({ label: "Pixel" });
-    // The Android companion's parser demands the 10-character prefix plus exactly 43 base64url characters (Connection.kt).
     expect(credential.startsWith("alca_pair_")).toBe(true);
     expect(credential.length).toBe(53);
     expect(credential.slice("alca_pair_".length)).toMatch(/^[A-Za-z0-9_-]{43}$/);

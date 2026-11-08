@@ -7,12 +7,12 @@ import { WORKSPACE_BACKUP_CLIENT_KEYS } from "../shared/workspace-backup-client.
 const source = readFileSync(new URL("./preload.cjs", import.meta.url), "utf8");
 const origin = "http://127.0.0.1:48992";
 const requestId = "11111111-1111-4111-8111-111111111111";
-function fixture({ remote = false, company = true, remoteClient = false, storage } = {}) {
+function fixture({ remote = false, company = true, storage } = {}) {
   const listeners = new Map(), sent = [], invoked = [], values = new Map();
   const location = { origin: remote ? "https://remote.invalid" : origin };
   let bridge;
   const context = vm.createContext({
-    process: { platform: "fixture", argv: [`--alca-local-origin=${origin}`, ...(company ? ["--alca-company-desktop=1"] : []), ...(remoteClient ? ["--alcabots-remote-client"] : [])] },
+    process: { platform: "fixture", argv: [`--alca-local-origin=${origin}`, ...(company ? ["--alca-company-desktop=1"] : [])] },
     location, TextEncoder,
     localStorage: storage ?? { getItem: key => values.get(key) ?? null },
     require: name => {
@@ -60,7 +60,7 @@ test("each native request collects fresh allowed state and never credentials or 
   assert.equal(JSON.stringify(f.sent).includes("synthetic secret"), false);
 });
 
-for (const options of [{ remote: true }, { company: false }, { remoteClient: true }]) {
+for (const options of [{ remote: true }, { company: false }]) {
   test(`snapshot listener is absent outside the owned local company desktop: ${JSON.stringify(options)}`, () => {
     const f = fixture(options); assert.equal(f.listening, false);
     f.collect({ requestId }); assert.equal(f.sent.length, 0);

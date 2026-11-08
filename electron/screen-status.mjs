@@ -17,11 +17,10 @@ const LINUX_UNSUPPORTED = new Set(["linux-wayland-seat-safety-blocked", "headles
  * - "blocked": its helper is missing, or the system refused to run it;
  * - "off": Linux control is off until the person turns it on;
  * - "not-running": computer control stopped or failed to start;
- * - "unsupported": it can't work in this session (Wayland, no desktop) or this app is a remote companion.
+ * - "unsupported": it can't work in this session (Wayland, no desktop).
  * `fix`: "start" (start computer control again, or turn Linux control on), "allow" (ask macOS), or null.
  */
-export function screenStatus({ platform = process.platform, connection = null, remote = false } = {}) {
-  if (remote) return off("unsupported", null);
+export function screenStatus({ platform = process.platform, connection = null } = {}) {
   if (sharedCuaConnection(connection) !== null && localComputerReady(platform, connection)) return { ready: true, lent: true, reason: null, fix: null };
   if (platform === "darwin" && missingPermissions(connection?.reason).length > 0) return { ready: false, lent: true, reason: "permissions", fix: "allow" };
   if (platform === "linux") {

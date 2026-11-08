@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const BUDGET_MS = 30_000;
 const CODE = /\.[cm]?[jt]sx?$/;
 // The tree the size ratchet counts, without tests, and the sources the vocabulary test reads.
-const RATCHETED = /^(?:server|shared|src|scripts|evals|electron|companion)\/.+\.(?:ts|tsx|mjs|cjs)$/;
+const RATCHETED = /^(?:server|shared|src|scripts|evals|electron)\/.+\.(?:ts|tsx|mjs|cjs)$/;
 const WORDED = /^(?:src|server)\/.+\.(?:ts|tsx|json)$/;
 const isTest = (file) => /\.test\.[cm]?[jt]sx?$/.test(file) || file.includes("/testing/");
 

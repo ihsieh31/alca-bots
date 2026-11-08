@@ -250,30 +250,19 @@ it("a blocked cloud desktop is refused for a chat turn and a routine; a lent com
   expect((await team.as(owner, "PATCH", `/api/bots/${botId}`, { computer: null })).status).toBe(200);
 }, hostTimeout(180_000));
 
-it("remote access off refuses a phone code and signs phones out, while every member's app still pairs; it lifts", async () => {
-  const code = await team.as(ada, "POST", "/api/team/phone-pairing", {});
-  expect(code.status, JSON.stringify(code.body)).toBe(200);
-  const phone = await fetch(`${team.base}/api/auth/pair`, { method: "POST", headers: { ...fx.edge, "content-type": "application/json" }, body: JSON.stringify({ code: code.body.code, label: "Phone" }) });
-  const phoneToken = ((await phone.json()) as { token: string }).token;
-  expect((await team.as(phoneToken, "GET", "/api/config")).status).toBe(200);
-  const unused = await team.as(ada, "POST", "/api/team/phone-pairing", {});
-  expect(unused.status).toBe(200);
-
+it("remote access off refuses a new phone pairing, while every member's app still pairs; it lifts", async () => {
   await rules({ remoteAccess: "off" });
-  const refused = await team.as(ada, "POST", "/api/team/phone-pairing", {});
+  const refused = await team.as(owner, "POST", "/api/link/pairings", { access: "daily" });
   expect([refused.status, refused.body.code]).toEqual([403, "managed_policy"]);
   expect(refused.body.error).toBe("Acme does not allow opening this Cloud on a phone or with a link. Ask a team admin.");
-  expect((await team.as(phoneToken, "GET", "/api/config")).status).toBe(401);
-  // A code made before the rule stops working too.
-  const late = await fetch(`${team.base}/api/auth/pair`, { method: "POST", headers: { ...fx.edge, "content-type": "application/json" }, body: JSON.stringify({ code: unused.body.code }) });
-  expect(late.status).toBe(401);
   // The Admin's signed pairing is how every member's app reaches the Cloud: a rule never locks the team out.
   const app = await team.pair(ADA);
   expect(app.status, JSON.stringify(app.body)).toBe(200);
   ada = app.token!;
 
   await rules(null);
-  expect((await team.as(ada, "POST", "/api/team/phone-pairing", {})).status).toBe(200);
+  const lifted = await team.as(owner, "POST", "/api/link/pairings", { access: "daily" });
+  expect(lifted.body.code).not.toBe("managed_policy");
 }, hostTimeout(60_000));
 
 it("a kept policy applies at once after a restart with the Admin unreachable, and never lapses; a document it can't read keeps the last good one and says so", async () => {

@@ -51,7 +51,7 @@ const EXCLUSION_NOTES = [
   "Saved credentials, provider and MCP connections, managed provider login homes and browser login profiles are not transferred. Destination connections are preserved; reconnect on a new device.",
   "Downloaded tools and caches (they can be installed again), and recorded browser step screenshots (export them from a conversation to keep them).",
   "Installed dependency folders (node_modules) and symbolic links inside conversation work folders; reinstall or recreate them in the project.",
-  "External project folders, CLI login homes, browser session homes, OS keychains, companion devices and other servers.",
+  "External project folders, CLI login homes, browser session homes, OS keychains, paired phones and other servers.",
   "VM/container disk layers and remote cloud data; durable files inside this workspace are included.",
   "Waits bots set up: they end within a week, so ask the bot again after restoring.",
 ];

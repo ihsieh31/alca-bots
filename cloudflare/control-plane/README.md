@@ -68,10 +68,6 @@ still reads those tables.
 | `DELETE` | `/v1/installations/:id` | owning account bearer |
 | `GET` | `/v1/installations/self` | installation credential |
 | `GET`, `POST`, `DELETE` | `/v1/installations/self/endpoint` | installation credential |
-| `POST` | `/v1/installations/self/push/register` | installation credential |
-| `POST` | `/v1/installations/self/push/unregister` | installation credential |
-| `POST` | `/v1/installations/self/push/send` | installation credential |
-| `POST` | `/v1/installations/self/relay-token` | installation credential |
 
 Installation registration requires a stable `clientInstanceId`, a display
 `name`, and a `platform` of `darwin`, `windows`, or `linux`; `appVersion` is
@@ -186,82 +182,6 @@ each eligible sweep emits a distinct aggregate operator-attention log without
 installation or account identifiers. This bounded sweep prevents a transient
 provider failure from orphaning resources forever without creating an
 unbounded scheduled invocation.
-
-### Phone push relay
-
-Closed-app alerts for the iOS app (harness side: `server/phone-push.ts`,
-wire contract version 1 in `shared/phone-push.ts`; app side:
-`docs/ios-companion.md`). Apple accepts pushes for an App Store or
-TestFlight build only when they are signed with the publishing team's key, and
-a harness may run on a VPS or in a container. So the project's key lives here,
-and a harness asks this Worker to push with the installation credential it
-already holds. Account bearer tokens are refused. All three routes take
-`application/json` and answer with the usual `{ "error": "<code>" }` shape.
-
-- `register` `{ "v": 1, "token": "<lowercase hex>", "environment": "production" | "sandbox" }`
-  stores the APNs device token for this installation (idempotent; it updates
-  the environment). At most 50 tokens per installation (`409
-  push_device_limit`) and 120 registrations per hour. An environment
-  `APNS_ENVIRONMENTS` does not list is `400 push_environment_not_allowed`.
-- `unregister` `{ "v": 1, "token": "…" }` deletes it. `204`.
-- `send` `{ "v": 1, "token": "…", "pairing"?: "…", "notification": { "kind",
-  "title", "botId", "botName", "threadId", "roomId"?, "roomName"? } }` pushes
-  to a token **this** installation registered, else `404
-  push_device_unknown` (the harness then registers and retries once). The
-  schema is strict: `kind` is `[a-z-]`, ids are `[\w-]{1,120}`, `title` is one
-  line of at most 200 characters, names at most 80. Any other field (a
-  `body`, a message) is `400 invalid_request`, never silently dropped, so no
-  message text can reach Apple through this route. `202 { "sent": true }` on
-  success. Limits: 600 sends per installation and 60 per token per hour (`429
-  rate_limited`, `Retry-After: 60`).
-
-The APNs request is `POST https://api.push.apple.com/3/device/<token>` (or
-`api.sandbox.push.apple.com` for a `sandbox` token) with `apns-push-type:
-alert`, `apns-priority: 10`, a 24-hour `apns-expiration`, `apns-topic` set to
-the bundle id, and an `apns-collapse-id` derived from the kind and thread, so
-a repeat replaces the older alert. The payload is
-`{ "aps": { "alert": { "title" }, "sound": "default", "thread-id",
-"interruption-level" }, "alca": { "v": 1, "kind", "botId", "botName",
-"threadId", "roomId"?, "roomName"?, "pairing"? } }`; `interruption-level` is
-`time-sensitive` for `approval`, `question`, `sign-in` and `mention`, else
-`active`.
-
-The provider token is an ES256 JWT signed with WebCrypto (no dependency):
-`{ "alg": "ES256", "kid": APNS_KEY_ID }`, `{ "iss": APNS_TEAM_ID, "iat" }`.
-Its `iat` is the start of the current 50-minute window, so every isolate
-signs for the same window and Apple's 20-to-60-minute refresh rule holds
-however many isolates send; each isolate caches its token for the window.
-
-APNs answers are mapped for the harness: `410 Unregistered`,
-`BadDeviceToken` and `DeviceTokenNotForTopic` delete the token for every
-installation that registered it in the same APNs environment (for a `410`,
-only registrations older than Apple's `timestamp`) and return `410
-push_device_unregistered` (the harness drops it too); an expired or invalid provider token is re-signed and retried once,
-then `503 push_unavailable`; APNs `429` is `429 rate_limited`; anything else
-is `502 push_failed`. Failures log the request id, APNs status and reason
-only, never the token or payload.
-
-Without all of the settings below every push route answers `503
-push_unavailable` and harnesses back off for an hour. Revoking an
-installation deletes its tokens. D1 stores, per row, the installation id, the
-token, its SHA-256, the environment and timestamps (`migrations/0008`).
-
-**Secrets the maintainer sets** (all with `wrangler secret put <NAME>
---config wrangler.jsonc`; none belongs in `vars`, this file, or CI output):
-
-| Name | Value |
-| --- | --- |
-| `APNS_KEY_ID` | The 10-character Key ID of the APNs auth key (`.p8`) in the Apple Developer account. |
-| `APNS_TEAM_ID` | The 10-character Team ID that owns the app. |
-| `APNS_PRIVATE_KEY` | The whole `.p8` file, PEM, e.g. `wrangler secret put APNS_PRIVATE_KEY < AuthKey_XXXXXXXXXX.p8`. Escaped `\n` newlines are accepted too. |
-| `APNS_BUNDLE_ID` | The iOS app's bundle id, which is the APNs topic. |
-| `APNS_ENVIRONMENTS` | Optional. `production` (default), `sandbox`, or `production,sandbox` to also accept development builds' tokens. |
-
-They are deliberately not in `secrets.required`: the Worker is complete
-without them, with phone push off, until the Apple key exists. Apply `migrations/0008` before
-deploying the Worker that uses it. For a local trial with `wrangler dev`,
-`.dev.vars` is read only for declared names, so add these names to
-`secrets.required` in a local, uncommitted copy of the config.
 
 ### Tunnel capacity and idle reclaim
 
@@ -588,56 +508,6 @@ DNS count), and each move two lookups in the old account. Tokens created by
 the same Cloudflare user share its 1,200 requests per five minutes. On
 Workers Free, four accounts with `ALCA_CLEANUP_SWEEP_LIMIT` 4 use the whole
 50-subrequest budget, hence at most three extra accounts.
-
-### AlcaBot Relay
-
-Phones reach a desktop through AlcaBot Relay, end-to-end encrypted: the relay passes sealed bytes and can't open them
-(`companion/src/e2e/README.md`). This Worker only lets a computer onto the relay. It mints a 12-hour host token signed
-with Ed25519; the relay holds only the public key and checks tokens offline, so it can't mint one itself.
-
-`POST /v1/installations/self/relay-token` with the installation credential and
-`{"appVersion":"0.1.150","devices":{"e2e":2,"legacy":1}}` (counts of paired phones on the encrypted connection and on the
-old one; no identifiers) answers:
-
-| Status | Body | When |
-| --- | --- | --- |
-| 200 | `{token, hostId, nodes, expiresAt, refreshAfter}` (times in ms) | this computer is in the rollout |
-| 503 | `relay_unavailable` | no signing key yet, `RELAY_DISABLED` on, outside the rollout, or blocked (`relay_blocked_at`). The desktop stays on Wi-Fi and Tailscale |
-| 401 | `unauthorized` | the installation credential is invalid or expired |
-| 429 | `rate_limited` | more than 60 an hour |
-
-- **Host id.** 16 random bytes made once per installation (`installations.relay_host_id`, unique). Phones learn it at
-  pairing; it never changes.
-- **Token.** `b64u(payload) "." b64u(Ed25519 signature over the first part)`, payload
-  `{"v":1,"kid","hid","iid","iat","exp"}` in that order, `exp = iat + 12 h`. The desktop refreshes after an hour.
-  Minted tokens match the V8 test vector byte for byte.
-- **Nodes.** Ordered by rendezvous hash, highest `SHA256(hostId ‖ node)[0:8]` first, so each computer prefers one node
-  and load splits evenly. A node listed in `RELAY_NODES_AMERICAS` goes first for a request whose `cf.continent` is NA or
-  SA.
-- **Rollout.** `RELAY_ROLLOUT_PERCENT` admits a computer when `SHA256(hostId)[0:2] mod 100` is below it, so a computer
-  stays in as the number grows; `RELAY_ALLOW_INSTALLATIONS` admits named installations (the team) at any percentage.
-- **Adoption.** Every request records its counts in `relay_adoption`, in the rollout or not; `/healthz` reports
-  `relayAdoption: {e2eDevices, legacyDevices, installs}` over the last 30 days. The tunnel path retires on these numbers.
-- **Usage per day** (`migrations/0014`). `relay_daily` counts installations once per UTC day and kind: `seen` (asked
-  for a token), `token` (got one), `e2e` (reported end-to-end phones), `new` (asked for the first time). It holds only
-  the day, the kind and a count; `relay_adoption.first_seen_at`, `token_at` and `e2e_at` tell a request whether its
-  installation was already counted today. The stats dashboard (stats.alca-corp.me) charts it. A Worker without the
-  migration keeps minting tokens and writing `relay_adoption`, and logs `relay_daily_schema` once per isolate.
-- **Tunnels.** From `RELAY_CAPABLE_MIN_VERSION`, a desktop at that version or later that reports `legacyDevices: 0` gets
-  `409 relay_capable` instead of a new tunnel. An endpoint it already holds keeps working.
-
-Setup, once:
-
-1. `wrangler d1 migrations apply DB --config wrangler.jsonc --remote` (0012, and 0014 for the daily counts; apply 0014
-   before deploying the Worker that writes it).
-2. Make a key pair: a 32-byte Ed25519 seed for this Worker, its public key for the relay's `RELAY_TOKEN_KEYS`
-   (`{"k1":"<b64u public key>"}`). `wrangler secret put RELAY_TOKEN_SIGNING_KEY --config wrangler.jsonc` with the seed as
-   base64url. Until it exists every request answers 503. Once it is set it is listed in `secrets.required`: a deploy
-   keeps only the secrets listed there, so an unlisted one is dropped. Set it before deploying a config that lists it.
-3. Admit the team with `RELAY_ALLOW_INSTALLATIONS`, then raise `RELAY_ROLLOUT_PERCENT` 10, 50, 100 while watching the
-   relay alerts. `RELAY_DISABLED: "1"` turns every token off at once; tokens already issued expire within 12 hours.
-4. To rotate, give the relay both public keys, set `RELAY_TOKEN_KID` and the new secret, deploy, then drop the old key
-   from the relay after 12 hours.
 
 ## Local checks
 

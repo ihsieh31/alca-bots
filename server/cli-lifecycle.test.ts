@@ -5,7 +5,6 @@ import { hostname } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isWorkspaceRunning, runOnboardingCommand, runServe, type CliOptions } from "./cli.ts";
-import { qrToString } from "./cli-pairing.ts";
 
 const mocks = vi.hoisted(() => ({
   // the fleet path is off in these tests: no credential in the environment
@@ -76,7 +75,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.denyLogOpen = false;
   dataDir = mkdtempSync(join(process.env.HOME!, "cli-lifecycle-"));
-  options = { command: "serve", port: 18451, dataDir, tailscale: false, tunnel: false, client: false, pair: false, json: false, guided: true, open: false };
+  options = { command: "serve", port: 18451, dataDir, tailscale: false, client: false, pair: false, json: false, guided: true, open: false };
   signalListeners = new Map(["SIGINT", "SIGTERM"].map((signal) => [signal as NodeJS.Signals, new Set(process.listeners(signal))]));
   mocks.spawn.mockImplementation(() => childProcess());
   mocks.tailscaleStatus.mockResolvedValue({ status: { cli: "/fixture/tailscale", dnsName: "fixture.tail.test", addresses: [], backendState: "Running" } });
@@ -147,50 +146,7 @@ describe("CLI startup lifecycle", () => {
     }
   });
 
-  it("does not start a tunnel after SIGINT during the final readiness response", async () => {
-    let healthRequests = 0;
-    vi.stubGlobal("fetch", vi.fn(async (url: string | URL | Request) => {
-      expect(String(url)).toBe(`http://127.0.0.1:${options.port}/api/health`);
-      healthRequests++;
-      if (healthRequests === 1) return Response.json({}, { status: 503 });
-      if (healthRequests === 3) interrupt();
-      return Response.json({ app: "alcabots", pid: childPid });
-    }));
-    expect(await runServe({ ...options, tunnel: true }, vi.fn())).toBe(0);
-    expect(healthRequests).toBe(3);
-    expect(mocks.startTunnel).not.toHaveBeenCalled();
-    expect(children[0]!.kill).toHaveBeenCalledWith("SIGTERM");
-    expect(mocks.cleanupTunnelOrigin).toHaveBeenCalledOnce();
-  });
 
-  it("hands the running tunnel to background endpoint recovery and takes it back on stop", async () => {
-    let healthRequests = 0;
-    // Nothing answers before serve starts its server; then it is up.
-    vi.stubGlobal("fetch", vi.fn(async () => (++healthRequests === 1
-      ? Response.json({}, { status: 503 })
-      : Response.json({ app: "alcabots", pid: childPid }))));
-    const service = { retry: vi.fn(async () => ({})), restore: vi.fn(), dispose: vi.fn() };
-    mocks.createTunnelAccount.mockReturnValue({ credentials: { status: "available", read: () => ({}) }, service });
-    const running = { started: Promise.resolve(), stop: vi.fn().mockResolvedValue(undefined) };
-    mocks.startTunnel.mockImplementation(() => {
-      setTimeout(interrupt, 10);
-      return running;
-    });
-    let servingAtRestore: unknown = "not called";
-    service.restore.mockImplementation(async () => {
-      servingAtRestore = recovery().running();
-      return {};
-    });
-    const recovery = () => mocks.createTunnelAccount.mock.calls[0]![0].recovery as { running(): unknown };
-
-    expect(await runServe({ ...options, tunnel: true }, vi.fn())).toBe(0);
-    expect(mocks.startTunnel).toHaveBeenCalledOnce();
-    expect(service.restore).toHaveBeenCalledOnce();
-    expect(servingAtRestore).toBe(running);
-    expect(recovery().running()).toBeNull();
-    expect(service.dispose).toHaveBeenCalled();
-    expect(running.stop).toHaveBeenCalledOnce();
-  });
 
   it("reopens a matching desktop workspace even when its server PID differs from the lease owner", async () => {
     writeFileSync(join(dataDir, "environment-id"), workspaceId);
@@ -241,77 +197,5 @@ describe("CLI startup lifecycle", () => {
     expect(output.includes("pairing code:")).toBe(!guided);
   });
 
-  it.each(["mismatched", "unreachable"])("never mints a phone code for a %s public endpoint", async (failure) => {
-    let healthRequests = 0;
-    const requests: string[] = [];
-    vi.stubGlobal("fetch", vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
-      const address = String(url);
-      requests.push(address);
-      expect(init?.method).not.toBe("POST");
-      if (address.endsWith("/api/health")) {
-        return ++healthRequests === 1 ? Response.json({}, { status: 503 }) : Response.json({ app: "alcabots", pid: childPid });
-      }
-      if (address.startsWith("https://")) {
-        if (failure === "unreachable") throw new Error("Fixture endpoint offline");
-        return Response.json({ environmentId: "another-workspace" });
-      }
-      return Response.json({ environmentId: workspaceId });
-    }));
-    const log = vi.fn((line: string) => { if (line.includes("Keep this terminal open")) interrupt(); });
-    expect(await runServe({ ...options, pair: true, phone: "android", publicUrl: "https://fixture.example.test" }, log)).toBe(0);
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("no phone pairing code was created"));
-    expect(requests.some((url) => url.includes("/api/auth/pairing"))).toBe(false);
-    expect(requests).toContain("https://fixture.example.test/.well-known/alcabots/environment");
-  });
 
-  it("offers Android client pairing only after verifying the same workspace, without claiming it is connected", async () => {
-    const origin = "https://fixture.example.test";
-    const code = "ABCD-EFGH-JKLM";
-    const expiresAt = Date.now() + 300_000;
-    const pairingUrl = `${origin}/pair#code=${code}`;
-    // A real server mints both encodings of one window; Android can only scan the alcabots:// one.
-    const credential = `alca_pair_${"a".repeat(43)}`;
-    const inviteUrl = `alcabots://pair?address=${encodeURIComponent(origin)}&token=${credential}&name=fixture`;
-    let healthRequests = 0;
-    const fetcher = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
-      const address = String(url);
-      if (address.endsWith("/api/health")) {
-        return ++healthRequests === 1 ? Response.json({}, { status: 503 }) : Response.json({ app: "alcabots", pid: childPid });
-      }
-      if (address === `http://127.0.0.1:${options.port}/api/auth/pairing`) {
-        expect(init?.method).toBe("POST");
-        expect(JSON.parse(String(init?.body))).toEqual({ label: "Android", scopes: ["client"] });
-        // A server started without ALCA_PUBLIC_URL: it mints the credential but
-        // cannot name itself, so it returns no links at all. The CLI was told
-        // the public address with --public-url and must build both from that.
-        return Response.json({ code, url: null, expiresAt, credential, serverName: "fixture", hint: "set ALCA_PUBLIC_URL" });
-      }
-      expect(address).toMatch(/\/\.well-known\/alcabots\/environment$/);
-      expect(init?.method).not.toBe("POST");
-      expect(init?.body).toBeUndefined();
-      return Response.json({ environmentId: workspaceId });
-    });
-    vi.stubGlobal("fetch", fetcher);
-    const log = vi.fn((line: string) => { if (line.includes("Keep this terminal open")) interrupt(); });
-    expect(await runServe({ ...options, pair: true, phone: "android", publicUrl: origin }, log)).toBe(0);
-    const requests = fetcher.mock.calls.map(([url]) => String(url));
-    const pairingRequest = `http://127.0.0.1:${options.port}/api/auth/pairing`;
-    expect(requests.filter((url) => url === pairingRequest)).toHaveLength(1);
-    expect(requests).toContain(`http://127.0.0.1:${options.port}/.well-known/alcabots/environment`);
-    expect(requests).toContain(`${origin}/.well-known/alcabots/environment`);
-    expect(requests.indexOf(`${origin}/.well-known/alcabots/environment`)).toBeLessThan(requests.indexOf(pairingRequest));
-    const output = log.mock.calls.map(([line]) => line).join("\n");
-    expect(output).toContain(`pairing code:  ${code}`);
-    expect(output).toContain(`expires:       ${new Date(expiresAt).toLocaleTimeString()} (single use)`);
-    expect(output).toContain(`web browser:   ${pairingUrl}`);
-    expect(output).toMatch(/[▀▄█]/);
-    expect(output).toContain(`Or open ${origin}/pair on your phone and enter the code.`);
-    expect(output).toContain("On Android, open the AlcaBots app and scan the QR with its pairing scanner.");
-    expect(output).toContain(qrToString(inviteUrl));
-    expect(output).not.toContain(qrToString(pairingUrl));
-    expect(output).toContain("client access: chat and approvals, not settings or pairing administration");
-    expect(output).toContain("Scanning a QR does not mean the phone is paired.");
-    expect(output).toContain("Waiting for you to connect on the phone.");
-    expect(output).not.toMatch(/pairing complete|phone (?:is |successfully )?connected|paired successfully/i);
-  });
 });

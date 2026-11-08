@@ -116,11 +116,9 @@ native permission rejection, cleanup, and post-creation activation warnings.
 Browser fixtures do not prove packaged operating-system grants or real model
 execution; those require the native approval verification separately.
 
-Companion connections make the bot with a single request: they cannot read
-host defaults or patch host settings, so the host applies its defaults.
-`companion/test/proxy.test.ts` checks creation succeeds while those routes
-remain blocked, and `src/lib/new-bot.test.ts` that a paired device sends only
-that request. The dialog tests also check that a caller's synchronous
+A paired device makes the bot with a single request and the host applies its
+defaults. `src/lib/new-bot.test.ts` checks that it sends only that request. The
+dialog tests also check that a caller's synchronous
 exception or rejected promise after creation is reported without leaving a
 retryable creation dialog open.
 

@@ -259,20 +259,6 @@ describe("the Sign in card", () => {
     expect(f.provider.counts.register).toBe(1);
   });
 
-  it("a companion phone on a local home gets \"Open this chat on your Mac to sign in to Linear.\"", async () => {
-    const phone: RequestAuth = { kind: "loopback", scopes: ["admin", "client"], companionDevice: "iphone-1" };
-    const local = await setup();
-    const { card } = await local.signIn();
-    expect(await local.authorize(card, phone)).toEqual({ status: 409, body: { error: "Open this chat on your Mac to sign in to Linear." } });
-    expect(local.provider.counts.register).toBe(0);
-    expect(local.current(card).connector).toMatchObject({ status: "required" });
-    expect(local.current(card).connector!.error).toBeUndefined();
-
-    const reachable = await setup({ origins: ["https://alca.example.com"] });
-    const other = (await reachable.signIn()).card;
-    const link = new URL((await reachable.authorize(other, phone)).body.url as string);
-    expect(link.searchParams.get("redirect_uri")).toBe("https://alca.example.com/mcp-oauth/callback");
-  });
 
   it("a remote session uses the public callback origin", async () => {
     const f = await setup({ origins: ["https://alca.example.com"] });

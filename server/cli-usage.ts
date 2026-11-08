@@ -27,15 +27,14 @@ export const USAGE = `alcabots — your team of AI bots, ready in a few steps
   alcabots setup [--data-dir DIR]
   alcabots start [the same options as serve]
   alcabots serve [--port 8799] [--data-dir DIR] [--label NAME]
-                    [--public-url https://host] [--tailscale | --tunnel | --domain HOST] [--no-pair]
-  alcabots pair  [--label NAME] [--client] [--phone ios|android] [--ttl 24h]
+                    [--public-url https://host] [--tailscale | --domain HOST] [--no-pair]
+  alcabots pair  [--label NAME] [--client] [--ttl 24h]
                     [--public-url https://host]
   alcabots sessions [revoke ID]
   alcabots status
-  alcabots login [--email you@example.com]
-  alcabots logout
+  alcabots phone [--daily]
   alcabots access list | add EMAIL [--chat-only] | remove EMAIL
-  alcabots service install [--domain HOST | --tunnel | --tailscale] [--port N] [--data-dir DIR] | uninstall
+  alcabots service install [--domain HOST | --tailscale] [--port N] [--data-dir DIR] | uninstall
                     [--sentinel]   (the health scan below, every two minutes, instead of the server)
   alcabots sentinel [--data-dir DIR] [--out DIR] [--once] [--json]   (read-only health scan; see --help)
   alcabots browser install | status
@@ -45,16 +44,15 @@ export const USAGE = `alcabots — your team of AI bots, ready in a few steps
                   | delete NAME --yes [--keep-data] | upgrade   (all take --dry-run)
                   | agent [--socket PATH] [--group USER]   (root; installed by init --operator)
 
-setup   choose AI access and optional phone access; keep existing bots and chats
+setup   choose AI access; keep existing bots and chats
 start   same as alcabots: use your saved settings and open the workspace
 serve   starts the server without prompts and prints a pairing link + QR code
 pair    mints a pairing code against a running server (--client: chat only;
         --ttl keeps it open up to 24h, still single use)
 sessions lists paired devices; "sessions revoke ID" signs one out
 status  what the server says about itself
-login   signs this machine in to an AlcaBots account (an emailed code)
-        and reserves its public address for --tunnel
-logout  releases that address and signs out
+phone   turns phone access on and shows a code for your phone's browser;
+        --daily leaves out settings and permissions
 access  who may sign in with an emailed code at /pair: an address or
         @domain; --chat-only gives chat and approvals without settings.
         Takes effect at once, no restart.
@@ -76,16 +74,13 @@ fleet   many client workspaces on one Linux server, each its own account,
 --tailscale  serve over your tailnet: Tailscale terminates HTTPS and the
              link uses this machine's MagicDNS name (needs Tailscale signed in
              and HTTPS certificates enabled for the tailnet)
---tunnel     serve at a public https://c-… address through a
-             Cloudflare tunnel: no domain, no proxy, no open port. Run
-             \`alcabots login\` once on this machine first.
 --domain     serve at https://HOST on your own domain: a pinned Caddy is
              downloaded once and run alongside the server, and gets the
              certificate itself. Point the domain's DNS at this machine and
              open ports 80 and 443.
 
 --no-open   do not open a browser window
---no-pair   skip phone setup and do not print a pairing code
+--no-pair   do not print a pairing code
 --local     start locally this time, ignoring saved remote-access settings
 
 ${HEADLESS_USAGE}

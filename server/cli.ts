@@ -3,12 +3,11 @@
 //   alcabots setup [--data-dir ~/.alcabots]
 //   alcabots start [serve options]
 //   alcabots serve [--port 8799] [--data-dir ~/.alcabots] [--label "cab mini"]
-//                     [--public-url https://host] [--tailscale | --tunnel | --domain HOST] [--no-pair]
+//                     [--public-url https://host] [--tailscale | --domain HOST] [--no-pair]
 //   alcabots pair  [--label "My MacBook"] [--client] [--public-url https://host]
 //   alcabots sessions [revoke <id>]
 //   alcabots status
-//   alcabots login [--email you@example.com]
-//   alcabots logout
+//   alcabots phone [--daily]
 //   alcabots run | send | wait | doctor | team apply | export | …
 //
 // This module only exports: alcabots.ts runs main(), so bundling this file into other entries never runs it twice.
@@ -20,7 +19,6 @@ import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 
-import { phonePairingLink } from "../shared/pairing-link.ts";
 import { parseAllowList } from "./account-signin.ts";
 import { appendAdminAction, flushAdminActivity, sharedSignIn } from "./admin-activity.ts";
 import { bindDecisionRetention, decisionRetentionDays } from "./decision-log.ts";
@@ -35,36 +33,16 @@ import { runFleetCommand, type FleetInput } from "./fleet-cli.ts";
 import { startFleetAgent } from "./fleet-agent.ts";
 import { fleetLayout } from "./fleet.ts";
 import { explainTailscaleFailure, tailscaleServe, tailscaleServeOff, tailscaleStatus, type TailscaleStatus } from "./tailscale.ts";
-import { defaultSetupIo, SetupCancelled, type SetupIo } from "./cli-prompts.ts";
+import { SetupCancelled, type SetupIo } from "./cli-prompts.ts";
 import { HEADLESS_VERB_NAMES, USAGE } from "./cli-usage.ts";
-import { normalizePhoneOrigin, phonePairingInstructions, runPhoneSetup } from "./cli-phone-setup.ts";
+import { runPhonePairing } from "./cli-phone.ts";
 import { browserSignInLines, formatSessions, pairingBlock } from "./cli-pairing.ts";
 import { parseDuration } from "./headless/args.ts";
 import type { AppConfig } from "./config.ts";
-import {
-  cleanupTunnelOrigin,
-  createTunnelAccount,
-  createTunnelOrigin,
-  describeTunnelAccount,
-  describeTunnelState,
-  ensureCloudflared,
-  FLEET_CREDENTIAL_ENV,
-  fleetAccess,
-  fleetCredential,
-  guardianEntry,
-  startTunnel,
-  tunnelAccess,
-  type CompanionOriginEndpoint,
-  type ManagedTunnelAccess,
-  type RunningTunnel,
-  type TunnelAccount,
-  type TunnelRecovery,
-} from "./tunnel.ts";
-
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 export interface CliOptions {
-  command: "setup" | "start" | "serve" | "pair" | "sessions" | "status" | "login" | "logout" | "access" | "service" | "browser" | "fleet" | "help";
+  command: "setup" | "start" | "serve" | "pair" | "sessions" | "status" | "phone" | "access" | "service" | "browser" | "fleet" | "help";
   port: number;
   dataDir: string;
   label?: string;
@@ -72,7 +50,6 @@ export interface CliOptions {
   /** `serve --domain host`: HTTPS on your own domain through a managed Caddy. */
   domain?: string;
   tailscale: boolean;
-  tunnel: boolean;
   client: boolean;
   pair: boolean;
   revoke?: string;
@@ -107,12 +84,11 @@ export interface CliOptions {
   local?: boolean;
   open?: boolean;
   guided?: boolean;
-  phone?: "ios" | "android";
   /** `pair --ttl 24h`: how long the code stays open. */
   pairTtlMs?: number;
 }
 
-const COMMANDS = ["setup", "start", "serve", "pair", "sessions", "status", "login", "logout", "access", "service", "browser", "fleet", "help", "--help", "-h"];
+const COMMANDS = ["setup", "start", "serve", "pair", "sessions", "status", "phone", "access", "service", "browser", "fleet", "help", "--help", "-h"];
 
 export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env): CliOptions | { error: string } {
   const implicitStart = !argv.length || (argv[0]!.startsWith("--") && argv[0] !== "--help");
@@ -125,7 +101,6 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env):
     port: Number(env.ALCA_PORT || 8799),
     dataDir: env.ALCA_DATA_DIR || join(homedir(), ".alcabots"),
     tailscale: false,
-    tunnel: false,
     client: false,
     pair: true,
     json: false,
@@ -150,14 +125,7 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env):
         if (typeof domain !== "string") return domain;
         options.domain = domain;
       }
-      else if (arg === "--tunnel") options.tunnel = true;
-      else if (arg === "--client") options.client = true;
-      // Which phone will scan, for runs nobody types into; only Android needs a different QR.
-      else if (arg === "--phone") {
-        const kind = value().toLowerCase();
-        if (kind !== "ios" && kind !== "android") return { error: "--phone takes ios or android" };
-        options.phone = kind;
-      }
+      else if (arg === "--client" || (options.command === "phone" && arg === "--daily")) options.client = true;
       else if (options.command === "pair" && arg === "--ttl") options.pairTtlMs = parseDuration(value(), "--ttl", { min: 60_000 });
       else if (arg === "--no-pair") options.pair = false;
       else if (arg === "--no-open") options.open = false;
@@ -196,11 +164,10 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env):
   }
   if (!Number.isInteger(options.port) || options.port < 1 || options.port > 65_535) return { error: "--port must be 1-65535" };
   if (options.publicUrl && !/^https?:\/\//.test(options.publicUrl)) return { error: "--public-url must start with http:// or https://" };
-  if (options.tailscale && options.tunnel) return { error: "choose one of --tailscale (your tailnet) and --tunnel (a public address)" };
   if (options.command === "access" && !options.accessAction) return { error: "access needs one of: list, add EMAIL [--chat-only], remove EMAIL" };
   if (options.command === "service" && !options.serviceAction) return { error: "service needs one of: install [the same options as serve], uninstall" };
-  if (options.domain && (options.tailscale || options.tunnel || options.publicUrl)) return { error: "--domain already gives the server its address; drop --tailscale, --tunnel and --public-url" };
-  if (options.local && (options.tailscale || options.tunnel || options.publicUrl)) return { error: "--local cannot be combined with a remote-access option" };
+  if (options.domain && (options.tailscale || options.publicUrl)) return { error: "--domain already gives the server its address; drop --tailscale and --public-url" };
+  if (options.local && (options.tailscale || options.publicUrl)) return { error: "--local cannot be combined with a remote-access option" };
   if (options.command === "browser" && !options.browserAction) return { error: "browser needs an action: install or status" };
   if (options.command === "fleet") {
     if (!options.fleetAction) return { error: "fleet needs one of: init --domain HOST [--operator USER], create NAME --admin EMAIL, list, users NAME add|remove EMAIL, suspend NAME, resume NAME, delete NAME --yes, upgrade, agent" };
@@ -295,69 +262,46 @@ export async function openDashboard(port: number, env = process.env): Promise<bo
   });
 }
 
-/** Its public descriptor must identify this exact server; never sends a pairing code or credential. */
-export async function verifyPhoneEndpoint(port: number, origin: string): Promise<boolean> {
-  if (!normalizePhoneOrigin(origin)) return false;
+/** Only a bare public https origin may be saved and reused: no credentials, path, query or loopback host. */
+function httpsOrigin(raw: string): string | null {
+  const value = raw.trim();
+  // Control characters are refused before URL parsing can silently remove them.
+  // eslint-disable-next-line no-control-regex
+  if (!/^https:\/\/[^/]/i.test(value) || /[\s\u0000-\u001f\u007f\\?#@]/.test(value)) return null;
   try {
-    const local = await api(port, "/.well-known/alcabots/environment");
-    const remote = await fetch(`${origin}/.well-known/alcabots/environment`, { signal: AbortSignal.timeout(5000), redirect: "error" });
-    if (local.status !== 200 || !remote.ok) return false;
-    const descriptor = await remote.json() as { environmentId?: unknown };
-    return typeof local.body?.environmentId === "string" && local.body.environmentId.length > 0
-      && descriptor.environmentId === local.body.environmentId;
-  } catch { return false; }
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase().replace(/\.$/, "");
+    if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/") return null;
+    if (!host || host === "localhost" || host.endsWith(".localhost") || host === "0.0.0.0" || host.startsWith("127.")) return null;
+    if (host === "[::]" || host === "[::1]" || /^\[::ffff:(?:0:0|7f[0-9a-f]{2}:[0-9a-f]+)\]$/.test(host)) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
 }
 
 export function applyStartupPreferences(options: CliOptions, saved: AppConfig["cliStartup"]): CliOptions {
-  if (options.local) return { ...options, tunnel: false, tailscale: false, publicUrl: undefined, phone: undefined };
-  if (!saved || options.tunnel || options.tailscale || options.publicUrl) return options;
-  if (saved.access === "public-url" && (!saved.publicUrl || !normalizePhoneOrigin(saved.publicUrl))) {
-    throw new Error("The saved phone address is not a valid HTTPS origin. Run alcabots setup to correct it, or alcabots --local to start only on this computer.");
+  if (options.local) return { ...options, tailscale: false, publicUrl: undefined };
+  if (!saved || options.tailscale || options.publicUrl) return options;
+  if (saved.access === "public-url" && (!saved.publicUrl || !httpsOrigin(saved.publicUrl))) {
+    throw new Error("The saved public address is not a valid HTTPS origin. Run alcabots setup to correct it, or alcabots --local to start only on this computer.");
   }
   return {
     ...options,
-    tunnel: saved.access === "tunnel", tailscale: saved.access === "tailscale",
+    tailscale: saved.access === "tailscale",
     publicUrl: saved.access === "public-url" ? saved.publicUrl : undefined,
-    phone: saved.access === "local" ? undefined : saved.phone,
   };
 }
 
-function startupPreferences(options: CliOptions): NonNullable<AppConfig["cliStartup"]> {
-  const access = options.local ? "local" : options.tunnel ? "tunnel" : options.tailscale ? "tailscale" : options.publicUrl ? "public-url" : "local";
-  const publicUrl = access === "public-url" ? normalizePhoneOrigin(options.publicUrl!) : null;
-  if (access === "public-url" && !publicUrl) throw new Error("Use an HTTPS origin without a password, path or query for saved phone access. The address was not saved.");
-  return {
-    access,
-    ...(publicUrl ? { publicUrl } : {}),
-    ...(!options.local && options.phone ? { phone: options.phone } : {}),
-  };
-}
-
-async function showPhonePairing(options: CliOptions, origin: string | undefined, log: (line: string) => void): Promise<boolean> {
-  const ready = !!origin && await verifyPhoneEndpoint(options.port, origin);
-  if (!ready) {
-    log("Phone access is not reachable yet. AlcaBots is ready on this computer; no phone pairing code was created.");
-    log("Check the HTTPS connection, then run alcabots pair again with the same --data-dir and --port.");
-    return false;
-  }
-  for (const line of phonePairingInstructions(options.phone ?? "ios", { origin: origin!, ready })) log(line);
-  log(await mintPairing(options.port, { client: true, label: options.label ?? (options.phone === "android" ? "Android" : "iPhone / iPad"), publicUrl: origin, phone: options.phone }));
-  log("Waiting for you to connect on the phone. Keep this terminal and the code private.");
-  return true;
-}
-
-async function mintPairing(port: number, options: { label?: string; client?: boolean; publicUrl?: string; phone?: "ios" | "android"; guided?: boolean; ttlMs?: number }): Promise<string> {
+async function mintPairing(port: number, options: { label?: string; client?: boolean; publicUrl?: string; guided?: boolean; ttlMs?: number }): Promise<string> {
   const request = { ...(options.label ? { label: options.label } : {}), ...(options.client ? { scopes: ["client"] } : {}), ...(options.ttlMs ? { ttlMs: options.ttlMs } : {}) };
   const { status, body } = await api(port, "/api/auth/pairing", { method: "POST", body: JSON.stringify(request) });
   if (refusedAsService(status, body)) throw new Error(SERVICE_TRUST_HELP);
   if (status !== 200) throw new Error(`server refused to mint a pairing code: ${typeof body?.error === "string" ? body.error : status}`);
   const url = options.publicUrl ? `${options.publicUrl}/pair#code=${body.code}` : typeof body.url === "string" ? body.url : null;
-  const invite = (options.publicUrl && typeof body.credential === "string"
-    ? phonePairingLink({ address: options.publicUrl, token: body.credential, name: typeof body.serverName === "string" ? body.serverName : undefined })
-    : null) ?? (typeof body.inviteUrl === "string" ? body.inviteUrl : null);
-  const localUrl = options.phone ? null : `http://127.0.0.1:${port}/pair#code=${body.code}`;
+  const localUrl = `http://127.0.0.1:${port}/pair#code=${body.code}`;
   if (options.guided && localUrl) return browserSignInLines(localUrl, body.code, body.expiresAt);
-  return pairingBlock({ code: body.code, url, inviteUrl: invite, localUrl, expiresAt: body.expiresAt, hint: typeof body.hint === "string" ? body.hint : null, phone: options.phone });
+  return pairingBlock({ code: body.code, url, localUrl, expiresAt: body.expiresAt, hint: typeof body.hint === "string" ? body.hint : null });
 }
 
 export async function runPair(options: CliOptions): Promise<number> {
@@ -365,38 +309,7 @@ export async function runPair(options: CliOptions): Promise<number> {
     console.error(`no AlcaBots server on http://127.0.0.1:${options.port}; start one with \`alcabots serve\` or set ALCA_PORT`);
     return 1;
   }
-  if (process.stdin.isTTY && process.stdout.isTTY && !options.label && !options.client && !options.pairTtlMs) {
-    const advertised = await api(options.port, "/api/auth/pairing");
-    let launch = options;
-    let origin = options.publicUrl ?? (typeof advertised.body?.publicUrl === "string" ? advertised.body.publicUrl : undefined);
-    if (!origin) {
-      const { readCliStartup } = await import("./cli-setup.ts");
-      launch = applyStartupPreferences(options, readCliStartup(options.dataDir));
-      origin = launch.publicUrl;
-      if (launch.tunnel) origin = describeTunnelAccount(createTunnelAccount({ dataDir: options.dataDir, version: serverVersion() }).credentials.read()).address ?? undefined;
-      if (launch.tailscale) {
-        const status = await tailscaleStatus();
-        if (!("failure" in status) && status.status.dnsName) origin = `https://${status.status.dnsName}`;
-      }
-    }
-    if (!origin || !normalizePhoneOrigin(origin)) {
-      console.log("Your workspace is running only on this computer. A phone cannot use its localhost address.");
-      console.log("Stop the server, run alcabots setup and choose phone access, then start alcabots again.");
-      return 1;
-    }
-    const ui = defaultSetupIo();
-    try {
-      const selected = await ui.choose("Which phone are you connecting?", ["iPhone / iPad — app or Safari", "Android — app or browser", "Cancel"], 0);
-      if (selected === 2) return 0;
-      launch = { ...launch, phone: selected === 0 ? "ios" : "android" };
-      return await showPhonePairing(launch, origin, ui.log) ? 0 : 1;
-    } catch (error) {
-      if (!(error instanceof SetupCancelled)) throw error;
-      console.log("Pairing cancelled. Existing devices are unchanged.");
-      return 130;
-    }
-  }
-  console.log(await mintPairing(options.port, { label: options.label, client: options.client, publicUrl: options.publicUrl, phone: options.phone, ttlMs: options.pairTtlMs }));
+  console.log(await mintPairing(options.port, { label: options.label, client: options.client, publicUrl: options.publicUrl, ttlMs: options.pairTtlMs }));
   if (options.client) console.log("(client scope: chat and approvals only; cannot change settings or pair others)");
   return 0;
 }
@@ -450,11 +363,6 @@ export async function runStatus(options: CliOptions, io: CliIo = defaultIo()): P
   } catch {
     io.error(`no AlcaBots server on http://127.0.0.1:${options.port}`);
     code = 1;
-  }
-  if (!options.json) {
-    const account = describeTunnelAccount(createTunnelAccount({ dataDir: options.dataDir, version: serverVersion() }).credentials.read());
-    if (fleetCredential()) io.log(`public address: managed by the fleet (${FLEET_CREDENTIAL_ENV} is set; the address is fetched when serve --tunnel starts)`);
-    else if (account.address) io.log(`public address: ${account.address} (signed in as ${account.email ?? "?"}; serve it with --tunnel)`);
   }
   return code;
 }
@@ -524,72 +432,6 @@ export async function runAccess(options: CliOptions, io: CliIo = defaultIo()): P
   return 0;
 }
 
-export async function runLogin(options: CliOptions, io: CliIo = defaultIo()): Promise<number> {
-  const account = createTunnelAccount({ dataDir: options.dataDir, version: serverVersion() });
-  if (fleetCredential()) io.log(`note: ${FLEET_CREDENTIAL_ENV} is set, so serve --tunnel will use that credential rather than this account`);
-  if (account.credentials.status === "unavailable") {
-    io.error(`${account.credentials.file} exists but could not be read; fix or remove it, then try again`);
-    return 1;
-  }
-  if (!account.controlPlane) {
-    io.error("ALCA_CONTROL_PLANE_URL is set but is not an https address");
-    return 1;
-  }
-  const existing = describeTunnelAccount(account.credentials.read());
-  if (existing.address) io.log(`already signed in as ${existing.email ?? "?"} (${existing.address}); signing in again refreshes it`);
-  const email = (options.email ?? (await io.ask("Email for your AlcaBots account: "))).trim();
-  if (!email) {
-    io.error("an email address is needed: alcabots login --email you@example.com");
-    return 1;
-  }
-  try {
-    await account.service.requestCode(email);
-  } catch (error) {
-    io.error(`could not send a sign-in code: ${message(error)}`);
-    return 1;
-  }
-  const code = (await io.ask(`Enter the 8-digit code we emailed to ${email}: `)).trim();
-  let state;
-  try {
-    state = await account.service.verifyCode(email, code);
-  } catch (error) {
-    io.error(`sign-in failed: ${message(error)}`);
-    return 1;
-  }
-  const signedIn = describeTunnelAccount(account.credentials.read());
-  if (!signedIn.address) {
-    io.error(`signed in, but no public address was issued${state.message ? `: ${state.message}` : ""}`);
-    return 1;
-  }
-  io.log(`Signed in as ${signedIn.email ?? email}.`);
-  io.log(`This machine's public address: ${signedIn.address}`);
-  io.log("Serve there with:  alcabots serve --tunnel");
-  return 0;
-}
-
-export async function runLogout(options: CliOptions, io: CliIo = defaultIo()): Promise<number> {
-  const account = createTunnelAccount({ dataDir: options.dataDir, version: serverVersion() });
-  const before = describeTunnelAccount(account.credentials.read());
-  if (!before.email) {
-    io.log("this machine is not signed in");
-    return 0;
-  }
-  let state;
-  try {
-    state = await account.service.signOut();
-  } catch (error) {
-    io.error(`sign-out failed: ${message(error)}`);
-    return 1;
-  }
-  const after = describeTunnelAccount(account.credentials.read());
-  if (after.email) {
-    io.error(`still signed in${state.message ? `: ${state.message}` : ""}`);
-    return 1;
-  }
-  io.log(`Signed out ${before.email}${before.address ? `; ${before.address} is released` : ""}.`);
-  return 0;
-}
-
 export async function runBrowser(options: CliOptions, io: CliIo = defaultIo()): Promise<number> {
   const { egoBrowserStatus } = await import("./ego-browser.ts");
   const status = egoBrowserStatus();
@@ -615,58 +457,6 @@ export function serverEntry(here = HERE): { command: string; args: string[]; sta
   return { command: process.execPath, args: ["--experimental-strip-types", source], staticDir, skillsDir: existsSync(join(root, "skills")) ? join(root, "skills") : null };
 }
 
-interface TunnelPlan {
-  access: ManagedTunnelAccess;
-  binary: string;
-  guardian: string;
-  origin: CompanionOriginEndpoint;
-  account: TunnelAccount | null;
-}
-
-/** Fails closed: never a silent fallback to a local-only server. */
-async function planTunnel(options: CliOptions, log: (line: string) => void, recovery: TunnelRecovery): Promise<TunnelPlan | { error: string }> {
-  let access: ManagedTunnelAccess | null = null;
-  let account: TunnelAccount | null = null;
-  const fail = (error: string) => {
-    account?.service.dispose();
-    return { error };
-  };
-  const credential = fleetCredential();
-  if (credential) {
-    log(`tunnel: using the installation credential from ${FLEET_CREDENTIAL_ENV}`);
-    try {
-      access = await fleetAccess({ credential, version: serverVersion() });
-    } catch (error) {
-      return { error: `--tunnel: ${message(error)}` };
-    }
-  } else {
-    account = createTunnelAccount({ dataDir: options.dataDir, version: serverVersion(), recovery, log: (line) => log(`tunnel: ${line}`) });
-    if (account.credentials.status === "unavailable") return fail(`${account.credentials.file} exists but could not be read; fix or remove it`);
-    if (!describeTunnelAccount(account.credentials.read()).email) {
-      return fail("no account on this machine yet: run `alcabots login` first, then `alcabots serve --tunnel`");
-    }
-    try {
-      const state = await account.service.retry();
-      const saved = tunnelAccess(account.credentials.read()) !== null;
-      if (state.status === "signed-out") log(`tunnel: the sign-in on this machine expired; run \`alcabots login\` to renew it${saved ? " (serving the saved address until then)" : ""}`);
-      else if (state.message) log(`tunnel: ${state.message}${saved ? " Serving the saved address for now." : ""}`);
-    } catch (error) {
-      log(`tunnel: control plane not reachable right now (${message(error)}); using the saved address`);
-    }
-    access = tunnelAccess(account.credentials.read());
-    if (!access) return fail("this machine has no public address; run `alcabots login` again");
-  }
-  let binary: string;
-  try {
-    binary = await ensureCloudflared({ dataDir: options.dataDir, log });
-  } catch (error) {
-    return fail(`--tunnel: ${message(error)}`);
-  }
-  const guardian = guardianEntry();
-  if (!guardian) return fail("--tunnel: the connector guardian is missing from this install");
-  return { access, binary, guardian, origin: createTunnelOrigin(), account };
-}
-
 export async function runServe(options: CliOptions, log: (line: string) => void = console.log): Promise<number> {
   const { egoBrowserStatus } = await import("./ego-browser.ts");
   if (await serverUp(options.port)) {
@@ -682,18 +472,6 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
       return 1;
     }
     tailscale = probe.status;
-  }
-  let plan: TunnelPlan | null = null;
-  const serving: { tunnel: RunningTunnel | null } = { tunnel: null };
-  if (options.tunnel) {
-    const planned = await planTunnel(options, log, { running: () => serving.tunnel });
-    if ("error" in planned) {
-      console.error(planned.error);
-      return 1;
-    }
-    plan = planned;
-    if (publicUrl && publicUrl !== plan.access.endpoint) log(`note: --public-url is ignored with --tunnel; the address is ${plan.access.endpoint}`);
-    publicUrl = plan.access.endpoint;
   }
   let caddyBinary: string | null = null;
   if (options.domain) {
@@ -722,7 +500,6 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
   if (entry.staticDir) env.ALCA_STATIC_DIR = entry.staticDir;
   if (entry.skillsDir && !process.env.ALCA_SKILLS_DIR) env.ALCA_SKILLS_DIR = entry.skillsDir;
   if (options.label && !process.env.ALCA_ENVIRONMENT_LABEL) env.ALCA_ENVIRONMENT_LABEL = options.label;
-  if (plan) env.ALCA_TUNNEL_SOCKET = plan.origin.socketPath;
   let logPath: string | undefined;
   let logFd: number | undefined;
   let tailscaleServing = false;
@@ -759,8 +536,6 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
     }
   } catch (error) {
     if ((tailscaleServing || (startupCancelled && tailscaleAttempted)) && tailscale) await tailscaleServeOff(tailscale).catch(() => undefined);
-    plan?.account?.service.dispose();
-    if (plan) cleanupTunnelOrigin(plan.origin);
     if (error instanceof SetupCancelled) {
       log("Startup cancelled. No server was started; your saved work is unchanged.");
       return 130;
@@ -776,15 +551,11 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
     child.once("error", () => { exited = 1; done(1); });
     child.once("exit", (code, signal) => { exited = code ?? (signal === "SIGTERM" || signal === "SIGINT" ? 0 : 1); done(exited); });
   });
-  let tunnel: RunningTunnel | null = null;
   let caddy: RunningCaddy | null = null;
   let stopping: Promise<void> | null = null;
   const stop = () => {
     stopping ??= (async () => {
-      serving.tunnel = null;
-      plan?.account?.service.dispose();
-      // The gateway and the edge stop accepting before the server they forward to goes away.
-      if (tunnel) await tunnel.stop().catch(() => undefined);
+      // The edge stops accepting before the server it forwards to goes away.
       if (caddy) await caddy.stop().catch(() => undefined);
       if (tailscaleServing && tailscale) await tailscaleServeOff(tailscale).catch(() => undefined);
       if (exited === null) {
@@ -794,7 +565,6 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
         await childExit;
         clearTimeout(timer);
       }
-      if (plan) cleanupTunnelOrigin(plan.origin);
     })();
     return stopping;
   };
@@ -832,19 +602,6 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
         return 1;
       }
     }
-    if (plan && child.pid) {
-      tunnel = startTunnel({
-        dataDir: options.dataDir,
-        access: plan.access,
-        originTarget: { pid: child.pid, socketPath: plan.origin.socketPath },
-        binaryPath: plan.binary,
-        guardian: plan.guardian,
-        onState: (state) => log(describeTunnelState(state, plan.access.endpoint)),
-      });
-      tunnel.started.catch((error: unknown) => log(`tunnel: ${message(error)}`));
-      serving.tunnel = tunnel;
-      void plan.account?.service.restore().catch(() => undefined);
-    }
     log("");
     log(`AlcaBots is running on http://127.0.0.1:${options.port}${publicUrl ? `, reachable at ${publicUrl}` : ""}`);
     if (options.guided) {
@@ -856,18 +613,7 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
       const ego = egoBrowserStatus();
       log(ego.kind === "ready" ? `browser: ego lite (${ego.path})` : `browser: unavailable. ${ego.reason}`);
     }
-    if (options.pair && options.phone) {
-      log("");
-      if (tunnel) {
-        // No pairing secret is created or sent to the public address until its identity is verified.
-        log("Preparing the phone connection…");
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        await Promise.race([tunnel.started.catch(() => undefined), childExit,
-          new Promise((done) => { timer = setTimeout(done, 15_000); })]);
-        if (timer) clearTimeout(timer);
-      }
-      if (!stopping && exited === null) await showPhonePairing(options, publicUrl, log).catch((error: unknown) => log(`no pairing code: ${message(error)}`));
-    } else if (options.pair) {
+    if (options.pair) {
       log("");
       try {
         log(await mintPairing(options.port, { label: options.label ? `${options.label} owner` : undefined, client: options.client, publicUrl: publicUrl ?? undefined, guided: options.guided }));
@@ -878,7 +624,7 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
       }
     }
     log(options.guided ? "\nKeep this terminal open while using your bots. Ctrl+C stops the server, not your saved work." : "stop with Ctrl+C");
-    if (options.guided) log("Next time: alcabots · Change AI or phone setup: alcabots setup · Pair another phone: alcabots pair");
+    if (options.guided) log("Next time: alcabots · Change AI setup: alcabots setup · Use from your phone: alcabots phone");
     return await childExit;
   } finally {
     serveOwnerToken = undefined;
@@ -905,7 +651,7 @@ export async function runOnboardingCommand(
   options: CliOptions,
   io: CliIo = defaultIo(),
   startServer: (options: CliOptions) => Promise<number> = serveUntilStopped,
-  flow: { prompts?: SetupIo; phoneSetup?: typeof runPhoneSetup; running?: typeof isWorkspaceRunning; open?: typeof openDashboard } = {},
+  flow: { prompts?: SetupIo; running?: typeof isWorkspaceRunning; open?: typeof openDashboard } = {},
 ): Promise<number> {
   const interactive = process.stdin.isTTY === true && process.stdout.isTTY === true;
   if (options.command === "setup" && !interactive) {
@@ -914,7 +660,7 @@ export async function runOnboardingCommand(
   }
   process.env.ALCA_DATA_DIR = options.dataDir;
   if (options.command !== "setup" && await (flow.running ?? isWorkspaceRunning)(options)) {
-    if (options.local || options.tunnel || options.tailscale || options.publicUrl) {
+    if (options.local || options.tailscale || options.publicUrl) {
       io.error("This workspace is already running. Stop it before changing local or remote access; the current connection was not changed.");
       return 1;
     }
@@ -923,8 +669,7 @@ export async function runOnboardingCommand(
     if (interactive && options.open !== false) await (flow.open ?? openDashboard)(options.port);
     return 0;
   }
-  const { runSetup, isSetupComplete, readCliStartup, saveCliStartup } = await import("./cli-setup.ts");
-  const prompts = flow.prompts ?? defaultSetupIo();
+  const { runSetup, isSetupComplete, readCliStartup } = await import("./cli-setup.ts");
   try {
     if (options.command === "setup" || !(await isSetupComplete(options.dataDir))) {
       if (!interactive) {
@@ -938,21 +683,9 @@ export async function runOnboardingCommand(
     }
     const saved = readCliStartup(options.dataDir);
     // Only setup revisits the access choice; normal starts reuse consent and never turn a local session public.
-    let launch = options.command === "setup" ? options : applyStartupPreferences(options, saved);
-    if (interactive && options.pair && !options.local && (options.command === "setup" || !saved)) {
-      io.log("\nOne optional step: connect your phone. You can skip this and start chatting here.");
-      const result = await (flow.phoneSetup ?? runPhoneSetup)(launch, prompts, {
-        accountReady: (value) => !!describeTunnelAccount(createTunnelAccount({ dataDir: value.dataDir, version: serverVersion() }).credentials.read()).email,
-        login: (value, ui) => runLogin(value, {
-          log: ui.log, error: ui.log,
-          ask: (question) => /code/i.test(question) ? ui.secret(question) : ui.ask(question),
-        }),
-      });
-      launch = { ...result.options, phone: result.phone };
-      saveCliStartup(options.dataDir, startupPreferences(launch));
-    }
+    const launch = options.command === "setup" ? options : applyStartupPreferences(options, saved);
     if (options.command === "setup") {
-      io.log("\nAll set. Start with: alcabots (or npx alcabots without a global install).");
+      io.log("\nAll set. Start with: alcabots (or npx alcabots without a global install). To use it from your phone: alcabots phone");
       if (options.dataDir !== join(homedir(), ".alcabots") || options.port !== 8799) {
         io.log(`Use the same --data-dir (${options.dataDir}) and --port (${options.port}) options when starting.`);
       }
@@ -988,13 +721,13 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       return runSessions(options);
     case "status":
       return runStatus(options);
-    case "login":
-      return runLogin(options);
+    case "phone":
+      return runPhonePairing(options.port, { daily: options.client });
     case "access":
       return runAccess(options);
     case "service":
       return runServiceCommand({
-        action: options.serviceAction ?? "install", dataDir: options.dataDir, port: options.port, domain: options.domain, tunnel: options.tunnel,
+        action: options.serviceAction ?? "install", dataDir: options.dataDir, port: options.port, domain: options.domain,
         tailscale: options.tailscale, label: options.label, sentinel: options.sentinel, script: process.argv[1] ?? "", node: process.execPath,
       }, { log: (line) => console.log(line), error: (line) => console.error(line) });
     case "fleet":
@@ -1033,8 +766,6 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         node: process.execPath,
         script: process.argv[1] ?? "",
       }, { log: (line) => console.log(line), error: (line) => console.error(line) });
-    case "logout":
-      return runLogout(options);
     case "browser":
       return runBrowser(options);
     default:

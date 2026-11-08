@@ -1,10 +1,9 @@
 import { userError } from "../user-errors.ts";
-// POST /api/bots/<bot>/secret-cards/<message>/provide with a phone's sealed envelope, .../save with {threadId, value}
+// POST .../save with {threadId, value}
 // for a custom secret typed in the app, and .../(provided|resume|dismiss) with {threadId}; and the agents tool's
 // /api/internal/request-credential. A value is never echoed back, logged or added to the card.
-import { CUSTOM_SECRET_TARGET, credentialResumeOutcome, isCredentialTargetId } from "../../shared/credential-request.ts";
-import { phoneSecretEnvelopeSchema, type SecretCards } from "../host/secret-cards.ts";
-import type { PhoneSecretSubmissionRegistry } from "../phone-secret.ts";
+import { credentialResumeOutcome } from "../../shared/credential-request.ts";
+import type { SecretCards } from "../host/secret-cards.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { SECRET_VALUE_MAX_BYTES } from "../secret-vault.ts";
 import { PASS, type RouteContext, type RouteHandler } from "./table.ts";
@@ -37,15 +36,13 @@ export function secretAnswerRefusal(auth: RequestAuth, context: SecretAnswerCont
 
 export interface SecretCardRouteDeps {
   cards: SecretCards;
-  phoneSecretSubmissions: Pick<PhoneSecretSubmissionRegistry, "has">;
   /** A member reaches a card only in a thread shown to them. */
   threadVisible(auth: RequestAuth, threadId: string): boolean;
   answerContext(auth: RequestAuth, botId: string, threadId: string): SecretAnswerContext;
 }
 
 export function createSecretCardRoutes(deps: SecretCardRouteDeps): RouteHandler {
-  const { phoneSecretSubmissions } = deps;
-  const { secretMessage, currentSecretState, resumeSecretCard, provideSecretFromPhone, phoneSecretSubmissionKey, secretSaved } = deps.cards;
+  const { secretMessage, currentSecretState, resumeSecretCard, secretSaved } = deps.cards;
   return async ({ req, res, path, method, auth, json, readBody }) => {
     let m: RegExpMatchArray | null;
     m = path.match(/^\/api\/bots\/([\w-]+)\/secret-cards\/([\w-]+)\/save$/);
@@ -64,37 +61,6 @@ export function createSecretCardRoutes(deps: SecretCardRouteDeps): RouteHandler 
         : deps.cards.saveCustomSecret(m[1]!, threadId, m[2]!, fields.value);
       return json(res, result.status, result.body);
     }
-    // An HPKE envelope bound to the paired device, bot, task, card and target; only the embedded Electron server holds the key to open it.
-    m = path.match(/^\/api\/bots\/([\w-]+)\/secret-cards\/([\w-]+)\/provide$/);
-    if (m && method === "POST") {
-      if (req.headers["x-alcabots-companion"] !== "1") {
-        return json(res, 403, { error: "Secure phone entry must come from a paired phone" });
-      }
-      const rawDeviceId = req.headers["x-alcabots-companion-device"];
-      const authenticatedDeviceId = Array.isArray(rawDeviceId) ? "" : String(rawDeviceId ?? "");
-      if (!/^[\w-]{1,128}$/.test(authenticatedDeviceId)) {
-        return json(res, 401, { error: "This paired phone could not be verified" });
-      }
-      if (!String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
-        return json(res, 415, { error: "content-type must be application/json" });
-      }
-      const parsed = phoneSecretEnvelopeSchema.safeParse(await readBody(req, 16_384));
-      if (!parsed.success || (!isCredentialTargetId(parsed.data?.target) && parsed.data?.target !== CUSTOM_SECRET_TARGET)) {
-        return json(res, 400, { error: "The encrypted credential request is invalid" });
-      }
-      if (parsed.data.target === CUSTOM_SECRET_TARGET) {
-        const refusal = codedSecretAnswerRefusal(auth, deps.answerContext(auth, m[1], parsed.data.threadId));
-        if (refusal) return json(res, 403, refusal);
-      }
-      const state = await provideSecretFromPhone({
-        ...parsed.data,
-        botId: m[1],
-        messageId: m[2],
-        target: parsed.data.target,
-      }, authenticatedDeviceId);
-      return json(res, 200, state);
-    }
-
     // Desktop credential cards never send the credential through this route: Electron saves it to the OS-backed store first.
     m = path.match(/^\/api\/bots\/([\w-]+)\/secret-cards\/([\w-]+)\/(provided|resume|dismiss)$/);
     if (m && method === "POST") {
@@ -102,11 +68,6 @@ export function createSecretCardRoutes(deps: SecretCardRouteDeps): RouteHandler 
       const threadId = String(body.threadId ?? "");
       const message = secretMessage(m[1], threadId, m[2]);
       if (!message?.secret) return json(res, 404, { ...userError("serverError.secret.missing") });
-      if (phoneSecretSubmissions.has(
-        phoneSecretSubmissionKey(threadId, message.id, message.secret.requestKey),
-      )) {
-        return json(res, 409, { ...userError("serverError.secret.credentialSavingFromPhone") });
-      }
       if (m[3] === "provided") {
         if (message.secret.dismissed) return json(res, 409, { ...userError("serverError.secret.credentialDismissed") });
         if (message.secret.superseded) return json(res, 409, { ...userError("serverError.secret.credentialSuperseded") });

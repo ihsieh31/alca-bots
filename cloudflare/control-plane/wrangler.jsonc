@@ -29,17 +29,7 @@
     "ALCA_TUNNEL_OFFLINE_RECLAIM_DAYS": "3",
     // Cleanup rows per five-minute cron run: 4 on Workers Free (50 subrequests
     // per invocation), 20 on Workers Paid.
-    "ALCA_CLEANUP_SWEEP_LIMIT": "4",
-    // AlcaBot Relay (README "AlcaBot Relay"): no relay node is deployed, so
-    // every relay token is off. To enable, deploy relay/ on a server, list it
-    // in RELAY_NODES, set RELAY_TOKEN_SIGNING_KEY and RELAY_DISABLED "0".
-    "RELAY_NODES": "",
-    "RELAY_NODES_AMERICAS": "",
-    "RELAY_TOKEN_KID": "k1",
-    "RELAY_ROLLOUT_PERCENT": "0",
-    "RELAY_ALLOW_INSTALLATIONS": "",
-    "RELAY_DISABLED": "1",
-    "RELAY_CAPABLE_MIN_VERSION": ""
+    "ALCA_CLEANUP_SWEEP_LIMIT": "4"
   },
   "secrets": {
     "required": ["BETTER_AUTH_SECRET", "CLOUDFLARE_API_TOKEN"]

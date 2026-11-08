@@ -62,7 +62,7 @@ it("sign-out requires confirmation and preserves local and organization wording"
   click("Sign out of AlcaBot Cloud"); click("Sign out of AlcaBot Cloud"); await flush(); expect(bridge.signOut).toHaveBeenCalledExactlyOnceWith();
   expect(render().html).toContain("Sign in to your Cloud plan"); expect(fetch).not.toHaveBeenCalled();
 });
-it("never accesses account bridge from remote companion pages", async () => {
+it("never accesses account bridge from remote client pages", async () => {
   vi.stubGlobal("window", { abot: { cloudAccount: bridge, remoteClient: { active: true } } }); render(); f.effects[0](); await flush();
   expect(bridge.state).not.toHaveBeenCalled(); expect(bridge.onState).not.toHaveBeenCalled(); expect(render().html).toContain("local desktop app");
 });

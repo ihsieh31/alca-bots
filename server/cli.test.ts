@@ -5,13 +5,11 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyStartupPreferences, parseArgs, runAccess, runLogin, runOnboardingCommand, serverEntry, type CliOptions, verifyPhoneEndpoint } from "./cli.ts";
+import { applyStartupPreferences, parseArgs, runAccess, runOnboardingCommand, serverEntry, type CliOptions } from "./cli.ts";
 import { browserSignInLines, formatSessions, pairingBlock, qrToString } from "./cli-pairing.ts";
 import { readAdminActivityRange } from "./admin-activity.ts";
 import { SetupCancelled } from "./cli-prompts.ts";
 import { removeTempDir, waitForExit } from "./testing/cleanup.ts";
-import { startControlPlaneStub } from "./testing/control-plane-stub.ts";
-import { freePortBlock } from "./testing/ports.ts";
 import { workerPort } from "./testing/worker-port.ts";
 
 const SERVER_DIR = dirname(fileURLToPath(import.meta.url));
@@ -44,21 +42,17 @@ describe("alcabots command line", () => {
     expect(parseArgs(["--port", "8125", "--no-open", "--local"], {})).toMatchObject({ command: "start", port: 8125, open: false, local: true });
     expect(parseArgs(["--help"], {})).toMatchObject({ command: "help" });
     expect(parseArgs(["-h"], {})).toMatchObject({ command: "help" });
-    expect(parseArgs(["--local", "--tunnel"], {})).toHaveProperty("error");
     expect(parseArgs(["dance"], {})).toEqual({ error: 'unknown command "dance"' });
     expect(parseArgs(["serve", "--port"], {})).toEqual({ error: "--port needs a value" });
     expect(parseArgs(["serve", "--port", "70000"], {})).toEqual({ error: "--port must be 1-65535" });
     expect(parseArgs(["pair", "--public-url", "mini.example"], {})).toEqual({ error: "--public-url must start with http:// or https://" });
     expect(parseArgs(["serve", "--bogus"], {})).toEqual({ error: 'unknown argument "--bogus"' });
-    expect(parseArgs(["serve", "--tunnel"], {})).toMatchObject({ command: "serve", tunnel: true });
     expect(parseArgs(["setup", "--data-dir", "/tmp/cli-setup"], {})).toMatchObject({ command: "setup", dataDir: resolve("/tmp/cli-setup") });
     expect(parseArgs(["start", "--port", "8125", "--no-pair"], {})).toMatchObject({ command: "start", port: 8125, pair: false });
-    expect(parseArgs(["login", "--email", "a@b.test"], {})).toMatchObject({ command: "login", email: "a@b.test" });
-    expect(parseArgs(["logout"], {})).toMatchObject({ command: "logout" });
+    expect(parseArgs(["phone", "--daily"], {})).toMatchObject({ command: "phone", client: true });
     expect(parseArgs(["browser", "install"], {})).toMatchObject({ command: "browser", browserAction: "install" });
     expect(parseArgs(["browser", "status"], {})).toMatchObject({ command: "browser", browserAction: "status" });
     expect(parseArgs(["browser"], {})).toEqual({ error: "browser needs an action: install or status" });
-    expect(parseArgs(["serve", "--tailscale", "--tunnel"], {})).toEqual({ error: "choose one of --tailscale (your tailnet) and --tunnel (a public address)" });
     expect(parseArgs(["access", "add", "her@example.test", "--chat-only"], {})).toMatchObject({ command: "access", accessAction: "add", email: "her@example.test", chatOnly: true });
     expect(parseArgs(["access", "list"], {})).toMatchObject({ command: "access", accessAction: "list" });
     expect(parseArgs(["access"], {})).toEqual({ error: "access needs one of: list, add EMAIL [--chat-only], remove EMAIL" });
@@ -70,14 +64,9 @@ describe("alcabots command line", () => {
     expect(parseArgs(["service"], {})).toEqual({ error: expect.stringContaining("service needs one of") });
     expect(parseArgs(["serve", "--domain", "Alca.Example.com"], {})).toMatchObject({ command: "serve", domain: "alca.example.com" });
     expect(parseArgs(["serve", "--domain", "localhost"], {})).toEqual({ error: expect.stringContaining("bare hostname") });
-    expect(parseArgs(["serve", "--domain", "alca.example.com", "--tunnel"], {})).toEqual({ error: expect.stringContaining("--domain already gives") });
+    expect(parseArgs(["serve", "--domain", "alca.example.com", "--tailscale"], {})).toEqual({ error: expect.stringContaining("--domain already gives") });
   });
 
-  it("takes the phone kind non-interactively, because a scripted pair never sees the chooser", () => {
-    expect(parseArgs(["pair", "--phone", "android"], {})).toMatchObject({ command: "pair", phone: "android" });
-    expect(parseArgs(["pair", "--phone", "iOS"], {})).toMatchObject({ phone: "ios" });
-    expect(parseArgs(["pair", "--phone", "blackberry"], {})).toEqual({ error: expect.stringContaining("ios or android") });
-  });
 
   it("prints a scannable block with the link, or says where to type the code", () => {
     const block = pairingBlock({ code: "ABCD-EFGH-JKLM", url: "https://mini.example/pair#code=ABCD-EFGH-JKLM", expiresAt: Date.now() + 60_000 });
@@ -102,37 +91,6 @@ describe("alcabots command line", () => {
     expect(guided).toContain("alcabots pair");
   });
 
-  describe("the two links one pairing window has", () => {
-    const url = "https://mini.example/pair#code=ABCD-EFGH-JKLM";
-    const invite = `alcabots://pair?address=https%3A%2F%2Fmini.example&token=alca_pair_${"a".repeat(43)}&name=mini`;
-    const block = (over: Record<string, unknown> = {}) =>
-      pairingBlock({ code: "ABCD-EFGH-JKLM", url, inviteUrl: invite, expiresAt: Date.now() + 60_000, ...over });
-
-    it("gives an Android phone the app-scheme QR, because its scanner rejects https", () => {
-      const out = block({ phone: "android" });
-      expect(out).toContain(qrToString(invite));
-      expect(out).not.toContain(qrToString(url));
-      expect(out).toContain("Scan that in the AlcaBots app");
-      expect(out).toContain(`web browser:   ${url}`);
-      expect(out).not.toContain("open or scan:");
-    });
-
-    it("gives everyone else the web QR, and still prints the app link rather than only naming it", () => {
-      const out = block({ phone: "ios" });
-      expect(out).toContain(qrToString(url));
-      expect(out).not.toContain(qrToString(invite));
-      expect(out).toContain(`phone app:     ${invite}`);
-      expect(out).toContain(`open or scan:  ${url}`);
-    });
-
-    it("says plainly when an Android phone asked for an app link this server cannot build", () => {
-      const out = block({ phone: "android", inviteUrl: null });
-      expect(out).toContain(qrToString(url));
-      expect(out).toContain("The Android app needs the phone-app link");
-      expect(out).toContain("ALCA_PUBLIC_URL");
-      expect(out).not.toContain("Scan that in the AlcaBots app");
-    });
-  });
 
   it("lists sessions as a table with relative last-seen times", () => {
     const now = Date.parse("2026-09-05T12:00:00Z");
@@ -210,12 +168,10 @@ describe("terminal onboarding commands", () => {
   const command = (name: "setup" | "start") => parseArgs([name, "--data-dir", join(process.env.HOME!, "onboarding"), "--port", "18451"], {}) as CliOptions;
   const io = () => ({ log: vi.fn(), error: vi.fn(), ask: vi.fn() });
   const preserveEnv = () => vi.stubEnv("ALCA_DATA_DIR", process.env.ALCA_DATA_DIR);
-  const phoneSetup = vi.fn<NonNullable<NonNullable<Parameters<typeof runOnboardingCommand>[3]>["phoneSetup"]>>();
   const running = vi.fn().mockResolvedValue(false);
   const open = vi.fn().mockResolvedValue(true);
-  const flow = { phoneSetup, running, open };
+  const flow = { running, open };
   beforeEach(() => {
-    phoneSetup.mockImplementation(async (options) => ({ options }));
     running.mockResolvedValue(false);
     open.mockResolvedValue(true);
   });
@@ -235,8 +191,6 @@ describe("terminal onboarding commands", () => {
     expect(setup.isSetupComplete).not.toHaveBeenCalled();
     expect(serve).not.toHaveBeenCalled();
     expect(output.log).toHaveBeenCalledWith(expect.stringContaining("Start with: alcabots"));
-    expect(phoneSetup).toHaveBeenCalledOnce();
-    expect(setup.saveCliStartup).toHaveBeenCalledWith(options.dataDir, { access: "local" });
   });
 
   it("starts after first-time setup and passes through the requested serve options", async () => {
@@ -284,35 +238,7 @@ describe("terminal onboarding commands", () => {
     expect(serve).not.toHaveBeenCalled();
   });
 
-  it("persists an explicitly chosen phone route and uses it on later starts without prompts", async () => {
-    terminal(true);
-    preserveEnv();
-    const options = command("start");
-    setup.isSetupComplete.mockResolvedValue(true);
-    phoneSetup.mockResolvedValue({ options: { ...options, tunnel: true, client: true }, phone: "android" });
-    const serve = vi.fn().mockResolvedValue(0);
-    await runOnboardingCommand(options, io(), serve, flow);
-    expect(setup.saveCliStartup).toHaveBeenCalledWith(options.dataDir, { access: "tunnel", phone: "android" });
-    expect(serve).toHaveBeenLastCalledWith(expect.objectContaining({ tunnel: true, phone: "android", guided: true }));
-    phoneSetup.mockClear();
-    setup.readCliStartup.mockReturnValue({ access: "tunnel", phone: "android" });
-    await runOnboardingCommand(options, io(), serve, flow);
-    expect(phoneSetup).not.toHaveBeenCalled();
-    expect(serve).toHaveBeenLastCalledWith(expect.objectContaining({ tunnel: true, phone: "android" }));
-  });
 
-  it("keeps the provider setup but does not start if phone setup is cancelled", async () => {
-    terminal(true);
-    preserveEnv();
-    setup.runSetup.mockResolvedValue(true);
-    phoneSetup.mockRejectedValue(new SetupCancelled());
-    const serve = vi.fn();
-    const output = io();
-    expect(await runOnboardingCommand(command("start"), output, serve, flow)).toBe(130);
-    expect(serve).not.toHaveBeenCalled();
-    expect(setup.saveCliStartup).not.toHaveBeenCalled();
-    expect(output.log).toHaveBeenCalledWith(expect.stringContaining("already saved is kept"));
-  });
 
   it("reopens an already-running workspace without setup, pairing, or a second server", async () => {
     terminal(true);
@@ -322,7 +248,6 @@ describe("terminal onboarding commands", () => {
     expect(await runOnboardingCommand(command("start"), io(), serve, flow)).toBe(0);
     expect(open).toHaveBeenCalledWith(18451);
     expect(setup.runSetup).not.toHaveBeenCalled();
-    expect(phoneSetup).not.toHaveBeenCalled();
     expect(serve).not.toHaveBeenCalled();
   });
 
@@ -332,7 +257,6 @@ describe("terminal onboarding commands", () => {
     setup.isSetupComplete.mockResolvedValue(true);
     const serve = vi.fn().mockResolvedValue(0);
     await runOnboardingCommand({ ...command("start"), pair: false, open: false }, io(), serve, flow);
-    expect(phoneSetup).not.toHaveBeenCalled();
     expect(setup.saveCliStartup).not.toHaveBeenCalled();
     expect(serve).toHaveBeenCalledWith(expect.objectContaining({ pair: false, open: false }));
   });
@@ -349,26 +273,16 @@ describe("terminal onboarding commands", () => {
     expect(serve).not.toHaveBeenCalled();
   });
 
-  it("does not persist a credential-bearing explicit URL even when phone setup is skipped", async () => {
-    terminal(true);
-    preserveEnv();
-    setup.isSetupComplete.mockResolvedValue(true);
-    const options = { ...command("start"), publicUrl: "https://user:secret@example.com" };
-    const serve = vi.fn();
-    await expect(runOnboardingCommand(options, io(), serve, flow)).rejects.toThrow("address was not saved");
-    expect(setup.saveCliStartup).not.toHaveBeenCalled();
-    expect(serve).not.toHaveBeenCalled();
-  });
 });
 
 describe("saved startup access", () => {
   const options = () => parseArgs([], {}) as CliOptions;
   it("keeps local launches local and supports a one-time local override", () => {
-    expect(applyStartupPreferences(options(), { access: "local" })).toMatchObject({ tunnel: false, tailscale: false, publicUrl: undefined });
-    expect(applyStartupPreferences({ ...options(), local: true }, { access: "tunnel", phone: "ios" })).toMatchObject({ tunnel: false, phone: undefined });
+    expect(applyStartupPreferences(options(), { access: "local" })).toMatchObject({ tailscale: false, publicUrl: undefined });
+    expect(applyStartupPreferences({ ...options(), local: true }, { access: "tailscale" })).toMatchObject({ tailscale: false });
   });
   it("explicit route flags take priority over saved settings", () => {
-    expect(applyStartupPreferences({ ...options(), tailscale: true }, { access: "tunnel" })).toMatchObject({ tailscale: true, tunnel: false });
+    expect(applyStartupPreferences({ ...options(), tailscale: true }, { access: "public-url", publicUrl: "https://example.com" })).toMatchObject({ tailscale: true });
   });
   it("refuses a saved URL that embeds a credential or points to localhost", () => {
     for (const publicUrl of ["https://localhost", "https://user:secret@example.com", "https://example.com/pair#code=secret"])
@@ -376,197 +290,9 @@ describe("saved startup access", () => {
   });
 });
 
-describe("phone endpoint identity", () => {
-  afterEach(() => vi.unstubAllGlobals());
-  it("checks the public endpoint matches this server without sending credentials", async () => {
-    const fetcher = vi.fn().mockResolvedValueOnce(Response.json({ environmentId: "fixture" }))
-      .mockResolvedValueOnce(Response.json({ environmentId: "fixture" }));
-    vi.stubGlobal("fetch", fetcher);
-    expect(await verifyPhoneEndpoint(18451, "https://alca.example.com")).toBe(true);
-    expect(fetcher.mock.calls[1]![1]).toMatchObject({ redirect: "error" });
-    expect(fetcher.mock.calls[1]![1]).not.toHaveProperty("headers");
-  });
-  it("refuses another server or unreachable origin", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(Response.json({ environmentId: "ours" }))
-      .mockResolvedValueOnce(Response.json({ environmentId: "other" })));
-    expect(await verifyPhoneEndpoint(18451, "https://alca.example.com")).toBe(false);
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
-    expect(await verifyPhoneEndpoint(18451, "https://alca.example.com")).toBe(false);
-    expect(await verifyPhoneEndpoint(18451, "https://localhost")).toBe(false);
-  });
-});
 
 const exited = (child: ChildProcess) => (child.exitCode !== null ? Promise.resolve(child.exitCode) : new Promise<number | null>((done) => child.once("exit", (code) => done(code))));
 
-describe.skipIf(process.platform === "win32")("serve --tunnel", () => {
-  const cli = (args: string[], env: NodeJS.ProcessEnv) =>
-    spawn(process.execPath, ["--experimental-strip-types", join(SERVER_DIR, "alcabots.ts"), ...args], {
-      cwd: join(SERVER_DIR, ".."),
-      env: { PATH: process.env.PATH ?? "", ...env },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-
-  it("refuses without an account and says what to do; no local-only fallback", async () => {
-    const home = mkdtempSync(join(tmpdir(), "alca-cli-tunnel-none-"));
-    const port = workerPort(21000, 9000);
-    const child = cli(["serve", "--tunnel", "--port", String(port), "--data-dir", join(home, "data")], { HOME: home, USERPROFILE: home });
-    let err = "";
-    child.stderr?.on("data", (chunk) => (err += String(chunk)));
-    try {
-      expect(await exited(child)).toBe(1);
-      expect(err).toContain("run `alcabots login` first");
-      let dead = false;
-      try {
-        await fetch(`http://127.0.0.1:${port}/api/health`);
-      } catch {
-        dead = true;
-      }
-      expect(dead).toBe(true);
-    } finally {
-      await removeTempDir(home);
-    }
-  }, 30_000);
-
-  it("a fleet credential in the environment serves --tunnel with no account file and no code", async () => {
-    const home = mkdtempSync(join(tmpdir(), "alca-cli-fleet-"));
-    const dataDir = join(home, "data");
-    mkdirSync(dataDir, { recursive: true });
-    const stub = await startControlPlaneStub();
-    const fake = join(home, "cloudflared");
-    writeFileSync(fake, "#!/bin/sh\nexec sleep 300\n", { mode: 0o755 });
-    const port = await freePortBlock([0, 1, 10_000]);
-    const originPort = port + 10_000;
-    const fleetEnv = {
-      HOME: home,
-      USERPROFILE: home,
-      ALCA_WEBHOOK_PORT: String(port + 1),
-      ALCA_BROWSER_CONNECTION: join(home, "browser-connection.json"),
-      ALCA_CONTROL_PLANE_URL: stub.url,
-      ALCA_CLOUDFLARED_PATH: fake,
-      ALCA_TUNNEL_ORIGIN_PORT: String(originPort),
-    };
-    const rejected = cli(["serve", "--tunnel", "--no-pair", "--port", String(port), "--data-dir", dataDir], {
-      ...fleetEnv,
-      ALCA_INSTALLATION_CREDENTIAL: `alca_install_${"x".repeat(22)}.${"y".repeat(43)}`,
-    });
-    let err = "";
-    rejected.stderr?.on("data", (chunk) => (err += String(chunk)));
-    expect(await exited(rejected)).toBe(1);
-    expect(err).toContain("was rejected");
-
-    const child = cli(["serve", "--tunnel", "--no-pair", "--port", String(port), "--data-dir", dataDir], {
-      ...fleetEnv,
-      ALCA_INSTALLATION_CREDENTIAL: stub.seedInstallation("fleet box"),
-    });
-    let out = "";
-    child.stdout?.on("data", (chunk) => (out += String(chunk)));
-    child.stderr?.on("data", (chunk) => (out += String(chunk)));
-    const gateway = `http://127.0.0.1:${originPort}`;
-    try {
-      const deadline = Date.now() + 60_000;
-      while (!out.includes("AlcaBots is running") && Date.now() < deadline && child.exitCode === null) await new Promise((r) => setTimeout(r, 200));
-      expect(out).toContain("using the installation credential from ALCA_INSTALLATION_CREDENTIAL");
-      expect(out).toContain(`reachable at ${stub.endpointUrl}`);
-      expect(existsSync(join(dataDir, "tunnel-account.json"))).toBe(false);
-      let status = 0;
-      const gatewayDeadline = Date.now() + 20_000;
-      while (Date.now() < gatewayDeadline && status !== 200) {
-        try {
-          status = (await fetch(`${gateway}/.well-known/alcabots/environment`)).status;
-        } catch {
-          status = 0;
-        }
-        if (status !== 200) await new Promise((r) => setTimeout(r, 250));
-      }
-      expect(status).toBe(200);
-    } finally {
-      child.kill("SIGTERM");
-      await exited(child);
-      await stub.close();
-      await removeTempDir(home);
-    }
-  }, 120_000);
-
-  it("serves at the account's public address through the gateway, where every request is remote", async () => {
-    const home = mkdtempSync(join(tmpdir(), "alca-cli-tunnel-"));
-    const dataDir = join(home, "data");
-    mkdirSync(dataDir, { recursive: true });
-    const stub = await startControlPlaneStub();
-    const fake = join(home, "cloudflared");
-    writeFileSync(fake, "#!/bin/sh\nexec sleep 300\n", { mode: 0o755 });
-    // sign this data dir in, in-process, against the stub
-    vi.stubEnv("ALCA_CONTROL_PLANE_URL", stub.url);
-    const quiet = { log: () => undefined, error: () => undefined, ask: async () => stub.otp };
-    expect(await runLogin({ command: "login", port: 1, dataDir, tailscale: false, tunnel: false, client: false, pair: true, json: false, email: "cli@example.test" }, quiet)).toBe(0);
-    vi.unstubAllEnvs();
-    const port = await freePortBlock([0, 1, 10_000]);
-    const originPort = port + 10_000;
-    const child = cli(["serve", "--tunnel", "--port", String(port), "--data-dir", dataDir, "--label", "tunnel test"], {
-      HOME: home,
-      USERPROFILE: home,
-      ALCA_WEBHOOK_PORT: String(port + 1),
-      ALCA_BROWSER_CONNECTION: join(home, "browser-connection.json"),
-      ALCA_CONTROL_PLANE_URL: stub.url,
-      ALCA_CLOUDFLARED_PATH: fake,
-      ALCA_TUNNEL_ORIGIN_PORT: String(originPort),
-    });
-    let out = "";
-    child.stdout?.on("data", (chunk) => (out += String(chunk)));
-    child.stderr?.on("data", (chunk) => (out += String(chunk)));
-    const gateway = `http://127.0.0.1:${originPort}`;
-    try {
-      const deadline = Date.now() + 60_000;
-      while (!out.includes("open or scan:") && Date.now() < deadline && child.exitCode === null) await new Promise((r) => setTimeout(r, 200));
-      expect(out).toContain(`AlcaBots is running on http://127.0.0.1:${port}, reachable at ${stub.endpointUrl}`);
-      expect(out).toContain(`open or scan:  ${stub.endpointUrl}/pair#code=`);
-      expect(stub.calls).toContain("POST /v1/installations/self/endpoint");
-
-      let descriptor: Response | null = null;
-      const gatewayDeadline = Date.now() + 20_000;
-      while (Date.now() < gatewayDeadline) {
-        try {
-          descriptor = await fetch(`${gateway}/.well-known/alcabots/environment`);
-          if (descriptor.status === 200) break;
-        } catch {
-          descriptor = null;
-        }
-        await new Promise((r) => setTimeout(r, 250));
-      }
-      expect(descriptor?.status, out.match(/^tunnel:.*$/gm)?.join("\n")).toBe(200);
-      // A request with no headers, which the loopback listener would take as the owner, is a stranger through the gateway.
-      const stranger = await fetch(`${gateway}/api/bots`);
-      expect(stranger.status).toBe(403);
-      expect(((await stranger.json()) as { error: string }).error).toMatch(/through a proxy/);
-      expect(await (await fetch(`${gateway}/api/health`)).json()).toEqual({ app: "alcabots" });
-      expect(typeof ((await (await fetch(`http://127.0.0.1:${port}/api/health`)).json()) as { pid: unknown }).pid).toBe("number");
-      const match = /pairing code:  ([A-Z2-9-]+)/.exec(out);
-      expect(match).toBeTruthy();
-      const paired = await fetch(`${gateway}/api/auth/pair`, {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.9" },
-        body: JSON.stringify({ code: match?.[1] ?? "", label: "phone" }),
-      });
-      expect(paired.status).toBe(200);
-      const { token } = (await paired.json()) as { token: string };
-      const mine = await fetch(`${gateway}/api/auth/session`, { headers: { authorization: `Bearer ${token}` } });
-      expect(mine.status).toBe(200);
-    } finally {
-      child.kill("SIGTERM");
-      await exited(child);
-      await stub.close();
-      await removeTempDir(home);
-    }
-    for (const url of [`${gateway}/api/health`, `http://127.0.0.1:${port}/api/health`]) {
-      let dead = false;
-      try {
-        await fetch(url);
-      } catch {
-        dead = true;
-      }
-      expect(dead, url).toBe(true);
-    }
-  }, 120_000);
-});
 
 describe("alcabots access", () => {
   it("edits the sign-in allow-list in config.json without a running server", async () => {
@@ -575,7 +301,7 @@ describe("alcabots access", () => {
     const out: string[] = [];
     const err: string[] = [];
     const io = { log: (line: string) => out.push(line), error: (line: string) => err.push(line), ask: async () => "" };
-    const base = { command: "access" as const, port: 1, dataDir, tailscale: false, tunnel: false, client: false, pair: true, json: false };
+    const base = { command: "access" as const, port: 1, dataDir, tailscale: false, client: false, pair: true, json: false };
     try {
       expect(await runAccess({ ...base, accessAction: "list" }, io)).toBe(0);
       expect(out.at(-1)).toMatch(/pairing codes only/);

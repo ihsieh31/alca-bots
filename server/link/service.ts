@@ -38,6 +38,7 @@ export interface LinkServiceOptions {
   port: number;
   sessions: LinkSessions;
   computerName(): string;
+  remoteAccessRefusal?(): string | undefined;
   env?: Record<string, string | undefined>;
   WebSocketImpl?: WebSocketCtor;
   log?: (message: string) => void;
@@ -175,6 +176,7 @@ export class LinkService {
   private onSession(session: HostSession): void {
     const deviceId = session.device.id;
     const bridge = createHttpBridge({
+      remoteAccessRefusal: () => this.o.remoteAccessRefusal?.(),
       peer: session.peer,
       overRelay: session.via === "relay",
       port: this.o.port,

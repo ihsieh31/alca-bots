@@ -390,16 +390,6 @@ test("a Cloud remembered for another account is not this account's Cloud", async
   assert.equal(f.ask("media", MIC).value, true);
 });
 
-test("companion client mode has no Cloud of its own, so no Cloud page hears the microphone", async () => {
-  const f = myCloudFixture();
-  await f.restore();
-  assert.equal(f.ask("media", MIC).value, true);
-  f.remoteAccess = { endpoint: "https://relay.example.test", serverName: "Office Mac", deviceId: "device-2" };
-  assert.equal(myCloudOrigin({ account: f.client, remembered: f.remembered, remoteAccess: f.remoteAccess }), null);
-  assert.equal(f.ask("media", MIC).value, false);
-  assert.equal(f.check(), false);
-  assert.equal(myCloudOrigin({ account: null, remembered: f.remembered, remoteAccess: null }), null, "no Cloud sign-in on this computer");
-});
 
 test("a check that finds no Cloud for this account ends it, for the microphone and the Plan channels alike", async () => {
   const f = myCloudFixture();

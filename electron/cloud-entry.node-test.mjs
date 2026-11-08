@@ -109,11 +109,11 @@ test("a failed open is contained and a later link still opens", async () => {
   assert.deepEqual(h.calls, ["open", "reveal", "open"]);
 });
 
-test("a consumed launch link is not replayed by the companion or updater relaunch", () => {
+test("a consumed launch link is not replayed by the app or updater relaunch", () => {
   const argv = ["/fixture/AlcaBots", "--fixture", "alcabots://cloud", "alcabots://cloud?ignored"];
   takeCloudDeepLink(argv);
   const calls = [];
-  runInNewContext(`${between("function relaunchAfterDesktopRemoteChange()", 'ipcMain.handle("desktop-remote:state"')}\nrelaunchAfterDesktopRemoteChange();`, {
+  runInNewContext(`${between("function relaunchApp()", "const workspaceOnly =")}\nrelaunchApp();`, {
     desktopShutdownStarted: false, process: { argv }, setTimeout: callback => { callback(); return {}; },
     app: { relaunch: options => calls.push(options.args), quit: () => {} },
   });
@@ -132,7 +132,7 @@ test("main takes the link from launch arguments, open-url and a second instance"
 });
 
 test("startup delivers a pending Cloud link before default navigation", () => {
-  const startup = between("  let restoredOrganizationEntry = false;", "  // Reconcile incomplete setup");
+  const startup = between("  let restoredOrganizationEntry = false;", "  // Registering from an unreadable store");
   const delivered = startup.indexOf("const deliveredCloudEntry = await cloudEntry.ready();");
   assert.ok(delivered > startup.indexOf("await deliverOrganizationEntry()"));
   assert.ok(delivered < startup.indexOf("await showStartPlace()"));
@@ -149,7 +149,6 @@ test("the Cloud entry checks the owned server, waits for the saved sign-in, and 
   for (const action of ["createWindow(", "persistEnvironments(", "win.webContents.send(", "win.loadURL("]) {
     assert.ok(entry.indexOf(action) > restored, `${action} must follow the server guard and the restore`);
   }
-  assert.ok(entry.indexOf("if (desktopRemoteAccess) throw") < guard, "companion client mode is not changed by the link");
   assert.doesNotMatch(entry, /dialog\.|confirm/);
   assert.match(entry, /const action = cloudLinkOpensSheet\(cloudAccount\?\.state\(\)\) \? "cloud-add" : "cloud";/);
   assert.match(entry, /void cloudAccount\?\.refresh\(\)\.catch\(\(\) => \{\}\);/, "every link asks for the session at once, with or without a checkout waiting");
@@ -168,6 +167,6 @@ test("Add a Cloud… is always the sheet on this computer's page, never a native
   assert.match(add, /const action = source === "app_howto" \? "cloud-add-howto" : "cloud-add";/);
   assert.deepEqual([...add.matchAll(/webContents\.send\(([^)]*)\)/g)].map(match => match[1]), ['"app:open-settings", action']);
   assert.deepEqual([...add.matchAll(/loadURL\((.*)\);/g)].map(match => match[1]), ["`${rendererOrigin()}/?desktop-settings=${action}`"]);
-  assert.match(between("function cloudOffersAllowed()", "\n}\n"), /return app\.isPackaged && !desktopRemoteAccess && brandedBuild === false;/);
+  assert.match(between("function cloudOffersAllowed()", "\n}\n"), /return app\.isPackaged && brandedBuild === false;/);
   assert.match(between("async function readCloudOfferBrand()", "\n}\n"), /fetch\(`http:\/\/127\.0\.0\.1:\$\{SERVER_PORT\}\/api\/brand`/);
 });

@@ -1,7 +1,32 @@
 // Never log Tailscale's raw stderr (it can contain auth keys and node names): failures are classified into a closed set.
 import { execFile } from "node:child_process";
+import { homedir } from "node:os";
+import { delimiter, join } from "node:path";
 
-import { tailscaleCandidates, tailscaleEnvironment } from "../companion/src/listener.ts";
+
+function tailscaleCandidates(home = homedir()): string[] {
+  // Absolute paths first: an app opened from Finder gets
+  // /usr/bin:/bin:/usr/sbin:/sbin, no Homebrew and no /usr/local.
+  return [
+    "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
+    join(home, "Applications", "Tailscale.app", "Contents", "MacOS", "Tailscale"),
+    "/opt/homebrew/bin/tailscale",
+    "/usr/local/bin/tailscale",
+    "/usr/bin/tailscale",
+    "/run/current-system/sw/bin/tailscale",
+    "C:\\Program Files\\Tailscale\\tailscale.exe",
+    "C:\\Program Files (x86)\\Tailscale\\tailscale.exe",
+    "tailscale",
+  ];
+}
+
+/** The macOS app executable chooses GUI or CLI mode from its environment; a Finder-launched process has no shell hints,
+ * so the CLI is asked for explicitly. https://tailscale.com/docs/reference/tailscale-cli?tab=macos */
+const tailscaleEnvironment = (): NodeJS.ProcessEnv => ({
+  ...process.env,
+  PATH: [process.env.PATH ?? "", "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"].filter(Boolean).join(delimiter),
+  TAILSCALE_BE_CLI: "1",
+});
 
 export interface TailscaleStatus {
   cli: string;

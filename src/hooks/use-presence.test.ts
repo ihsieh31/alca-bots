@@ -215,7 +215,7 @@ describe("usePresence", () => {
     expect(pairs(dom.removed)).toEqual(pairs(dom.added));
   });
 
-  it("pings in companion client mode too, where the companion lets the route through", async () => {
+  it("pings in remote client mode too", async () => {
     stubDom({ abot: { remoteClient: { active: true } } });
     fixture.api.mockResolvedValue({ ok: true, returned: false });
     render(loaded, vi.fn());

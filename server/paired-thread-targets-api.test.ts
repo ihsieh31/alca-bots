@@ -71,8 +71,6 @@ describe("paired thread targets through an isolated HTTP fixture", () => {
       expect(result.status, `${method} ${suffix}`).toBe(409);
       expect(result.body.error).toMatch(/Update the AlcaBots app on this device.*choose a thread/);
     }
-    const legacyPhone = await api("POST", `/api/bots/${bot.id}/read`, undefined, { "x-alcabots-companion": "1", "x-alcabots-companion-device": "fixture-phone" });
-    expect(legacyPhone.status).toBe(409);
     expect((await page(threadA)).messages).toEqual(beforeA.messages);
     expect((await page(threadB)).messages).toEqual(beforeB.messages);
     expect((await botState(bot.id)).modelSelection).toEqual(selection(models[0]));
@@ -138,8 +136,6 @@ describe("paired thread targets through an isolated HTTP fixture", () => {
     const before = await page(bot.threadId);
     const spoofed = await api("POST", `/api/bots/${bot.id}/messages`, { text: "Unauthorized", threadId: bot.threadId }, {
       "x-forwarded-for": "203.0.113.5",
-      "x-alcabots-companion": "1",
-      "x-alcabots-companion-device": "not-authenticated",
     });
     expect(spoofed.status).toBe(403);
     expect((await page(bot.threadId)).messages).toEqual(before.messages);

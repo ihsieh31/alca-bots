@@ -46,10 +46,10 @@ export function installTalk({ ipcMain, localOnly, localOrHome, BrowserWindow, ap
   };
 
   return {
-    /** `remote()`: this desktop is a remote client of another computer. `away()`: this computer's bots moved to My Cloud,
+    /** `away()`: this computer's bots moved to My Cloud,
      * so its own copy is frozen. `starting()`: this computer's server is on its way up. `dataDir()`: the data folder
      * this process runs. */
-    start({ globalShortcut, screen, prefs, remote, away, starting, localRequest, dataDir }) {
+    start({ globalShortcut, screen, prefs, away, starting, localRequest, dataDir }) {
       const request = (route, init) => (packaged ? localRequest(route, init) : fetch(new URL(route, devUrl), init));
       try {
         panel = createTalkPanel({ t, BrowserWindow, screen, nativeImage, iconPath, theme, onOpen: logged("open", () => session.open()), onDismiss: logged("dismiss", () => session.dismiss()) });
@@ -61,7 +61,7 @@ export function installTalk({ ipcMain, localOnly, localOrHome, BrowserWindow, ap
           release: () => shortcut.releaseModifiers(),
           openChat: chat => (chat ? openLink(`alcabots://thread/${encodeURIComponent(chat.threadId)}?bot=${encodeURIComponent(chat.botId)}`) : reveal()),
         });
-        shortcut = createTalkShortcut({ globalShortcut, prefs, available: () => appleSpeech && !remote() && !away(), onPress: logged("press", () => session.press()) });
+        shortcut = createTalkShortcut({ globalShortcut, prefs, available: () => appleSpeech && !away(), onPress: logged("press", () => session.press()) });
       } catch (error) {
         session = null;
         log(`talk shortcut unavailable: ${error?.message ?? error}`);

@@ -1,6 +1,6 @@
 ---
 title: Networking
-description: Understand the harness, webhook, and companion network boundaries.
+description: Understand the harness, webhook, and phone link network boundaries.
 icon: Network
 ---
 
@@ -10,12 +10,11 @@ AlcaBots separates its network surfaces by trust level.
 |---|---|---|
 | Harness | `127.0.0.1:8799` | Full app API and event stream |
 | Webhook receiver | `127.0.0.1:8800` | Health and secret hook endpoints only |
-| Companion sidecar | `0.0.0.0:8810` when enabled | Paired-device, token-authenticated allowlist |
-| Companion control | `127.0.0.1:8811` | Pairing and device administration |
+| Phone link | Outbound only, to the relay | Paired phones over an end-to-end encrypted link |
 
 ## Remote access
 
-Use the companion sidecar rather than exposing the harness. Tailscale is the recommended remote route because it encrypts and authenticates the network path without making the machine public.
+Use the phone link rather than exposing the harness. Tailscale is the recommended remote route because it encrypts and authenticates the network path without making the machine public.
 
 For webhook delivery, proxy only the dedicated webhook receiver. Never forward the main harness port to the public internet.
 

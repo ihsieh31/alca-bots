@@ -56,6 +56,5 @@ describe("ego live routes", () => {
     const session = { kind: "session", session: { id: "secret-session", userId: "portal:grant" } } as unknown as RequestAuth;
     expect(liveOwner(session)).toMatch(/^[0-9a-f]{24}$/u);
     expect(liveOwner(session)).not.toContain("secret");
-    expect(liveOwner({ kind: "loopback", scopes: [], companionDevice: "p1" })).not.toBe(liveOwner({ kind: "loopback", scopes: [] }));
   });
 });
