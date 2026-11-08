@@ -1,6 +1,6 @@
 // Web Push as a browser's push service expects it: the body encrypted to the phone (RFC 8291, aes128gcm) and the
 // request signed with this computer's key (VAPID, RFC 8292). The push service only ever carries ciphertext.
-import { createCipheriv, createECDH, createPrivateKey, generateKeyPairSync, hkdfSync, randomBytes, sign, type JsonWebKey } from "node:crypto";
+import { createCipheriv, createECDH, createPrivateKey, generateKeyPairSync, hkdfSync, randomBytes, sign } from "node:crypto";
 
 export interface PushKeys {
   p256dh: string;
@@ -86,7 +86,7 @@ export function encryptPush(plaintext: Uint8Array, keys: PushKeys, fixed: { salt
 
 export function generateVapidKey(): VapidKey {
   const { privateKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
-  const jwk = privateKey.export({ format: "jwk" }) as JsonWebKey;
+  const jwk = privateKey.export({ format: "jwk" });
   return { kty: "EC", crv: "P-256", x: jwk.x!, y: jwk.y!, d: jwk.d! };
 }
 

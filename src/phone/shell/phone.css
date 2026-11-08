@@ -92,7 +92,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
   text-align: left;
 }
 .phone-row-title { display: block; font-size: 16px; font-weight: 500; letter-spacing: -0.012em; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.phone-row-sub { display: block; font-size: 13.5px; line-height: 1.35; margin-top: 1px; color: var(--color-ink-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phone-row-sub { display: block; font-size: 14px; line-height: 1.35; margin-top: 1px; color: var(--color-ink-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .phone-row-sub-strong { color: var(--color-ink); }
 
 .phone-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-ink); flex: none; margin-right: 6px; }
@@ -134,11 +134,11 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
 .phone-roster { display: flex; gap: 6px; margin: 0 -20px; padding: 4px 16px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
 .phone-roster::-webkit-scrollbar { display: none; }
 .phone-roster-item { flex: none; width: 76px; min-height: 84px; display: flex; flex-direction: column; align-items: center; gap: 7px; scroll-snap-align: start; }
-.phone-roster-item > span { max-width: 100%; font-size: 12.5px; color: var(--color-ink-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phone-roster-item > span { max-width: 100%; font-size: 13px; color: var(--color-ink-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.phone-quiet { padding: 54px 12px; text-align: center; color: var(--color-ink-secondary); font-size: 14.5px; line-height: 1.5; animation: phone-tab-in 600ms var(--phone-ease) both; }
+.phone-quiet { padding: 54px 12px; text-align: center; color: var(--color-ink-secondary); font-size: 15px; line-height: 1.5; animation: phone-tab-in 600ms var(--phone-ease) both; }
 .phone-quiet-title { font-size: 20px; font-weight: 500; letter-spacing: -0.016em; color: var(--color-ink); margin-bottom: 6px; }
-.phone-empty-line { font-size: 14.5px; color: var(--color-ink-secondary); padding: 6px 0; }
+.phone-empty-line { font-size: 15px; color: var(--color-ink-secondary); padding: 6px 0; }
 
 .phone-computer { display: flex; align-items: center; gap: 13px; padding: 16px; border-radius: 20px; background: var(--color-card); border: 1px solid var(--color-edge); margin-bottom: 30px; }
 .phone-computer + .phone-section { margin-top: 0; }
@@ -163,7 +163,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
   z-index: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   min-height: 50px;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.002em;
   color: var(--color-ink-tertiary);
@@ -227,7 +227,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
   height: 36px;
   padding: 0 15px;
   border-radius: 18px;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   animation: phone-tab-in 360ms var(--phone-ease) both;
@@ -264,7 +264,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
   grid-template-rows: 0fr;
   background: var(--color-raised);
   transition: grid-template-rows 360ms var(--phone-ease);
-  font-size: 12.5px;
+  font-size: 13px;
   text-align: center;
   color: var(--color-ink-secondary);
 }
@@ -354,7 +354,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
   justify-content: center;
   gap: 6px;
   padding: 0 14px;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--color-ink);
 }
@@ -401,7 +401,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
   justify-content: center;
   gap: 14px;
   padding: 0 40px;
-  font-size: 14.5px;
+  font-size: 15px;
   line-height: 1.45;
   text-align: center;
   color: var(--color-ink-secondary);
@@ -435,7 +435,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
   bottom: calc(var(--phone-bottom) + var(--phone-keyboard, 0px) + 112px);
   padding: 11px 16px;
   border-radius: 16px;
-  font-size: 13.5px;
+  font-size: 14px;
   text-align: center;
   background: var(--color-ink);
   color: var(--color-app);
@@ -451,7 +451,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
 [data-phone-keyboard] .phone-browser-bottom { padding-bottom: 8px; }
 .phone-browser-hint {
   margin-bottom: 10px;
-  font-size: 12.5px;
+  font-size: 13px;
   text-align: center;
   color: var(--color-ink-secondary);
 }
@@ -472,7 +472,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
   width: 100%;
   height: 50px;
   border-radius: 25px;
-  font-size: 15.5px;
+  font-size: 16px;
   font-weight: 550;
   background: var(--color-ink);
   color: var(--color-app);
@@ -480,7 +480,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
 }
 .phone-browser-primary:active { scale: 0.98; }
 .phone-browser-primary:disabled { opacity: 0.35; }
-.phone-browser-handback { flex: 1; width: auto; height: 44px; margin-left: 6px; font-size: 14.5px; }
+.phone-browser-handback { flex: 1; width: auto; height: 44px; margin-left: 6px; font-size: 15px; }
 .phone-browser-tab { display: flex; align-items: center; gap: 4px; min-height: 60px; }
 .phone-browser-tab-main { flex: 1; min-width: 0; padding: 8px 4px; text-align: left; }
 .phone-browser-tab-main[aria-current] .phone-row-title { font-weight: 650; }
