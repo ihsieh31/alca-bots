@@ -138,7 +138,7 @@ describe("LinkService", () => {
     expect(s.service.status().pairing?.state).toBe("paired");
     expect(s.service.status().devices).toEqual([expect.objectContaining({ name: "Test phone", access: "full", connection: "relay" })]);
     for (const file of ["devices.json", "identity.json", "settings.json"]) {
-      if (file !== "settings.json") expect(statSync(join(s.dataDir, "link", file)).mode & 0o777).toBe(0o600);
+      if (file !== "settings.json" && process.platform !== "win32") expect(statSync(join(s.dataDir, "link", file)).mode & 0o777).toBe(0o600);
     }
 
     await client.request("http.open", {
