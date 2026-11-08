@@ -149,6 +149,15 @@ added with one click, skills switched on. See [docs/org-library.md](docs/org-lib
 Your New bot defaults can travel too, as a **preset bot** that appears in New bot (in a team file, or on
 their own with **Share as preset…**). See [docs/presets.md](docs/presets.md).
 
+### 🌐 Browse in your own browser with ego lite
+
+Bots browse the web through [ego lite](https://lite.ego.app), the Chromium browser on your own Mac or
+Windows PC. You see every page a bot opens in its own group of tabs, your sign-ins stay yours, and when a
+site needs you (a sign-in, a code, a CAPTCHA) the bot hands the tabs to you and continues when you are
+done. From a paired phone you can watch the bot's browser and take it over: the bot waits until you hand it
+back. Install ego lite and finish its onboarding, then restart AlcaBots. See
+[the browser guide](apps/docs/content/docs/computers/browser.mdx).
+
 ### 🎧 Bots that talk back
 
 Press the speaker on any reply, or switch a bot to read its answers out as they land — so you can listen
@@ -195,6 +204,7 @@ expressions · screenshots of the bot's work folded into the transcript.
 | **Boat** ([boat.dev](https://boat.dev)) | Cloud computers (upstream integration; needs your own account) |
 | **Composio** | Connected apps — Gmail, Slack, GitHub, and more |
 | **Cua Driver** | Native computer use on your own machine |
+| **ego lite** ([lite.ego.app](https://lite.ego.app)) | The bots' web browser, installed separately on your computer |
 | **ElevenLabs · Fish Audio** | Hosted voices for bots that talk back |
 
 ## How it works
@@ -449,6 +459,10 @@ Milind Soni and OpenMausBot contributors. Details are in [LICENSING.md](LICENSIN
 Packaged Cua Driver components retain their upstream MIT, SIL OFL 1.1, MPL-2.0, and other dependency terms;
 the corresponding notices, license texts, source locations, and SBOM are in
 [`third_party/cua-driver/`](third_party/cua-driver/) and ship beside the native runtime.
+
+ego lite is proprietary software by Citro Labs, installed separately under its own
+[terms](https://lite.ego.app/terms) and never bundled; the bots' browsing guide is adapted from the MIT-licensed
+ego-browser skill, whose license is in [`third_party/ego-lite/`](third_party/ego-lite/).
 
 OpenMausBot and MausBot are trademarks of Supamaus Software Private Limited; "Grok" and other product names
 are trademarks of their respective owners. alca-bots is not affiliated with any of them.

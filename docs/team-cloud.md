@@ -71,11 +71,8 @@ keeps people apart on it. The bot box ([bot-box.md](bot-box.md)) is what makes t
   connections from elsewhere have no way in: a share code, a moved MCP sign-in or a mailbox is refused with
   *"Personal connections never enter Acme. Ask an admin to connect it for Acme."* A login from a sign-in card is saved by
   an Admin only, for the whole team.
-- **Browsers.** Each private chat with a bot drives that person's own browser of the bot, each group chat the group
-  chat's, and the bot's main chat the team's: separate Chrome profiles, saved sign-ins and live views, so a site one
-  member signed in to in their chat never opens signed in for another member. The live view shows the browser of the
-  conversation it is opened from, to whoever may read that conversation (a member's own browser to that member alone);
-  with no conversation named (a phone) it is the person's own. Every Chrome runs in its own box (below).
+- **Browsers.** A Cloud team's bots have no web browser: bots browse through ego lite, which runs on a person's own
+  Mac or Windows computer, so web work goes through connected apps or a cloud computer here.
 - **Phones.** Settings → *Open on your phone* (and *Connect your phone* in the account menu) shows a code made for the
   person signed in. The phone app scans it as any `/pair#code=` link and gets that person's session: their address,
   their role, their chats, never another member's. The phone stays signed in while the person's app keeps checking in
