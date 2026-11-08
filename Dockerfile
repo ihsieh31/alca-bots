@@ -2,11 +2,9 @@
 # ALCA Cloud Pro home machine (docs/cloud-pro.md).
 #
 # Build the renderer + the self-contained server bundle, then ship only those
-# artifacts on a slim Node runtime. The runtime stage holds what changes
-# rarely (Chrome's libraries, agent-browser and its Chrome), and each image
-# adds its engine CLIs before the app files, which change with every commit:
-# a code-only change rebuilds only the small app layers, so a pull downloads
-# only those. The server keeps binding 127.0.0.1 inside the container (the
+# artifacts on a slim Node runtime. Each image adds its engine CLIs before the
+# app files, which change with every commit: a code-only change rebuilds only
+# the small app layers, so a pull downloads only those. The server keeps binding 127.0.0.1 inside the container (the
 # loopback-trust invariant is the auth model); deploy/docker-compose.yml puts
 # Caddy in the same network namespace to terminate TLS and authentication at
 # the edge.
@@ -20,9 +18,9 @@
 # ...) and AlcaBots's own state (~/.alcabots) persist across container
 # restarts.
 #
-# A plain `docker run` of either image wants `--init --shm-size=512m`, as the
-# compose files set: exited child processes need an init to collect them, and
-# Chrome needs shared memory. On Fly Machines (the Cloud home) Fly's own init is PID 1.
+# A plain `docker run` of either image wants `--init`, as the compose files
+# set: exited child processes need an init to collect them. On Fly Machines
+# (the Cloud home) Fly's own init is PID 1.
 
 FROM caddy:2.10.2 AS edge
 # Official Caddy carries a privileged-port file capability. The Cloud home's
@@ -69,55 +67,14 @@ RUN arch=x64 && if [ "$TARGETARCH" = arm64 ]; then arch=arm64; fi \
   && mv "dist-native/duckdb/linux-$arch" dist-native/duckdb/target && chmod -R go-w dist-native/duckdb
 
 FROM node:24-bookworm-slim AS runtime
-# Install Chrome's Bookworm libraries directly: agent-browser --with-deps
-# invokes sudo even as root, and this image deliberately does not ship sudo.
-# git + curl: agent CLIs shell out to git; curl backs the healthcheck
+# git + curl: agent CLIs shell out to git; curl backs the healthcheck.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl git \
-    libxcb-shm0 libx11-xcb1 libx11-6 libxcb1 libxext6 libxrandr2 \
-    libxcomposite1 libxcursor1 libxdamage1 libxfixes3 libxi6 libgtk-3-0 \
-    libpangocairo-1.0-0 libpango-1.0-0 libatk1.0-0 libcairo-gobject2 \
-    libcairo2 libgdk-pixbuf-2.0-0 libxrender1 libasound2 libfreetype6 \
-    libfontconfig1 libdbus-1-3 libnss3 libnss3-tools libnspr4 \
-    libatk-bridge2.0-0 libdrm2 libxkbcommon0 libatspi2.0-0 libcups2 \
-    libxshmfence1 libgbm1 fonts-noto-color-emoji fonts-noto-cjk fonts-freefont-ttf \
+    fonts-noto-color-emoji fonts-noto-cjk fonts-freefont-ttf \
   && rm -rf /var/lib/apt/lists/* \
   && useradd --create-home --home-dir /data --shell /bin/bash alca
-# The pinned agent-browser and a Chrome for Testing with its libraries, left
-# from the built-in browser that ego lite replaced (docs/plans/browser-engine.md);
-# nothing in the server uses them any more.
-ARG AGENT_BROWSER_VERSION=0.37.0
-# `agent-browser install` fetches Chrome for Testing's last-known-good Stable;
-# the publish job passes that version so a Chrome release rebuilds this layer.
-ARG CHROME_CACHE_TAG=""
-# Chrome for Testing has no Linux ARM64 build, so an arm64 image takes
-# Debian's Chromium instead, linked at the same path; the publish job passes
-# its newest bookworm version so a Debian security update rebuilds it too.
-ARG CHROMIUM_CACHE_TAG=""
-ARG TARGETARCH
-# The global link must be the native binary for this platform (agent-browser's
-# postinstall points it there); the other platforms' binaries are never run.
-RUN echo "agent-browser ${AGENT_BROWSER_VERSION}, Chrome for Testing ${CHROME_CACHE_TAG:-Stable}, Debian Chromium ${CHROMIUM_CACHE_TAG:-latest}" \
-  && npm install -g --cache /tmp/npm-cache agent-browser@${AGENT_BROWSER_VERSION} \
-  && if [ "$TARGETARCH" = arm64 ]; then \
-       apt-get update && apt-get install -y --no-install-recommends chromium && rm -rf /var/lib/apt/lists/* \
-       && mkdir -p /opt/alcabots-browser && ln -s /usr/lib/chromium/chromium /opt/alcabots-browser/chrome; \
-     else HOME=/opt/alcabots-browser agent-browser install \
-       && ln -s /opt/alcabots-browser/.agent-browser/browsers/chrome-*/chrome /opt/alcabots-browser/chrome; \
-     fi \
-  && native="$(readlink -f "$(command -v agent-browser)")" \
-  && case "$native" in */agent-browser/bin/agent-browser-linux-*) ;; *) echo "agent-browser is not a native binary: $native" >&2; exit 1;; esac \
-  && [ "$(head -c 4 "$native")" = "$(printf '\177ELF')" ] \
-  && for binary in "${native%/*}"/agent-browser-*; do [ "$binary" = "$native" ] || rm "$binary"; done \
-  && agent-browser --version \
-  && rm -rf /tmp/npm-cache /tmp/node-compile-cache
-# Keep the baked-in browser outside both root's private home and /data,
-# which may be an existing mounted volume. Session state still lives in HOME,
-# which each image sets after its last build step, so no build step writes
-# into what a fresh volume starts with.
 #  ALCA_DUCKDB_DIR: the DuckDB binding tree the server requires (no node_modules here).
-ENV AGENT_BROWSER_EXECUTABLE_PATH=/opt/alcabots-browser/chrome \
-    ALCA_DUCKDB_DIR=/app/duckdb \
+ENV ALCA_DUCKDB_DIR=/app/duckdb \
     ALCA_DATA_DIR=/data/.alcabots \
     ALCA_STATIC_DIR=/app/dist \
     ALCA_PORT=8799 \
@@ -129,7 +86,7 @@ FROM runtime AS cloud-home
 # Tools bots reach for in their shell on a My Cloud: Python, pdftotext and
 # unzip (about 28 MB unpacked), and the bot box (server/bot-box): bubblewrap
 # runs every bot turn in its own namespaces, socat bridges a box's loopback
-# ports to the server's gates. Their own layer, so the Chrome layers beneath
+# ports to the server's gates. Their own layer, so the runtime layers beneath
 # stay cached. pnpm, so a bot's shell can install what its project asks for.
 # uv and uvx, so a connector someone runs with uvx comes along when they move here
 # (server/cloud-connections.ts) as an npx one does: about 32 MB, on every user's

@@ -7,10 +7,8 @@ services:
       args:
         ENGINES: ${ENGINES:-}
     image: localhost/alcabots-podman:${ALCA_IMAGE_TAG:-local}
-    # Collects exited child processes; Chrome's shared memory as on the
-    # desktop containers.
+    # Collects exited child processes.
     init: true
-    shm_size: 512m
     userns_mode: keep-id:uid=1001,gid=1001
     user: "1001:1001"
     restart: unless-stopped

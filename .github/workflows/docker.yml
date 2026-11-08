@@ -56,17 +56,8 @@ jobs:
           edition=$(docker exec alca curl -sf http://127.0.0.1:8799/api/edition)
           echo "$edition"
           grep -q '"edition":"oss"' <<<"$edition"
-      - name: Prove the non-root user can browse with the baked-in Chrome
-        run: |
-          set -euo pipefail
-          test "$(docker exec alca id -un)" = alca
-          timeout 45 docker exec alca agent-browser --session ci-browser open 'data:text/html,<title>ALCA browser smoke</title><h1>Browser ready</h1>'
-          timeout 15 docker exec alca agent-browser --session ci-browser get title | grep -Fx 'ALCA browser smoke'
-          # Chrome for Testing's page is 1280x577 until sized; the harness sizes
-          # it to 1280x720 so pictures, boxes and clicks agree.
-          timeout 15 docker exec alca agent-browser --session ci-browser set viewport 1280 720
-          test "$(timeout 15 docker exec alca agent-browser --session ci-browser eval "innerWidth+'x'+innerHeight")" = '"1280x720"'
-          timeout 15 docker exec alca agent-browser --session ci-browser close
+      - name: Prove the image runs as the non-root user
+        run: test "$(docker exec alca id -un)" = alca
       - name: Prove the server never binds a public interface
         # The loopback-trust model is the auth model, so the image must keep
         # the server unreachable from the container's own network. Probe from a
@@ -422,7 +413,7 @@ jobs:
           docker save alca-cloud-home:ci -o "$RUNNER_TEMP/home.tar"
           python3 - "$RUNNER_TEMP/server.tar" "$RUNNER_TEMP/home.tar" <<'PY'
           import json, re, sys, tarfile
-          cache = re.compile(r"^(root/\.npm|tmp/(npm-cache|alca-build-home|node-compile-cache|grok-install|uv-install))/")
+          cache = re.compile(r"^(root/\.npm|tmp/(alca-build-home|node-compile-cache|grok-install|uv-install))/")
           for path in sys.argv[1:]:
               files = {}
               with tarfile.open(path) as image:
@@ -435,8 +426,7 @@ jobs:
               left = sorted(name for name in files if cache.match(name))
               assert not left, f"{path}: build caches in a layer: {left[:5]}"
               assert len(files["app/dist-server/index.js"]) == 1, f"{path}: the app is written more than once"
-              native = [name for name in files if re.match(r"usr/local/lib/node_modules/agent-browser/bin/agent-browser-", name)]
-              assert len(native) == 1, f"{path}: agent-browser ships {native}"
+              assert not [name for name in files if re.match(r"usr/local/lib/node_modules/agent-browser/|opt/alcabots-browser/", name)], f"{path}: a browser binary ships in the image"
               if path.endswith("home.tar"):
                   caddy = files["usr/local/bin/caddy"]
                   assert len(caddy) == 1, f"Caddy is written {len(caddy)} times"
@@ -448,25 +438,25 @@ jobs:
                   assert len(grok) == 1 and grok[0].uid == 0 and grok[0].mode & 0o7777 == 0o755, "Grok is not one root-owned 0755 binary"
                   installer = sorted(name for name in files if re.match(r"(data|root)/\.grok/|usr/local/bin/agent$", name))
                   assert not installer, f"Grok's installer left files behind: {installer[:5]}"
-              print(f"{path}: {len(files)} files, each once; no build cache; {native[0]}")
+              print(f"{path}: {len(files)} files, each once; no build cache; no browser binary")
           PY
 
   arm64-smoke:
     name: arm64 image + boot smoke
     # Raspberry Pi 4/5 and ARM servers pull the arm64 image; GitHub's ARM
-    # runner builds it natively and proves the server, the UI, the Data
-    # engine's native tree and the bots' Chromium all work on it.
+    # runner builds it natively and proves the server, the UI and the Data
+    # engine's native tree all work on it.
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build image
         run: docker build -t alcabots:arm64 .
-      - name: Boot the container; prove the server, UI, DuckDB and browser work on arm64
+      - name: Boot the container; prove the server, UI and DuckDB work on arm64
         run: |
           set -euo pipefail
           test "$(docker image inspect -f '{{.Architecture}}' alcabots:arm64)" = arm64
-          docker run -d --init --shm-size=512m --name alca alcabots:arm64
+          docker run -d --init --name alca alcabots:arm64
           for i in $(seq 1 40); do
             if docker exec alca curl -sf http://127.0.0.1:8799/api/health | grep -q alcabots; then break; fi
             sleep 2
@@ -475,9 +465,6 @@ jobs:
           docker exec alca curl -sf http://127.0.0.1:8799/ | grep -qi "<html" || { docker logs alca; echo "UI not served"; exit 1; }
           docker exec -w /app/duckdb alca node --input-type=module -e "const { DuckDBInstance } = await import('@duckdb/node-api'); const c = await (await DuckDBInstance.create()).connect(); const r = await c.runAndReadAll('select 42 as x'); if (Number(r.getRows()[0][0]) !== 42) process.exit(1)"
           test "$(docker exec alca id -un)" = alca
-          timeout 90 docker exec alca agent-browser --session ci-browser open 'data:text/html,<title>ALCA browser smoke</title><h1>Browser ready</h1>'
-          timeout 15 docker exec alca agent-browser --session ci-browser get title | grep -Fx 'ALCA browser smoke'
-          timeout 15 docker exec alca agent-browser --session ci-browser close
 
   publish:
     name: publish to GHCR
@@ -508,28 +495,22 @@ jobs:
             type=sha,format=long
             type=ref,event=tag
       - id: keys
-        # What the two slow layers install: `agent-browser install` fetches
-        # Chrome for Testing's last-known-good Stable, and the Cloud home takes
-        # each engine's npm latest. Keyed on those versions, the layers (and
-        # their digests) carry over from the last publish until a release; a
-        # code-only push re-pulls only the app layers. A lookup that fails keys
-        # on today's date instead, so neither is ever frozen at an old release.
+        # The Cloud home bakes in each engine's npm latest. Keyed on those
+        # versions, the layer (and its digest) carries over from the last
+        # publish until a release; a code-only push re-pulls only the app
+        # layers. A lookup that fails keys on today's date instead, so the
+        # engines are never frozen at an old release.
         env:
           CLOUD_HOME_ENGINES: "@anthropic-ai/claude-code @openai/codex"
         run: |
           today="date-$(date -u +%F)"
-          chrome=$(curl -fsSL --max-time 30 https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -er .channels.Stable.version) || chrome=""
-          [[ "$chrome" =~ ^[0-9]+(\.[0-9]+)+$ ]] || chrome=$today
-          # An arm64 image takes Debian's Chromium instead: key it on the newest bookworm build, security updates included.
-          chromium=$(curl -fsSL --max-time 30 'https://qa.debian.org/madison.php?package=chromium&s=bookworm,bookworm-security&a=arm64&text=on' | awk -F'|' '{gsub(/ /, "", $2); print $2}' | sort -V | tail -n 1) || chromium=""
-          [[ "$chromium" =~ ^[0-9][0-9A-Za-z.+~:-]*$ ]] || chromium=$today
           engines="" engines_tag=""
           for package in $CLOUD_HOME_ENGINES; do
             version=$(npm view "$package@latest" version 2>/dev/null) || version=""
             if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9][0-9A-Za-z.+-]*$ ]]; then engines=$CLOUD_HOME_ENGINES engines_tag=$today; break; fi
             engines="$engines $package@$version"
           done
-          { echo "chrome=$chrome"; echo "chromium=$chromium"; echo "engines=${engines# }"; echo "engines_tag=$engines_tag"; } | tee -a "$GITHUB_OUTPUT"
+          { echo "engines=${engines# }"; echo "engines_tag=$engines_tag"; } | tee -a "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
@@ -537,9 +518,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            CHROME_CACHE_TAG=${{ steps.keys.outputs.chrome }}
-            CHROMIUM_CACHE_TAG=${{ steps.keys.outputs.chromium }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       # The Cloud Pro home machine (the Dockerfile's cloud-home target), on the
@@ -563,8 +541,6 @@ jobs:
           context: .
           target: cloud-home
           build-args: |
-            CHROME_CACHE_TAG=${{ steps.keys.outputs.chrome }}
-            CHROMIUM_CACHE_TAG=${{ steps.keys.outputs.chromium }}
             CLOUD_HOME_ENGINES=${{ steps.keys.outputs.engines }}
             ENGINES_CACHE_TAG=${{ steps.keys.outputs.engines_tag }}
           push: true

@@ -16,10 +16,8 @@ services:
     # prebuilt on every main push; `docker compose up --build` builds from source instead
     image: ghcr.io/ihsieh31/alca-bots:latest
     restart: unless-stopped
-    # An init collects child processes whose parents exit, and Chrome gets
-    # the shared memory ALCA's desktop containers give it.
+    # An init collects child processes whose parents exit.
     init: true
-    shm_size: 512m
     volumes:
       - data:/data
     ports:

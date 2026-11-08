@@ -59,11 +59,19 @@ pnpm exec vitest run <檔案>   # 完整套件很慢（本機一小時以上）�
    npx wrangler deploy
    ```
 4. **手機中繼 relay**：需要一台 VPS 跑 `relay/`（有 Dockerfile 和 Caddyfile），DNS 指到 `bots-relay1.alca-corp.me`；之後在 control-plane 的 `wrangler.jsonc` 設 `RELAY_NODES`、`RELAY_DISABLED: "0"` 和 `RELAY_TOKEN_SIGNING_KEY`。
-5. **瀏覽器換成 ego lite**：分支 `ego-lite-browser` 兩個階段都已完成。bot 只透過 ego lite 瀏覽（`server/ego-browser.ts`、`server/ego-browser-proxy.ts`，設計見 `docs/plans/browser-engine.md`），舊的內置瀏覽器（agent-browser、alca-cdp、瀏覽器面板、瀏覽器設定檔、fill_login、My Chrome、打包的 Chromium 及其 CI）已刪除。還留著、之後可再清的：
-   - Docker 映像檔仍安裝 agent-browser 和 Chrome（`Dockerfile`、`.github/workflows/docker.yml`、`scripts/docker-image.test.ts`）；UI 測試工具 `scripts/testing/control-alca-ui.ts` 也用全域安裝的 agent-browser。
-   - 已存的登入資料後端（`server/login-store.ts`、`server/onepassword.ts`、`/api/logins`、雲端搬移時的登入資料），目前沒有 UI 會用到。
-   - 設定裡的 `browserProfiles`、bot 的 `browserProfile`／`recordBrowserSteps` 欄位、`browserMatesOf`。
-   - Electron 借電腦時的 Chrome 授權欄位（已不會生效），以及伺服器端 `server/device-links.ts` 的網路借用路線（已沒有呼叫者）。
-   - 其他語系裡關於舊瀏覽器的字串。
+5. **瀏覽器換成 ego lite**：分支 `ego-lite-browser` 兩個階段都已完成。bot 只透過 ego lite 瀏覽（`server/ego-browser.ts`、`server/ego-browser-proxy.ts`，設計見 `docs/plans/browser-engine.md`），舊的內置瀏覽器（agent-browser、alca-cdp、瀏覽器面板、瀏覽器設定檔、fill_login、My Chrome、打包的 Chromium 及其 CI）已刪除。分支 `workbuddy/ego-lite-cleanup` 接著清剩下的部分：
+
+   **已清**
+   - Docker 映像檔、CI 與 compose：`Dockerfile` 不再裝 Chrome 系統庫、agent-browser 或 Chrome for Testing；`docker.yml` 移除瀏覽器 smoke、Chrome/Chromium 版本快取鍵與 build-args；三個 compose 檔移除只為 Chrome 設的 `shm_size`；環境白名單不再帶 `AGENT_BROWSER_EXECUTABLE_PATH`。`scripts/docker-image.test.ts` 同步改斷言，並加了一條「映像裡不得出現瀏覽器二進位」的檢查。
+   - 其他語系的舊瀏覽器字串：刪掉 114 個英文 key、共 1015 條翻譯與 901 筆 source hash。保留仍被 `feature-flags.ts`、`ComputerPanel.tsx` 使用的 `browser.noEngine`、`computer.browserSwitch.title`。
+   - `browserMatesOf`／`loginHeldBackFor`，以及 `BotLogins` 裡只服務它們的 `bots`、`cardBots`、`sitesFor`、`markUsed`。
+
+   **保留（不是殘留）**
+   - UI 驗證 harness `scripts/testing/control-alca-ui.ts` 仍用開發者自己裝的 agent-browser（`scripts/testing/agent-browser-cli.ts` 是上個 commit 刻意留下的）；它驅動的是被測的 renderer，跟 bot 用哪個瀏覽器無關。砍掉會連帶毀掉 CI 的 `ui-smoke` job、約 30 個 e2e 與 `docs/verification/chat-ui.md` 等 recipe；要換 driver 得先重寫 snapshot／ref／session 語意，屬獨立工程。
+
+   **還留著、之後可再清**
+   - 已存的登入資料後端（`server/login-store.ts`、`server/onepassword.ts`、`/api/logins`、雲端搬移時的登入資料）：沒有 UI 在用，但 `secretForms`／`HeldSecrets` 被 email 與 secret vault 用、`BotLogins.credentialConfig` 被 credential card 用、`login-handoff.ts` 的通道被連線搬移用；要先解耦才能刪，不能整檔砍。
+   - 設定裡的 `browserProfiles`、bot 的 `browserProfile`／`recordBrowserSteps`：跨 shared/server/src/electron/companion 約 260 處引用。`new-bot-defaults.ts` 與 `team-file.ts` 的 schema 是 `.strict()`，舊 `config.json`／team 檔留著這些欄位會直接 parse 失敗，得照 repo 既有的 legacy 遷移慣例加「讀舊值再丟掉」的相容層。
+   - Electron 借電腦的 Chrome 授權欄位，以及 `server/device-links.ts` 的網路借用路線：`chrome` 還在 registration schema、`device-link-protocol.mjs` 的幀與借電腦顯示字串；`DeviceLinks.route()` 沒有生產呼叫者，但 `accept()`／`drop()`／`close()` 仍服務 WS 握手，且 `device-links.test.ts` 的 8 個測試都靠 `route()` 觀察連線。要先決定只刪 route 還是整條 device link 通道一起下線，再連 electron 端一併清。
 6. **macOS 使用者**：App 第一次打開要「右鍵 → 打開」；自動更新在 macOS 上不會運作，要手動下載新版。
 7. **發佈**：改 `package.json` 的 version 並推上 main 會觸發 Release workflow。npm 發佈（`alca-bots`）和 Docker（`ghcr.io/ihsieh31/...`）的 workflow 可能還需要調整 secrets。

@@ -55,8 +55,8 @@ const EVERYDAY_KEYS: Record<string, readonly string[]> = {
     "keys.cerebras.desc", "keys.groq.desc", "keys.meta.desc",
   ],
   "the Settings pages Simple mode shows": [
-    "settings.diagnostics.subtitle", "settings.diagnostics.elsewhere", "settings.import.appsSubtitle", "settings.profiles.temporaryHint",
-    "settings.profiles.myChromeUnavailable", "remote.serverPairing.cloudPersonal", "remote.serverPairing.error",
+    "settings.diagnostics.subtitle", "settings.diagnostics.elsewhere", "settings.import.appsSubtitle",
+    "remote.serverPairing.cloudPersonal", "remote.serverPairing.error",
   ],
 };
 
