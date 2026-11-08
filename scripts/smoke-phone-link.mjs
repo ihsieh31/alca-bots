@@ -14,6 +14,9 @@ const REPLY = "hello from fake claude";
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const direct = process.argv.includes("--direct");
 const shots = process.env.SMOKE_SHOTS ?? tmpdir();
+/** The deployed relay and site, instead of ones started here: `SMOKE_LIVE_RELAY=https://… SMOKE_LIVE_SITE=https://…`. */
+const liveRelay = process.env.SMOKE_LIVE_RELAY;
+const liveSite = process.env.SMOKE_LIVE_SITE;
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_CORE ?? "playwright-core");
 
 const freePort = () => new Promise((done) => {
@@ -55,11 +58,11 @@ let failed = false;
 try {
   const relayPort = await freePort();
   const port = await freePort();
-  const relayUrl = `http://127.0.0.1:${relayPort}`;
-  run(["--experimental-strip-types", "link/relay/main.ts", "--port", String(relayPort), "--site", join(root, "dist-phone")], { PATH: process.env.PATH });
+  const relayUrl = liveRelay ?? `http://127.0.0.1:${relayPort}`;
+  if (!liveRelay) run(["--experimental-strip-types", "link/relay/main.ts", "--port", String(relayPort), "--site", join(root, "dist-phone")], { PATH: process.env.PATH });
   run(["server/index.ts"], {
     PATH: process.env.PATH, HOME: home, USERPROFILE: home, ALCA_DATA_DIR: dataDir, ALCA_PORT: String(port), ALCA_WEBHOOK_PORT: String(port + 1000),
-    FAKE_CLAUDE_MODE: "happy", ALCA_LINK_RELAY_URL: relayUrl, ALCA_LINK_SITE_URL: relayUrl, ALCA_LINK_ALLOW_LOOPBACK: "1",
+    FAKE_CLAUDE_MODE: "happy", ALCA_LINK_RELAY_URL: relayUrl, ALCA_LINK_SITE_URL: liveSite ?? relayUrl, ALCA_LINK_ALLOW_LOOPBACK: "1",
   });
   const base = `http://127.0.0.1:${port}`;
   const api = async (method, path, body) => {

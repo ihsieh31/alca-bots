@@ -65,7 +65,7 @@ const TYPES: Record<string, string> = {
 export const SITE_CSP =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' ws: wss:; font-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
-const HEADERS = {
+export const SITE_HEADERS = {
   "x-content-type-options": "nosniff",
   "referrer-policy": "no-referrer",
   "x-frame-options": "DENY",
@@ -97,7 +97,7 @@ function sitePath(url: string | undefined): string | undefined {
 
 function serveStatic(dir: string, req: IncomingMessage, res: ServerResponse): void {
   let rel = sitePath(req.url);
-  if (rel === undefined) return void res.writeHead(404, HEADERS).end();
+  if (rel === undefined) return void res.writeHead(404, SITE_HEADERS).end();
   if (rel === "" || rel.endsWith("/")) rel += "index.html";
   let file = join(dir, rel);
   let type = TYPES[extname(file)];
@@ -105,14 +105,14 @@ function serveStatic(dir: string, req: IncomingMessage, res: ServerResponse): vo
     if (!type || !statSync(file).isFile()) throw new Error();
   } catch {
     // App routes fall back to the shell.
-    if (extname(rel)) return void res.writeHead(404, HEADERS).end();
+    if (extname(rel)) return void res.writeHead(404, SITE_HEADERS).end();
     rel = "index.html";
     file = join(dir, rel);
     type = TYPES[".html"];
   }
   const worker = rel === "sw.js";
   res.writeHead(200, {
-    ...HEADERS,
+    ...SITE_HEADERS,
     "content-type": type as string,
     "content-security-policy": SITE_CSP,
     "cache-control": worker || rel === "index.html" ? "no-cache" : "public, max-age=300",
@@ -131,11 +131,11 @@ export async function startRelay(o: RelayOptions = {}): Promise<Relay> {
   const handler = (req: IncomingMessage, res: ServerResponse) => {
     const path = (req.url ?? "/").split("?")[0];
     if (req.method === "GET" && path === "/healthz") {
-      res.writeHead(200, { ...HEADERS, "content-type": "application/json" });
+      res.writeHead(200, { ...SITE_HEADERS, "content-type": "application/json" });
       return void res.end(JSON.stringify({ ok: true, ...hub.stats() }));
     }
     if (siteDir && (req.method === "GET" || req.method === "HEAD")) return serveStatic(siteDir, req, res);
-    res.writeHead(404, HEADERS).end();
+    res.writeHead(404, SITE_HEADERS).end();
   };
   const tls = o.tlsCert && o.tlsKey;
   const server = tls

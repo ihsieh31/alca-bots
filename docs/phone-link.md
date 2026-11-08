@@ -21,7 +21,7 @@ To remove a phone, use **Remove** next to it in Settings. It loses access at onc
 
 ## How it connects
 
-Both sides meet at a relay, then move to a direct connection when the network allows it. Direct connections are off by default, because they ask a public STUN server for your network address; turn them on under **Relay and connection**.
+Both sides meet at a relay, then move to a direct connection when the network allows it. Direct connections are on by default. To find a direct path, both devices ask public STUN servers from Cloudflare and Google for their network address; to avoid that, turn it off under **Relay and connection** and stay on the relay.
 
 | What can see what | |
 |---|---|
@@ -46,7 +46,7 @@ node --experimental-strip-types link/relay/main.ts --site dist-phone --host 127.
 
 Put it behind your own HTTPS proxy, or pass `--tls-cert` and `--tls-key`. Phones need HTTPS for the page's encryption to work.
 
-**On Cloudflare Workers:** deploy `link/relay-worker` with Wrangler, and host `dist-phone/` on any static host. Set the relay address when you build the site with `VITE_LINK_RELAY_URL`.
+**On Cloudflare Workers:** deploy `link/relay-worker` with Wrangler, and host `dist-phone/` on any static host (`link/site-worker` does this on Cloudflare; change its domain to yours). Set the relay address when you build the site with `VITE_LINK_RELAY_URL`, and allow the site with the relay's `ALLOWED_ORIGINS`.
 
 ## Limits
 

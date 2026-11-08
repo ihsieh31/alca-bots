@@ -1,0 +1,10 @@
+# The phone's site on Cloudflare Workers: static files only. Run `pnpm build:phone` first, with VITE_LINK_RELAY_URL set.
+# A self-hoster changes the domain, or sets workers_dev = true and removes the route.
+name = "alcabots-phone"
+compatibility_date = "2026-10-01"
+workers_dev = false
+preview_urls = false
+routes = [{ pattern = "bots-app.alca-corp.me", custom_domain = true }]
+
+[assets]
+directory = "../../dist-phone"

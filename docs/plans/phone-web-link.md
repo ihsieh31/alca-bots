@@ -280,6 +280,8 @@ host → 裝置（事件，頻道 `http`）：
 - 端對端驗證：`pnpm build:phone && PLAYWRIGHT_CORE=<playwright-core 路徑> SMOKE_SHOTS=<截圖目錄> node scripts/smoke-phone-link.mjs [--direct]`。
 - 組織政策 `remoteAccess` 關閉時：擋 `POST /api/link/pairings`，也擋已配對手機的每個請求（bridge 的 `remoteAccessRefusal`）。
 - 使用者文件：`docs/phone-link.md`。
+- 線上服務（使用者已同意部署）：中繼 `https://bots-relay.alca-corp.me`（Worker `alcabots-relay`，`link/relay-worker`，部署時帶 `--var ALLOWED_ORIGINS:https://bots-app.alca-corp.me --var RELAY_MODE:production`）；手機頁 `https://bots-app.alca-corp.me`（Worker `alcabots-phone`，`link/site-worker`，建置時帶 `VITE_LINK_RELAY_URL=https://bots-relay.alca-corp.me`）。
+- 對線上跑端對端：加 `SMOKE_LIVE_RELAY`、`SMOKE_LIVE_SITE` 給 `scripts/smoke-phone-link.mjs`。新子網域在開通前查過的話，路由器會快取「查無此網域」最多 30 分鐘。
 - 全套測試還剩 4 個在這項工作之前就失敗的項目，都不是手機連線造成的：`server/saved-steps/store.test.ts`（refuses a bot id…）、`src/lib/schedule-label.test.ts`、`src/lib/transcript-derivations.test.ts`、`src/components/SidebarThreadRow.test.ts`（後三個是機器語系為中文、測試預期英文）。`server/outbound-hold.test.ts` 高負載時偶爾在清暫存目錄失敗（ENOTEMPTY），單獨跑會過。
 - 全套測試要用 `ALCA_VITEST_WORKERS=6 pnpm exec vitest run --reporter=dot`，預設一次只跑一個檔案，要跑很久。
 
