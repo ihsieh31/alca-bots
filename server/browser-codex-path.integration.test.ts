@@ -49,10 +49,9 @@ describe.skipIf(process.platform === "win32")("Codex browser turns with a minima
       readFileSync(join(SERVER_DIR, "testing", "fake-codex-app-server.ts"), "utf8"),
     ));
     symlinkSync(process.execPath, join(bin, "node"));
-    browser = join(bin, "agent-browser");
+    browser = join(bin, "ego-browser");
     // The fake provider records MCP configuration without starting a browser.
-    // Preparation checks that the acknowledged close really removed it.
-    writeFileSync(browser, "#!/bin/sh\nif [ \"$1\" = session ]; then printf '%s\\n' '{\"success\":true,\"data\":{\"sessions\":[]}}'; fi\nexit 0\n", { mode: 0o755 });
+    writeFileSync(browser, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
     writeFileSync(join(data, "config.json"), JSON.stringify({
       features: { browser: true },
       instances: Object.fromEntries(["default", "absolute"].map((id) => [id, {
@@ -67,7 +66,7 @@ describe.skipIf(process.platform === "win32")("Codex browser turns with a minima
       cwd: join(SERVER_DIR, ".."),
       env: {
         PATH: FINDER_PATH, HOME: home, ALCA_DATA_DIR: data, ALCA_PORT: String(port),
-        ALCA_AGENT_BROWSER_PATH: browser, VITEST: "1",
+        ALCA_EGO_BROWSER_PATH: browser, VITEST: "1",
       },
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -113,20 +112,12 @@ describe.skipIf(process.platform === "win32")("Codex browser turns with a minima
     expect(dump.env.PATH.split(":")).toContain(bin);
     expect(dump.env.PATH).toContain(FINDER_PATH);
     expect(dump.argv).toContain(`mcp_servers.browser.command=${JSON.stringify(process.execPath)}`);
-    expect(dump.argv.some((arg: string) => arg.startsWith("mcp_servers.browser.args=") && arg.includes("harness-mcp-proxy.ts") && arg.includes('"browser"'))).toBe(true);
+    expect(dump.argv.some((arg: string) => arg.startsWith("mcp_servers.browser.args=") && arg.includes("ego-browser-proxy.ts"))).toBe(true);
     // Codex starts every MCP server from one shared environment and passes
-    // each only the names in its env_vars. A token name two servers share
-    // holds the last mount's value, and the browser was refused.
+    // each only the names in its env_vars.
     const envVars = (server: string) => JSON.parse(dump.argv.find((arg: string) => arg.startsWith(`mcp_servers.${server}.env_vars=`))?.split("=").slice(1).join("=") ?? "[]") as string[];
-    const browserToken = envVars("browser").filter((name) => name.startsWith("ALCA_MCP_TOKEN"));
-    const dataToken = envVars("data").filter((name) => name.startsWith("ALCA_MCP_TOKEN"));
-    expect(browserToken).toHaveLength(1);
-    expect(dataToken).toHaveLength(1);
-    expect(browserToken[0]).not.toBe(dataToken[0]);
-    expect(dump.env[browserToken[0]]).toBeTruthy();
-    expect(dump.env[browserToken[0]]).not.toBe(dump.env[dataToken[0]]);
-    expect(dump.env.AGENT_BROWSER_SESSION).toBeUndefined();
-    expect(dump.env.AGENT_BROWSER_ENCRYPTION_KEY).toBeUndefined();
+    expect(envVars("browser")).toContain("ALCA_EGO_BROWSER_COMMAND");
+    expect(dump.env.ALCA_EGO_BROWSER_COMMAND).toBe(browser);
     expect(dump.calls.some((call: any) => call.method === "turn/start")).toBe(true);
   });
 });

@@ -59,6 +59,12 @@ pnpm exec vitest run <檔案>   # 完整套件很慢（本機一小時以上）�
    npx wrangler deploy
    ```
 4. **手機中繼 relay**：需要一台 VPS 跑 `relay/`（有 Dockerfile 和 Caddyfile），DNS 指到 `bots-relay1.alca-corp.me`；之後在 control-plane 的 `wrangler.jsonc` 設 `RELAY_NODES`、`RELAY_DISABLED: "0"` 和 `RELAY_TOKEN_SIGNING_KEY`。
-5. **Windows 用的 agent-browser**：目前直接從上游公開的 release 下載（`browser-engine-v0.36.0-omb.1`，Apache-2.0，sha256 已在程式裡寫死核對）。想改成自己託管，就把那個 release 的檔案複製到本 repo 的 release，再改 `server/browser-engine-release.ts` 的網址。
+5. **瀏覽器換成 ego lite（第二階段）**：分支 `ego-lite-browser` 已完成第一階段：bot 的瀏覽器改用 ego lite（`server/ego-browser.ts`、`server/ego-browser-proxy.ts`，設計見 `docs/plans/browser-engine.md`），文件與 `alcabots browser` 指令也已修正。舊的內置瀏覽器程式碼還在，只是 bot 已經不會用到。第二階段要刪除：
+   - server：`server/browser*.ts`、`server/browser/`、`server/host/browser*.ts`、fill_login／saved logins（`login-fill*`、agents-bridge 的 `fill_login` 和 goldens）、`/api/internal/browser/mcp`、browser viewer routes、browser-sites、evidence routes、browser-engine install route、config 的 `browserEngine.*`。
+   - electron：`device-chrome.mjs`、My Chrome 借用、`electron-builder.yml` 打包的 agent-browser／Chromium。
+   - UI：`BrowserPanel`、`BrowserProfilesManager`、`BrowserSettingsRows`、`SignedInSites`、`bot-panel/browser-logins`、`LoginsSettings` 等。
+   - 建置與 CI：`scripts/prepare-browser*`、`smoke-browser-bundle`、`build-windows-browser-vendor*`、`.github/workflows/browser-vendor-windows.yml`、Dockerfile 裡的 agent-browser。
+   - 測試：依賴舊瀏覽器的測試（例如 `server/index.test.ts` 裡打 `/api/internal/browser/mcp` 的區塊、`server/parallel-threads.e2e.test.ts` 的 browse），在第一階段會失敗，要一起刪掉。
+   - 文件：`docs/browser-packaging.md`、`docs/verification/browser-*.md`、`docs/cloud-pro.md` 的 Your Chrome 段落。
 6. **macOS 使用者**：App 第一次打開要「右鍵 → 打開」；自動更新在 macOS 上不會運作，要手動下載新版。
 7. **發佈**：改 `package.json` 的 version 並推上 main 會觸發 Release workflow。npm 發佈（`alca-bots`）和 Docker（`ghcr.io/ihsieh31/...`）的 workflow 可能還需要調整 secrets。

@@ -1,0 +1,39 @@
+---
+title: Browser (ego lite)
+description: How bots browse the web through ego lite, the browser on your own computer.
+icon: Globe
+---
+
+Bots browse the web through ego lite, a Chromium browser built for people and AI agents to share. It runs on your computer, keeps your own sign-ins, and shows you every page a bot opens, so you can watch it work and take over in the same window.
+
+## Set it up
+
+1. Install ego lite on macOS or Windows and finish its first-run onboarding. Onboarding puts the `ego-browser` command on your PATH (on macOS, in `~/.local/bin`).
+2. Restart AlcaBots so it finds the command.
+3. Leave **Browser** on in Settings and in the bot's profile. Bots whose model supports browser tools now get them.
+
+If `ego-browser` lives somewhere AlcaBots does not look, set `ALCA_EGO_BROWSER_PATH` to its full path.
+
+## What a bot can do
+
+A bot gets two tools:
+
+| Tool | What it does |
+|---|---|
+| `ego_browser_guide` | Prints the usage guide for the installed ego lite version. A bot reads it once per conversation before it browses. |
+| `ego_browser_run` | Runs one Node.js script with `ego-browser nodejs`: open pages, read snapshots, click, type, upload, download and take screenshots through ego lite's TaskSpace and Page APIs. Screenshots the script saves are shown to the bot. |
+
+A bot works in one **task space** per goal, which you see in ego lite as its own group of tabs, and closes it when it is done.
+
+## Sign-ins and human checks
+
+A bot never asks for passwords or one-time codes in chat. When a site needs you (a sign-in, a code, a CAPTCHA), the bot hands the task space to you in ego lite and tells you what to do in chat. When you say you are done, it continues in the same tabs. Because ego lite is your own browser, sites you are already signed in to stay signed in.
+
+## Limits
+
+- ego lite runs only on macOS and Windows desktops. Self-hosted servers, Docker, Linux and AlcaBot Cloud have no browser.
+- AlcaBots does not record browser steps, list signed-in sites or type saved logins (`fill_login`) into ego lite. Sign in yourself in ego lite.
+
+<Callout type="warn" title="A browser script can reach your computer">
+  `ego_browser_run` runs the bot's script in ego lite's own Node.js runtime, outside AlcaBots's sandboxes, with access to your files and network. Turn the browser off for bots you do not trust with that.
+</Callout>

@@ -83,7 +83,7 @@ export interface CliOptions {
   serviceAction?: "install" | "uninstall";
   sentinel?: boolean;
   email?: string;
-  /** `browser install [--with-deps]` */
+  /** `browser install | status` */
   browserAction?: "install" | "status";
   /** `fleet init|create|list|users|suspend|resume|delete|upgrade|agent` */
   fleetAction?: FleetInput["action"] | "agent";
@@ -102,7 +102,6 @@ export interface CliOptions {
   yes?: boolean;
   keepData?: boolean;
   fleetUserAction?: "add" | "remove";
-  withDeps?: boolean;
   json: boolean;
   /** Explicitly ignore saved remote access for this launch. */
   local?: boolean;
@@ -129,7 +128,6 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env):
     tunnel: false,
     client: false,
     pair: true,
-    withDeps: false,
     json: false,
     chatOnly: false,
   };
@@ -174,7 +172,6 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env):
       else if (options.command === "service" && !options.serviceAction && (arg === "install" || arg === "uninstall")) options.serviceAction = arg;
       else if (options.command === "service" && arg === "--sentinel") options.sentinel = true;
       else if (options.command === "browser" && (arg === "install" || arg === "status")) options.browserAction = arg;
-      else if (options.command === "browser" && arg === "--with-deps") options.withDeps = true;
       else if (options.command === "fleet" && !options.fleetAction && ["init", "create", "list", "users", "suspend", "resume", "delete", "upgrade", "agent"].includes(arg)) options.fleetAction = arg as FleetInput["action"] | "agent";
       else if (options.command === "fleet" && options.fleetAction && !["init", "list", "upgrade", "agent"].includes(options.fleetAction) && !options.slug && !arg.startsWith("--")) options.slug = arg;
       else if (options.command === "fleet" && arg === "--operator") options.operator = value();
@@ -594,39 +591,15 @@ export async function runLogout(options: CliOptions, io: CliIo = defaultIo()): P
 }
 
 export async function runBrowser(options: CliOptions, io: CliIo = defaultIo()): Promise<number> {
-  const { browserEngineStatus, describeBrowserEngine, ensureChrome, installAgentBrowserBinary, resolveAgentBrowserBinary } = await import("./browser-engine.ts");
-  const status = browserEngineStatus({ dataDir: options.dataDir });
-  if (options.browserAction === "status") {
-    io.log(describeBrowserEngine(status, status.kind === "ready" ? new (await import("./browser/chrome/launcher.ts")).ChromeLauncher({ dataDir: options.dataDir }).describe() : undefined));
-    if (status.kind !== "ready" && status.installable) io.log("install it with:  alcabots browser install");
-    return status.kind === "ready" ? 0 : 1;
+  const { egoBrowserStatus } = await import("./ego-browser.ts");
+  const status = egoBrowserStatus();
+  if (status.kind === "ready") {
+    io.log(`browser: ego lite (${status.path})`);
+    return 0;
   }
-  let binary = resolveAgentBrowserBinary({ dataDir: options.dataDir });
-  if (binary) {
-    io.log(`agent-browser is already here: ${binary}`);
-  } else {
-    if (status.kind !== "ready" && !status.installable) {
-      io.error(status.reason);
-      return 1;
-    }
-    try {
-      binary = await installAgentBrowserBinary({ dataDir: options.dataDir, log: io.log });
-    } catch (error) {
-      io.error(`could not install agent-browser: ${message(error)}`);
-      return 1;
-    }
-    io.log(`installed ${binary}`);
-  }
-  try {
-    await ensureChrome(binary, { withDeps: options.withDeps === true, log: io.log });
-  } catch (error) {
-    io.error(`Chrome is not ready: ${message(error)}`);
-    if (process.platform === "linux" && !options.withDeps) io.error("on Linux, install Chrome's system libraries with `sudo alcabots browser install --with-deps`, then retry `alcabots browser install` as the user running serve");
-    return 1;
-  }
-  io.log("browser installed for this user and data directory; run serve as the same user, then enable it under Settings → Computers and per bot");
-  if (process.platform === "linux" && options.withDeps) io.log("if serve runs as another user, run `alcabots browser install` from that user's login shell too");
-  return 0;
+  if (options.browserAction === "status") io.log(`browser: unavailable. ${status.reason}`);
+  else io.error(`${status.reason} Then restart AlcaBots, or set ALCA_EGO_BROWSER_PATH to the ego-browser command.`);
+  return 1;
 }
 
 export function serverEntry(here = HERE): { command: string; args: string[]; staticDir: string | null; skillsDir: string | null } {
@@ -695,7 +668,7 @@ async function planTunnel(options: CliOptions, log: (line: string) => void, reco
 }
 
 export async function runServe(options: CliOptions, log: (line: string) => void = console.log): Promise<number> {
-  const { browserEngineStatus, describeBrowserEngine } = await import("./browser-engine.ts");
+  const { egoBrowserStatus } = await import("./ego-browser.ts");
   if (await serverUp(options.port)) {
     console.error(`something already answers on http://127.0.0.1:${options.port}; use \`alcabots pair\` against it, or --port for a second server`);
     return 1;
@@ -880,7 +853,8 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
       if (options.open !== false && !await openDashboard(options.port)) log("Open the local address above in a browser on this computer.");
     } else {
       log(`data: ${options.dataDir}`);
-      log(describeBrowserEngine(browserEngineStatus({ dataDir: options.dataDir })));
+      const ego = egoBrowserStatus();
+      log(ego.kind === "ready" ? `browser: ego lite (${ego.path})` : `browser: unavailable. ${ego.reason}`);
     }
     if (options.pair && options.phone) {
       log("");

@@ -55,7 +55,7 @@ describe("alcabots command line", () => {
     expect(parseArgs(["start", "--port", "8125", "--no-pair"], {})).toMatchObject({ command: "start", port: 8125, pair: false });
     expect(parseArgs(["login", "--email", "a@b.test"], {})).toMatchObject({ command: "login", email: "a@b.test" });
     expect(parseArgs(["logout"], {})).toMatchObject({ command: "logout" });
-    expect(parseArgs(["browser", "install", "--with-deps"], {})).toMatchObject({ command: "browser", browserAction: "install", withDeps: true });
+    expect(parseArgs(["browser", "install"], {})).toMatchObject({ command: "browser", browserAction: "install" });
     expect(parseArgs(["browser", "status"], {})).toMatchObject({ command: "browser", browserAction: "status" });
     expect(parseArgs(["browser"], {})).toEqual({ error: "browser needs an action: install or status" });
     expect(parseArgs(["serve", "--tailscale", "--tunnel"], {})).toEqual({ error: "choose one of --tailscale (your tailnet) and --tunnel (a public address)" });

@@ -20,8 +20,8 @@ local candidate fixes from this change; these results do not certify the
 unmodified published 0.1.60 package.
 
 The paired web UI completed a real GPT-6-Astra chat, two automatically
-scheduled routine runs, and a browser title/screenshot test. The browser
-needed the Ubuntu sandbox setup below. A full reboot restored the service
+scheduled routine runs, and a browser title/screenshot test with the
+browser engine AlcaBots used then. A full reboot restored the service
 and managed tunnel automatically; the existing paired device, bots, chats,
 and paused schedule remained available. A new real chat turn also succeeded.
 
@@ -34,7 +34,7 @@ providers, and capacity limits were outside this run.
 
 Runs fully on the server: every engine CLI (Claude Code, Codex, Grok, custom ACP engines), chats, rooms, bot-to-bot coordination, routines, connected apps and custom MCP servers, webhooks, Company Brain, computer use on cloud or container computers, text-to-speech, and the web UI (the server serves it itself).
 
-Needs the desktop app instead: dictation and controlling the server's own desktop. Bots browse on a server too, once the browser engine is installed (below).
+Needs the desktop app instead: dictation, controlling the server's own desktop, and the bots' browser (ego lite runs only on macOS and Windows desktops).
 
 ## Before you start
 
@@ -134,31 +134,6 @@ npx alcabots serve --tailscale
 ```
 
 Tailscale terminates HTTPS with its own certificate and the pairing link uses the server's MagicDNS name (`https://alca.tail1234.ts.net`). Only devices on your tailnet can reach it, which is a very good property for a server that can run tools.
-
-## Give the bots a browser (optional)
-
-Bots can browse on a server. Docker (path B) ships the engine and Chrome in
-the image. For paths A and C, install Linux system libraries once from the
-administrator shell:
-
-```sh
-sudo -H npx --yes alcabots browser install --with-deps
-```
-
-Then install the browser in the service account's home, from the `alca` shell:
-
-```sh
-npx --yes alcabots browser install
-```
-
-The administrator's browser download is in a different home; it does not install
-the service account's browser. Both commands must finish successfully.
-
-On Ubuntu 24.04, AppArmor may also require [administrator sandbox setup](#ubuntu-2404-browser-sandbox).
-The one-click installer downloads the browser; it does not grant these OS permissions.
-
-Then turn the browser on under Settings → Computers, and per bot. Each bot
-gets its own isolated session whose logins persist across restarts.
 
 ## Install and sign the engines in
 
@@ -289,8 +264,7 @@ tar czf "$backup_dir/alcabots-data.tgz" -C "$HOME" .alcabots
 ```
 
 A full backup also needs your engine credential/configuration paths, such as
-`~/.codex`, `~/.claude` and `~/.claude.json`, and browser session state under
-`~/.agent-browser` if used. Include the paths that exist for your installed CLIs,
+`~/.codex`, `~/.claude` and `~/.claude.json`, Include the paths that exist for your installed CLIs,
 any configured home/data-directory overrides, and workspaces outside the app
 directory. These are not included in the command above.
 
@@ -338,60 +312,3 @@ Read this before putting anything else in front of the server.
 
 **Something else.** `journalctl -u alcabots --since -10m` (or `docker compose logs alca --tail 100`) shows the server's startup lines. Paste them with your question in the community channel.
 
-### Ubuntu 24.04 browser sandbox
-
-If Chrome reports `No usable sandbox!` and `sudo journalctl -k --since -10m`
-shows an AppArmor `DENIED` for `userns`, the browser download is installed but
-Ubuntu is blocking its sandbox. [Chromium documents this restriction](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md).
-Do not add `--no-sandbox` or disable `kernel.apparmor_restrict_unprivileged_userns` globally.
-
-For paths A and C, an administrator can allow only a trusted, root-owned Chrome
-copy. Find the service user's downloaded executable:
-
-```sh
-find /home/alca/.agent-browser/browsers -type f -name chrome -executable
-```
-
-Use its actual `chrome-VERSION` directory in every path below; `VERSION` is a
-placeholder, not a fixed Chrome release. Copy the whole directory, including its
-libraries, to a new location that the service user cannot modify:
-
-```sh
-sudo install -d -o root -g root -m 0755 /opt/alcabots-browser
-sudo cp -R /home/alca/.agent-browser/browsers/chrome-VERSION /opt/alcabots-browser/
-sudo chown -R root:root /opt/alcabots-browser/chrome-VERSION
-sudo chmod -R go-w /opt/alcabots-browser/chrome-VERSION
-```
-
-Save this as the root-owned `/etc/apparmor.d/alcabots-chrome`, replacing
-`VERSION` with the same value. Keep the exact executable path: a wildcard under
-the writable service home would also allow replacement executables.
-
-```text
-abi <abi/4.0>,
-include <tunables/global>
-
-profile alcabots-chrome /opt/alcabots-browser/chrome-VERSION/chrome flags=(unconfined) {
-  userns,
-}
-```
-
-Load the profile:
-
-```sh
-sudo apparmor_parser -r /etc/apparmor.d/alcabots-chrome
-```
-
-Add the following line under `[Service]` in the systemd unit above, again using
-the exact installed version, then run `sudo systemctl daemon-reload` and
-`sudo systemctl restart alcabots`:
-
-```ini
-Environment=AGENT_BROWSER_EXECUTABLE_PATH=/opt/alcabots-browser/chrome-VERSION/chrome
-```
-
-For a foreground server, export `AGENT_BROWSER_EXECUTABLE_PATH` to that same
-path in the `alca` shell before starting `serve`. After a Chrome update, copy the
-new version and update both the AppArmor profile and service environment; the
-root-owned copy is not updated by the browser installer. Keep
-`kernel.apparmor_restrict_unprivileged_userns=1`.

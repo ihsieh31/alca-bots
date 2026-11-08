@@ -39,9 +39,7 @@ vi.mock("./tailscale.ts", () => ({
   tailscaleServeOff: mocks.tailscaleServeOff, explainTailscaleFailure: (failure: string) => failure,
 }));
 vi.mock("./tunnel.ts", () => ({ ...mocks, describeTunnelState: () => "Fixture tunnel" }));
-vi.mock("./browser-engine.ts", () => ({
-  browserEngineStatus: () => ({ kind: "ready" }), describeBrowserEngine: () => "Fixture browser ready",
-}));
+vi.mock("./ego-browser.ts", () => ({ egoBrowserStatus: () => ({ kind: "ready", path: "/fixture/ego-browser" }) }));
 vi.mock("./cli-setup.ts", () => ({
   runSetup: () => { throw new Error("An existing workspace must not rerun setup"); },
 }));

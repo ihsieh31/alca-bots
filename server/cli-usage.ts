@@ -38,7 +38,7 @@ export const USAGE = `alcabots — your team of AI bots, ready in a few steps
   alcabots service install [--domain HOST | --tunnel | --tailscale] [--port N] [--data-dir DIR] | uninstall
                     [--sentinel]   (the health scan below, every two minutes, instead of the server)
   alcabots sentinel [--data-dir DIR] [--out DIR] [--once] [--json]   (read-only health scan; see --help)
-  alcabots browser install [--with-deps] | status
+  alcabots browser install | status
   alcabots fleet init --domain HOST [--operator USER] | create NAME --admin EMAIL [--member EMAIL] [--brand FILE]
                     [--anthropic-key-file FILE] [--cap USD] [--license-key KEY] [--memory 1G]
                   | list | users NAME add|remove EMAIL [--chat-only] | suspend NAME | resume NAME
@@ -62,12 +62,9 @@ service keep the server running across reboots: writes a systemd unit
         (Linux) or a launchd agent (macOS) for the same serve options and
         prints the commands that install it. Install the package
         permanently first (npm install -g alcabots).
-browser install: the bots' browser engine (agent-browser, pinned) into the
-        data dir, and Chrome for Testing into the user's browser cache.
-        --with-deps also installs
-        the Linux libraries Chrome needs (run as root once). Then run
-        browser install as the user running serve, from that user's home.
-        status: what the current user and data directory have.
+browser status: whether the bots' browser, ego lite, is installed (the
+        ego-browser command on PATH, or ALCA_EGO_BROWSER_PATH).
+        install: how to install ego lite (macOS and Windows only).
 fleet   many client workspaces on one Linux server, each its own account,
         service, data folder, brand, sign-in list and keys at NAME.HOST
         behind the system Caddy. Plans are printed unless run as root;
