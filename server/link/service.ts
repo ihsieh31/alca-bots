@@ -22,9 +22,11 @@ import {
   type LinkSettings,
   type LinkStatus,
 } from "../../shared/link.ts";
+import type { Notification } from "../../shared/notification.ts";
 import { writeFileAtomic } from "../atomic.ts";
 import { createHttpBridge } from "./bridge.ts";
 import { LinkDevices, scopesFor } from "./devices.ts";
+import { LinkPush, PushRefused } from "./push.ts";
 
 export interface LinkSessions {
   issue(input: { label: string; scopes: Array<"admin" | "client"> }): { token: string; session: { id: string } };
@@ -39,6 +41,7 @@ export interface LinkServiceOptions {
   sessions: LinkSessions;
   computerName(): string;
   remoteAccessRefusal?(): string | undefined;
+  pushFetch?: typeof fetch;
   env?: Record<string, string | undefined>;
   WebSocketImpl?: WebSocketCtor;
   log?: (message: string) => void;
@@ -67,6 +70,7 @@ const secureUrl = (value: string, label: string, allowInsecureLoopback: boolean)
 
 export class LinkService {
   readonly devices: LinkDevices;
+  readonly push: LinkPush;
   private readonly o: LinkServiceOptions;
   private readonly dir: string;
   private settingsNow: LinkSettings;
@@ -82,6 +86,7 @@ export class LinkService {
     this.dir = join(o.dataDir, "link");
     mkdirSync(this.dir, { recursive: true, mode: 0o700 });
     this.devices = new LinkDevices(join(this.dir, "devices.json"));
+    this.push = new LinkPush({ dir: this.dir, ...(o.pushFetch ? { fetch: o.pushFetch } : {}), ...(o.log ? { log: o.log } : {}) });
     this.settingsNow = this.readSettings();
     // An expired session only means a phone was away for a long time: the next connection gets a new one.
     o.sessions.onSessionRevoked((sessionId, why) => {
@@ -182,13 +187,37 @@ export class LinkService {
       port: this.o.port,
       sessionToken: () => this.sessionToken(deviceId),
     });
+    this.push.sessionOpened(deviceId);
+    session.peer.onClose(() => this.push.sessionClosed(deviceId));
     session.peer.handle(async (op, args) => {
       if (op === "ping") return "pong";
       if (op === "rtc.offer") return this.rtcOffer(deviceId, args);
+      if (op.startsWith("push.")) return this.pushOp(deviceId, op, args);
       const handler = bridge[op];
       if (!handler) throw new RpcError("unsupported", `unknown op ${op}`);
       return handler(args);
     });
+  }
+
+  private pushOp(deviceId: string, op: string, args: Record<string, unknown>): unknown {
+    const refusal = this.o.remoteAccessRefusal?.();
+    if (refusal) throw new RpcError("forbidden", refusal);
+    if (op === "push.config") return this.push.config(deviceId);
+    if (op === "push.unsubscribe") return void this.push.remove(deviceId);
+    if (op === "push.visible") return void this.push.setVisible(deviceId, args.visible === true);
+    if (op !== "push.subscribe") throw new RpcError("unsupported", `unknown op ${op}`);
+    try {
+      return void this.push.subscribe(deviceId, args);
+    } catch (error) {
+      if (error instanceof PushRefused) throw new RpcError("bad_request", error.message);
+      throw error;
+    }
+  }
+
+  /** A notification meant for one teammate stays out of it: a phone belongs to the computer's owner, not to that person. */
+  notifyPhones(notification: Notification): void {
+    if (!this.settingsNow.enabled || notification.forPerson || this.o.remoteAccessRefusal?.()) return;
+    this.push.notify(notification);
   }
 
   private async rtcOffer(deviceId: string, args: Record<string, unknown>): Promise<{ sdp: string }> {
@@ -288,6 +317,7 @@ export class LinkService {
   revokeDevice(id: string): boolean {
     const revoked = this.devices.revoke(id);
     if (!revoked) return false;
+    this.push.remove(id);
     if (revoked.sessionId) this.o.sessions.revoke(revoked.sessionId);
     this.host?.disconnect(id);
     return true;

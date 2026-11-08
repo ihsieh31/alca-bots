@@ -25,6 +25,7 @@ import { applyUpdate, useUpdateReady } from "../sw-client";
 import { ChatScreen } from "./ChatScreen";
 import { todayView, type ThreadRow } from "./derive";
 import { lightTap } from "./motion";
+import { useNotificationOpen, type OpenTarget } from "./notification-open";
 import { usePhoneNav, type PhoneRoute, type PhoneTab } from "./nav";
 import { BackButton, PhoneScreen } from "./PhoneScreen";
 import { MoreScreen, PartnersScreen, TodayScreen, WorkScreen } from "./screens";
@@ -141,6 +142,16 @@ function Shell() {
     openThread(dispatch, { botId: row.botId, threadId: row.threadId }, state, showThreads);
     nav.push({ kind: "chat" });
   }, [dispatch, nav, showThreads, state]);
+
+  const atChat = nav.stack[nav.stack.length - 1]?.kind === "chat";
+  const openFromNotification = useCallback(({ botId, threadId, groupId }: OpenTarget) => {
+    if (groupId) dispatch({ type: "select", id: groupId });
+    else if (botId && threadId) openThread(dispatch, { botId, threadId }, state, showThreads);
+    else if (botId) dispatch({ type: "select", id: botId });
+    else return;
+    if (!atChat) nav.push({ kind: "chat" });
+  }, [atChat, dispatch, nav, showThreads, state]);
+  useNotificationOpen(Boolean(state.hydrated), openFromNotification);
 
   const waiting = todayView(state).waiting.length;
   const pushed = shown.current.length > 0;

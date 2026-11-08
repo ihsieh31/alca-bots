@@ -1,6 +1,6 @@
 // The phone site's service worker. It keeps the page openable with no network and answers media requests through the
 // page's connection. A new version waits until the person chooses to update, so a page isn't swapped under them.
-import { answerFromPage, OPEN_MESSAGE, routeFor, SKIP_WAITING_MESSAGE, type PageClients } from "./sw-core";
+import { answerFromPage, OPEN_MESSAGE, routeFor, SKIP_WAITING_MESSAGE, type PageClient } from "./sw-core";
 
 declare const __SW_VERSION__: string;
 declare const __SW_PRECACHE__: string[];
@@ -19,16 +19,16 @@ interface PushEvent extends WaitEvent {
 interface NotificationClickEvent extends WaitEvent {
   notification: { data: unknown; close(): void };
 }
-interface WindowClient {
+interface WindowClient extends PageClient {
   focus(): Promise<unknown>;
-  postMessage(message: unknown): void;
 }
 const sw = self as unknown as {
   location: Location;
-  clients: PageClients & {
+  clients: {
+    get(id: string): Promise<WindowClient | undefined | null>;
+    matchAll(options: { type: "window"; includeUncontrolled: true }): Promise<readonly WindowClient[]>;
     claim(): Promise<void>;
     openWindow(url: string): Promise<unknown>;
-    matchAll(options: { type: "window"; includeUncontrolled: true }): Promise<readonly WindowClient[]>;
   };
   registration: { showNotification(title: string, options: Record<string, unknown>): Promise<void> };
   skipWaiting(): Promise<void>;
@@ -114,7 +114,7 @@ sw.addEventListener("notificationclick", (event) => {
     const [page] = await sw.clients.matchAll({ type: "window", includeUncontrolled: true });
     if (page) {
       await page.focus();
-      page.postMessage({ type: OPEN_MESSAGE, ...target });
+      page.postMessage({ type: OPEN_MESSAGE, ...target }, []);
       return;
     }
     const query = new URLSearchParams();

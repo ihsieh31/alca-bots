@@ -20,8 +20,9 @@ import "../styles.css";
 import { createLinkEventSource } from "./event-source";
 import { forgetCredentials, phoneIdentity, readCredentials, saveCredentials } from "./keystore";
 import { LinkHttp } from "./link-http";
-import { linkPathFor, setLinkState } from "./link-state";
+import { linkPathFor, setLinkRequest, setLinkState } from "./link-state";
 import { attachMediaBridge } from "./media-bridge";
+import { forgetPush, isAppleTouch, isStandalone, reportVisibility, resyncPush } from "./push";
 import { recoverFromMissingCode, startServiceWorker } from "./sw-client";
 
 settleAdvancedModeDefault();
@@ -54,8 +55,7 @@ const screen = "flex min-h-dvh items-center justify-center bg-app px-4 py-8 text
 const card = "w-full max-w-[380px]";
 
 /** iPhone home-screen apps keep their own storage: pairing in Safari would not carry over to the installed app. */
-const needsHomeScreenFirst = () => /iPhone|iPad/.test(navigator.userAgent)
-  && !(navigator as { standalone?: boolean }).standalone;
+const needsHomeScreenFirst = () => isAppleTouch() && !isStandalone();
 
 function PairScreen({ link, reason, onPaired }: { link: LinkPairingLink | null; reason: string | null; onPaired(credentials: LinkCredentials, identity: Identity): void }) {
   const [code, setCode] = useState(link?.code ?? "");
@@ -136,6 +136,9 @@ function Connected({ credentials, identity, onRemoved }: { credentials: LinkCred
     setLinkState({ path: "connecting", computer });
     const stopReady = client.onReady((_ready, peer) => {
       http.setPeer(peer, client.via);
+      setLinkRequest((op, args) => peer.request(op, args));
+      reportVisibility();
+      void resyncPush().catch(() => {});
       setLinkState({ path: linkPathFor(client.via), computer });
       setOffline(false);
       setApp((mounted) => {
@@ -147,12 +150,14 @@ function Connected({ credentials, identity, onRemoved }: { credentials: LinkCred
       if (status === "revoked") onRemoved();
       if (status === "offline") {
         http.setPeer(null);
+        setLinkRequest(null);
         setLinkState({ path: "offline", computer });
         setOffline(true);
       }
     });
     const stopCredentials = client.onCredentials((next) => void saveCredentials(next));
     const resume = () => {
+      reportVisibility();
       if (document.visibilityState === "visible") void client.resume();
     };
     document.addEventListener("visibilitychange", resume);
@@ -166,6 +171,7 @@ function Connected({ credentials, identity, onRemoved }: { credentials: LinkCred
       stopCredentials();
       client.stop();
       http.setPeer(null);
+      setLinkRequest(null);
     };
   }, [credentials, identity, onRemoved]);
 
@@ -185,6 +191,7 @@ function Phone({ initial, link }: { initial: { credentials: LinkCredentials; ide
   const [reason, setReason] = useState<string | null>(null);
   const [removed] = useState(() => () => {
     void forgetCredentials();
+    void forgetPush();
     setPaired(null);
     setReason(t("phone.removed"));
   });
