@@ -46,7 +46,7 @@ writeFileSync(
   path.join(home, ".alcabots", "config.json"),
   JSON.stringify({ instances: { ghost: { driver: "not-a-real-driver", displayName: "Ghost" } } }),
 );
-for (const appName of ["alcabots", "AlcaBots"]) {
+for (const appName of ["alca-bots", "alcabots", "AlcaBots"]) {
   const userData = path.join(xdgConfig, appName);
   mkdirSync(userData, { recursive: true, mode: 0o700 });
   chmodSync(userData, 0o700);
@@ -336,7 +336,7 @@ try {
   if (sessionBlocked) {
     await waitForExit();
     if (existsSync(marker)) throw new Error("release safety block still invoked a CUA executable");
-    const activeUserData = ["alcabots", "AlcaBots"]
+    const activeUserData = ["alca-bots", "alcabots", "AlcaBots"]
       .map((name) => path.join(xdgConfig, name))
       .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
     if (!activeUserData) throw new Error("release safety smoke could not locate the CUA descriptor");
@@ -383,7 +383,7 @@ try {
     if (existsSync(marker)) {
       throw new Error(`packaged app invoked the ambient driver:\n${readFileSync(marker, "utf8")}`);
     }
-    const userData = ["alcabots", "AlcaBots"]
+    const userData = ["alca-bots", "alcabots", "AlcaBots"]
       .map((name) => path.join(xdgConfig, name))
       .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
     if (!userData) throw new Error("bundled smoke could not locate the CUA descriptor");
@@ -479,7 +479,7 @@ try {
       await delay(50);
     }
     if (staleHealth?.ok) throw new Error("embedded harness survived hard Electron death");
-    const userData = ["alcabots", "AlcaBots"]
+    const userData = ["alca-bots", "alcabots", "AlcaBots"]
       .map((name) => path.join(xdgConfig, name))
       .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
     if (!userData) throw new Error("hard-death smoke could not locate the CUA descriptor");

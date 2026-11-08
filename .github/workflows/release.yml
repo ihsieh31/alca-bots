@@ -394,7 +394,7 @@ jobs:
         run: pnpm smoke:linux-package
       - name: Remove the installed upgrade fixture
         if: always()
-        run: sudo dpkg --purge alcabots || true
+        run: sudo dpkg --purge alca-bots || true
       - name: Stable-named copies and checksums
         run: |
           v=$(node -p "require('./package.json').version")
