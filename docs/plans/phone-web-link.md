@@ -198,15 +198,15 @@ host → 裝置（事件，頻道 `http`）：
 
 | # | 任務 |
 |---|---|
-| 2.1 | 外殼與導覽：分頁、深色淺色、安全區、鍵盤處理 |
-| 2.2 | 今天頁：由現有 store 導出待決定與進行中 |
-| 2.3 | 夥伴頁 |
-| 2.4 | 對話頁：重用訊息渲染元件，重做版面與輸入框 |
-| 2.5 | 核准抽屜：核准、問題、secret／sign-in 卡片 |
-| 2.6 | 電腦視窗：ego lite live view 與接手 |
-| 2.7 | service worker：媒體代理、離線外殼、更新流程 |
-| 2.8 | Web Push：電腦端 VAPID，透過瀏覽器推播服務，iOS 需先加到主畫面 |
-| 2.9 | 離線快取：參考 `apps/phone-pwa/app/cache-*.ts` |
+| 2.1 | ✅ 外殼與導覽：分頁、深色淺色、安全區、鍵盤處理 |
+| 2.2 | ✅ 今天頁：由現有 store 導出待決定與進行中 |
+| 2.3 | ✅ 夥伴頁 |
+| 2.4 | ✅ 對話頁：重用訊息渲染元件，重做版面與輸入框 |
+| 2.5 | ✅ 核准抽屜：核准、問題、secret／sign-in 卡片 |
+| 2.6 | ✅ 電腦視窗：ego lite live view 與接手 |
+| 2.7 | ✅ service worker：媒體代理、離線外殼、更新流程 |
+| 2.8 | ✅ Web Push：電腦端 VAPID，透過瀏覽器推播服務，iOS 需先加到主畫面 |
+| 2.9 | ✅ 離線快取：參考 `apps/phone-pwa/app/cache-*.ts` |
 
 驗收：390 寬無頭瀏覽器截圖檢查、e2e 流程、沒有水平捲動、觸控目標至少 44px。
 
@@ -302,3 +302,18 @@ host → 裝置（事件，頻道 `http`）：
 - `SessionRegistry.onSessionRevoked` 的 listener 多了第二個參數 `why`：過期只重發 session，被撤銷才視同移除手機。
 - 中繼路徑的原始資料速率定為 400 KiB/s（`HTTP_RELAY_BYTES_PER_SECOND`），上傳端也要照這個值限速。
 - `git grep -E '\\b…'` 在這台機器會誤回 0 筆，別用 `\\b`。
+
+第二階段完成時的決定（給下一位接手的人）：
+
+- **service worker 只代理媒體標籤。** 頁面的 `fetch` 與 `EventSource` 已經走 `LinkHttp`；`src/phone/sw-core.ts` 只處理到得了網路層的 `/api/*`（`<img>`、`<video>`、下載連結），用 `MessageChannel` 交給頁面，一次拉一塊，所以不會堆積。
+- **更新不自動換頁。** 新版會停在 waiting，畫面顯示「有新版本」，按下才 `skipWaiting` 並重新載入。舊頁找不到已被移除的程式碼時，`vite:preloadError` 會走同一條路。
+- **推播是電腦自己送的。** `server/link/web-push.ts` 做 RFC 8291 加密與 VAPID，`server/link/push.ts` 管訂閱。訂閱走 Link 的 `push.*` op，不走 HTTP，所以 `linkRequestRefusal` 不用開洞。只接受瀏覽器的推播服務網址，避免手機讓電腦對任意位址送請求。帶 `forPerson` 的通知不推到手機。
+- **手機畫面可見時不推播。** 頁面用 `push.visible` 回報，連線全斷視為不可見。
+- **瀏覽器視窗用伺服器現成的 `/api/bots/<id>/browser/live`**（`server/ego-live.ts`）。視窗關閉或連線中斷時，伺服器會自動釋放接手權，bot 就能繼續。
+- **離線副本是白名單。** `src/phone/offline-cache.ts` 的 `KEPT_EXACT` 與 `KEPT_PATTERN` 之外都不存，要讓新畫面離線可讀就加在這裡。連得上電腦時一律問電腦。
+
+已驗證與未驗證：
+
+- 瀏覽器視窗、離線、媒體代理、通知顯示與點開，都用無頭 Chrome 驗證過（`scripts/smoke-phone-link.mjs`、隔離的假 ego）。
+- **還沒驗證：** 真實的 Apple／Google 推播服務送達、iPhone 上的接手手勢與鍵盤、真實 ego lite。無頭瀏覽器訂閱不到推播服務，所以推播的端到端要真機測。
+- VM、VPS、雲端桌面的 noVNC 接手仍在第三階段（`ws.*` 通道）。

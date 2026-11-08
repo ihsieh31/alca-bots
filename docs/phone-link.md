@@ -33,6 +33,20 @@ The pairing code proves both sides to each other (SPAKE2), so a relay that tries
 
 An organization that turns off remote access also blocks new phone pairings and refuses requests from phones already paired.
 
+## What stays on the phone
+
+The page keeps an encrypted copy of what it last showed (your partners, recent conversations, settings) so it opens at once and stays readable when the computer is off. The copy is sealed with a key the page can use but can't read out; someone with the unlocked phone's browser storage holds both, so treat it like the phone's other app data. Removing the phone, or pairing it with another computer, erases the copy.
+
+## Notifications
+
+Turn them on under **More → Notifications**. The computer encrypts each notification to your phone and hands it to your browser's push service (Apple, Google, Mozilla or Microsoft), so that service sees when one arrives and how large it is, but not what it says. The computer sends nothing to the relay for this, and no notification reaches a phone that is showing the app.
+
+What a notification says can appear on your lock screen. Your phone's own notification settings control that.
+
+## Watch and take over the bot's browser
+
+While a bot is using its browser, **Watch** appears in the conversation. Pinch to zoom. **Take over** pauses the bot's browsing and lets you tap, scroll and type; **Hand back**, closing the window or leaving the app lets the bot continue.
+
 ## Host your own relay
 
 Set the address under **Settings → Remote access → Phone → Relay and connection**, or with `ALCA_LINK_RELAY_URL` and `ALCA_LINK_SITE_URL`.
@@ -52,4 +66,5 @@ Put it behind your own HTTPS proxy, or pass `--tls-cert` and `--tls-key`. Phones
 
 - A relay carries at most 1 MiB/s per connection, so large files move slowly until the connection is direct.
 - Phone access is off until you turn it on.
-- The phone can't show the computer's desktop yet.
+- The phone can watch and take over a bot's browser (ego lite). A VM, a VPS or a cloud desktop still opens as screenshots, without takeover.
+- Notifications need an iPhone to have the page on its Home Screen, and a phone's browser to support Web Push.

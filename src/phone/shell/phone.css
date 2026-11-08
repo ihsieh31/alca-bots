@@ -11,7 +11,8 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
 
 .phone-shell {
   --phone-ease: cubic-bezier(0.32, 0.72, 0, 1);
-  --phone-top: env(safe-area-inset-top, 0px);
+  --phone-safe-top: env(safe-area-inset-top, 0px);
+  --phone-top: var(--phone-safe-top);
   --phone-bottom: env(safe-area-inset-bottom, 0px);
   --phone-tabs-height: calc(64px + var(--phone-bottom));
   position: relative;
@@ -27,6 +28,8 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
 .phone-shell input, .phone-shell textarea, .phone-shell select, .phone-shell [contenteditable="true"] { font-size: 16px; }
 
 /* The tabs sit under a pushed screen, drifting back as it covers them. */
+.phone-shell[data-offline] { --phone-top: calc(var(--phone-safe-top) + 30px); }
+.phone-page, .phone-chat, .phone-panel { transition: padding-top 360ms var(--phone-ease); }
 .phone-base {
   position: absolute;
   inset: 0;
@@ -198,7 +201,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
   flex-direction: column;
   padding-top: var(--phone-top);
   padding-bottom: max(var(--phone-bottom), var(--phone-keyboard, 0px));
-  transition: padding-bottom 260ms var(--phone-ease);
+  transition: padding-top 360ms var(--phone-ease), padding-bottom 260ms var(--phone-ease);
 }
 .phone-chat > main, .phone-chat > [data-chat-view] { flex: 1; min-height: 0; }
 .phone-back {
@@ -266,7 +269,7 @@ html:has([data-phone-shell]), html:has([data-phone-shell]) body {
   color: var(--color-ink-secondary);
 }
 .phone-connection > span { overflow: hidden; }
-.phone-connection-shown { grid-template-rows: 1fr; padding: calc(var(--phone-top) + 6px) 12px 6px; }
+.phone-connection-shown { grid-template-rows: 1fr; padding: calc(var(--phone-safe-top) + 6px) 12px 6px; }
 
 .phone-switch {
   position: relative;

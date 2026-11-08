@@ -64,10 +64,8 @@ function TabBar({ tab, badge, onSelect }: { tab: PhoneTab; badge: number; onSele
 }
 
 /** Says when the computer can't be reached or the app has lost its server; nothing while all is well. */
-function ConnectionLine() {
+function ConnectionLine({ offline }: { offline: boolean }) {
   const link = useLinkState();
-  const { state } = useStore();
-  const offline = link.path === "offline" || (link.path === "connecting" && !state.connected);
   return (
     <div className={cn("phone-connection", offline && "phone-connection-shown")} role="status" aria-hidden={!offline}>
       <span>{offline ? t("phone.shell.reconnecting", { computer: link.computer }) : ""}</span>
@@ -153,12 +151,14 @@ function Shell() {
   }, [atChat, dispatch, nav, showThreads, state]);
   useNotificationOpen(Boolean(state.hydrated), openFromNotification);
 
+  const link = useLinkState();
+  const offline = link.path === "offline" || (link.path === "connecting" && !state.connected);
   const waiting = todayView(state).waiting.length;
   const pushed = shown.current.length > 0;
 
   return (
-    <div data-phone-shell data-pushed={pushed ? "" : undefined} className="phone-shell">
-      <ConnectionLine />
+    <div data-phone-shell data-pushed={pushed ? "" : undefined} data-offline={offline ? "" : undefined} className="phone-shell">
+      <ConnectionLine offline={offline} />
       <UpdatePill />
       <div className="phone-base">
         <div key={nav.tab} className="phone-tab-page">
