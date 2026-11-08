@@ -619,6 +619,8 @@ import { createDevsReports } from "./host/devs-reports.ts"; import { bugReportEn
 import { createCardRequester, linePersonKey } from "./host/thread-person.ts"; import { selfThreadRefusal } from "./host/self-threads.ts"; import { lookedAfterBy } from "./host/looked-after.ts"; import { createActingPeople, HANDED_PEOPLE_FILE, HandedPeople, type HandedRun, keptPrivate, privateHandBack, withPerson } from "./host/acting-person.ts";
 import { createThreadRoutes } from "./routes/threads.ts";
 import { createWebhookRoutes } from "./routes/webhooks.ts";
+import { LinkService } from "./link/service.ts";
+import { linkRoutes } from "./routes/link.ts";
 import { withScopeHint } from "./connector-scope-hint.ts";
 import { connectorRequestItems } from "./connector-request-items.ts";
 import { onThreadSeen, personAsks as personAskAt, sawThread } from "./thread-presence.ts"; import { createWarmSummaryHost, HARNESS_IDLE_FRACTION } from "./host/warm-summary-host.ts";
@@ -15231,7 +15233,13 @@ if (CLOUD_HOME) registerCloudPower(cloudPower = createCloudPower({ dataDir: DATA
   liveCall: () => liveCalls.current() !== null, computer: () => cloudComputerPower.awake() || boatLifecycleBusyBots.size > 0, nextDueAt: () => { const due = [routines?.nextDueAt() ?? null, proactive.brief.nextWakeAt(), botWaits.nextWakeAt()].filter((at): at is number => at !== null); return due.length ? Math.min(...due) : null; },
   maintenance: () => workspaceMaintenance.active || providerFleetReloading || providerAuthSessions.active } }));
 
+const phoneLink = new LinkService({
+  dataDir: DATA_DIR, port: PORT, sessions, computerName: () => cfg.computerName || "AlcaBots", log: (message) => console.log(message),
+});
+ROUTES.push(linkRoutes(phoneLink));
+
 server.listen(PORT, "127.0.0.1", async () => {
+  void phoneLink.start();
   companyRuntimeReady();
   console.log(`alcabots server on http://127.0.0.1:${PORT}`);
   personWaits.boot(); startCloudTeamPolicy({ cloudHome: CLOUD_HOME, dataDir: DATA_DIR, managed: managedPolicy, sessions }); moveFreeze.hold(() => appTriggers.start(), () => void appTriggers.stop()); startCloudHomeConnectedApps({ cloudHome: CLOUD_HOME !== null, dataDir: DATA_DIR, cloudGrant: CLOUD_ENV.ALCA_CLOUD_CONNECTED_APPS_GRANT, apply: (access) => { composio.setManagedBrokerAccess(access); broadcast({ kind: "config", ...configStatus() }); } });
@@ -15297,7 +15305,7 @@ const gracefulShutdown = createGracefulShutdown({
       // Invalidate turn bearers before any cleanup reaches an await: child MCP processes and the listener may outlive it.
       revokeAllInternalCapabilities();
       sharedComputers.close(); stopCloudTeamPolicy();
-      phones.close();
+      phones.close(); void phoneLink.stop();
       sharedComputerControl.close();
       desktopViewer.closeAll();
       upgrades.close();

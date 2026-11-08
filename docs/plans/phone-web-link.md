@@ -260,11 +260,11 @@ host → 裝置（事件，頻道 `http`）：
 
 更新時只改這裡。
 
-- [ ] 1.1 移植協定
-- [ ] 1.2 移植中繼
-- [ ] 1.3 host 生命週期
-- [ ] 1.4 HTTP bridge
-- [ ] 1.5 routes 與設定
+- [x] 1.1 移植協定
+- [x] 1.2 移植中繼
+- [x] 1.3 host 生命週期
+- [x] 1.4 HTTP bridge
+- [x] 1.5 routes 與設定
 - [ ] 1.6 手機端
 - [ ] 1.7 桌面端 UI
 - [ ] 1.8 撤除舊連線
@@ -276,3 +276,8 @@ host → 裝置（事件，頻道 `http`）：
 ### 交接筆記
 
 （接手時需要知道、但還不在程式碼裡的事寫在這裡。）
+
+- 設定不放 config，改放 `<DATA_DIR>/link/settings.json`，同目錄有 `identity.json`、`devices.json`（權限 0600，含手機的 session token）。
+- `SessionRegistry.onSessionRevoked` 的 listener 多了第二個參數 `why`：過期只重發 session，被撤銷才視同移除手機。
+- 中繼路徑的原始資料速率定為 400 KiB/s（`HTTP_RELAY_BYTES_PER_SECOND`），上傳端也要照這個值限速。
+- `git grep -E '\\b…'` 在這台機器會誤回 0 筆，別用 `\\b`。
