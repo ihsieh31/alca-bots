@@ -14,7 +14,7 @@ import { CloudSendStrip } from "./CloudSendStrip";
 const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
 const html = (component: () => ReactNode) => { f.index = 0; f.effects = []; return renderToStaticMarkup(createElement(component)).replaceAll("&#x27;", "'"); };
 
-const notice: CloudSendNotice = { ready: true, bots: ["Ember"], updatedBots: [], skills: 2, logins: 0, onePassword: true, settings: 0, signature: "sig-1", dismissed: false, running: false, last: null, whole: null };
+const notice: CloudSendNotice = { ready: true, bots: ["Ember"], updatedBots: [], skills: 2, settings: 0, signature: "sig-1", dismissed: false, running: false, last: null, whole: null };
 const strip = (cloudHome: boolean) => () => CloudSendStrip({ cloudHome });
 async function shown(value: CloudSendNotice, cloudHome: boolean) {
   const page: CloudSendPageBridge = { notice: vi.fn().mockResolvedValue(value), dismiss: vi.fn().mockResolvedValue({ ...value, move: undefined }), onNotice: vi.fn(() => () => {}) };
@@ -36,7 +36,7 @@ const moves: OneHomeView[] = [
   { phase: "wait", failing: { error: null } },
   { phase: "finishing" },
   { phase: "finishing", failing: { error: "My Cloud did not answer." } },
-  { phase: "done", counts: { bots: 4, skills: 2, logins: 2, onePassword: true, chats: 148, routines: 2 }, phone: true, held: ["OPENAI_API_KEY"] },
+  { phase: "done", counts: { bots: 4, skills: 2, chats: 148, routines: 2 }, phone: true, held: ["OPENAI_API_KEY"] },
   { phase: "keeping" },
   { phase: "keeping", updating: true },
   { phase: "home-again" },
@@ -57,8 +57,8 @@ it("never draws the one-time move over the page, on either page, in any state", 
 });
 
 it("says nothing without a move, whatever an older desktop's send did, nor in a browser", async () => {
-  await shown({ ...notice, running: true, runningReason: "first", last: { at: 3, reason: "first", failed: 2, seen: false, sent: { bots: 2, updatedBots: 0, skills: 0, logins: 0, onePassword: false, settings: 0, chats: null },
-    reasons: [{ what: { bots: [], skills: 0, logins: 2, onePassword: false, settings: 0, chats: false }, error: "AlcaBots on this computer did not answer." }] } }, true);
+  await shown({ ...notice, running: true, runningReason: "first", last: { at: 3, reason: "first", failed: 2, seen: false, sent: { bots: 2, updatedBots: 0, skills: 0, settings: 0, chats: null },
+    reasons: [{ what: { bots: [], skills: 0, settings: 0, chats: false }, error: "AlcaBots on this computer did not answer." }] } }, true);
   expect(html(strip(true))).toBe("");
   f.values = [];
   vi.stubGlobal("window", {});

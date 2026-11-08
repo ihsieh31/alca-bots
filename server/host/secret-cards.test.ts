@@ -33,7 +33,7 @@ function fixture(language?: string) {
   };
   const bot = { id: "ledger", name: "Ledger" } as BotRecord;
   const cards = createSecretCards({
-    store: store as never, cfg: {} as never, botLogins: { credentialConfig: (config) => ({ ...config, onePassword: { connected: false } }) },
+    store: store as never, cfg: {} as never,
     phoneSecrets: { provide: async () => {}, open: () => {} } as never, phoneSecretSubmissions: {} as never,
     connectorThread: () => ({ bot, group: undefined }), answerCardNode: () => true, followCard: () => {}, dataDir, providerKeysRefused: false,
     layerFolder: () => dataDir, turnVm: () => undefined, ...(language ? { threadLanguage: () => language } : {}),
@@ -110,7 +110,7 @@ describe("the mailbox card", () => {
     const resumed: string[] = [];
     const bot = { id: "ledger", name: "Ledger" } as BotRecord;
     const cards = createSecretCards({
-      store: store as never, cfg: {} as never, botLogins: { credentialConfig: (config) => ({ ...config, onePassword: { connected: false } }) },
+      store: store as never, cfg: {} as never,
       phoneSecrets: { provide: async () => {}, open: async () => PASSWORD } as never, phoneSecretSubmissions: { has: () => false, run: async (_card: unknown, _op: unknown, work: () => Promise<void>) => work() } as never,
       connectorThread: () => ({ bot, group: undefined }), answerCardNode: (_thread, _id, text) => { resumed.push(text); return true; }, followCard: () => {}, dataDir, providerKeysRefused: false,
       layerFolder: () => dataDir, turnVm: () => undefined,

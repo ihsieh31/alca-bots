@@ -11,21 +11,18 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { createComputerSharing } from "../electron/computer-sharing.mjs";
-import { itemKey } from "../electron/cloud-send-parts.mjs";
 import { launchCloudSendFixture, type CloudSendFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { startBrokerFake, type BrokerFake } from "./testing/broker-fake.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
 // Obvious fakes only.
 const hex = (bytes: number) => randomBytes(bytes).toString("hex");
-const TOKEN = `ops_fake-move-${hex(12)}`;
-const PASSWORD = `fake-move-Passw0rd-${hex(6)}`;
 const DODO_KEY = `dodo_test_fake_${hex(12)}`;
 const DOCS_TOKEN = `fake-docs-token-${hex(8)}`;
 const CLIENT_SECRET = `fake-client-secret-${hex(8)}`;
 const OPENROUTER_KEY = `sk-or-v1-fake${hex(16)}`;
 const ACCESS = `fake-access-${hex(8)}`, REFRESH = `fake-refresh-${hex(8)}`;
-const SECRETS = [TOKEN, PASSWORD, DODO_KEY, DOCS_TOKEN, CLIENT_SECRET, OPENROUTER_KEY, ACCESS, REFRESH];
+const SECRETS = [DODO_KEY, DOCS_TOKEN, CLIENT_SECRET, OPENROUTER_KEY, ACCESS, REFRESH];
 const LINEAR_URL = "https://mcp.linear.example.test/mcp";
 
 let broker: BrokerFake;
@@ -43,7 +40,7 @@ beforeAll(async () => {
   mkdirSync(join(scratch, "turns"));
   writeFileSync(release, "");
   broker = await startBrokerFake();
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, broker, toolCalls: 36,
+  fx = await launchCloudSendFixture({ broker, toolCalls: 36,
     cloudEngine: `process.env.FAKE_CLAUDE_MODE = "hang"; process.env.FAKE_CLAUDE_RELEASE = ${JSON.stringify(release)};
 if (process.argv[2] !== "--version") { process.env.FAKE_CLAUDE_DUMP = ${JSON.stringify(join(scratch, "turns"))} + "/" + process.pid + ".json"; process.env.FAKE_CLAUDE_TEXT_DUMP = ${JSON.stringify(join(scratch, "one-shot.json"))}; }` });
   signIns = createServer((req, res) => {
@@ -191,8 +188,6 @@ it("a move carries everything, apps and keys first, and its check finds every ro
   ember = await newBot("Ember");
   await local("PATCH", `/api/bots/${ember.id}`, { soul: "You are Ember." });
   expect((await local("PUT", `/api/bots/${ember.id}/memory/file`, { path: "memory/clients.md", text: "Acme pays on the 5th.\n" })).status).toBe(200);
-  expect((await local("POST", "/api/logins", { site: "accounts.example.test", username: "alice", password: PASSWORD, totp: "JBSWY3DPEHPK3PXP", bots: [ember.id] })).status).toBe(201);
-  expect((await local("POST", "/api/logins/1password", { token: TOKEN })).status).toBe(200);
 
   // Apps and keys: an MCP server's key and another's header token, a sign-in of its own, an AI key and the connected-apps
   // account.
@@ -241,7 +236,7 @@ it("a move carries everything, apps and keys first, and its check finds every ro
   expect(report.attachments).toEqual([]);
   expect(report.secrets.differs).toEqual([]);
   expect(report.secrets.missing).toEqual([]);
-  expect(report.secrets.equal).toEqual(expect.arrayContaining([itemKey.login("example.test", "alice"), "1password", "key:openrouter", "mcp:dodo", "mcp:docs", "mcp:linear"]));
+  expect(report.secrets.equal).toEqual(expect.arrayContaining(["key:openrouter", "mcp:dodo", "mcp:docs", "mcp:linear"]));
 
   // Read back the way each side's chat view and bot read it.
   const [here, there] = [await history(local, archie.threadId), await history(onCloud, archie.threadId)];
@@ -256,7 +251,7 @@ it("a move run again changes nothing on My Cloud, and its check still finds ever
   const manifest = async () => (await fx.onCloud("GET", "/api/cloud-send/manifest")).body;
   const before = await manifest();
   const again = await fx.move({ final: true });
-  expect(again.result).toMatchObject({ bots: [], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: [], failed: [], chats: { conversations: 0, messages: 0, left: 0 },
+  expect(again.result).toMatchObject({ bots: [], updatedBots: [], skills: 0, settings: [], failed: [], chats: { conversations: 0, messages: 0, left: 0 },
     moved: 0, memory: 0, files: { sent: 0, kept: 0 }, conversationSettings: 0 });
   expect(await manifest()).toEqual(before);
   expect(everythingArrived(await fx.check())).toBe(true);

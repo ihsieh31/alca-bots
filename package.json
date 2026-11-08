@@ -88,7 +88,6 @@
     "control-plane:dry-run": "pnpm --filter @alcabots/control-plane dry-run"
   },
   "dependencies": {
-    "@1password/sdk": "0.5.0",
     "@clack/prompts": "1.7.0",
     "@codemirror/lang-sql": "6.10.0",
     "@codemirror/language": "6.13.1",

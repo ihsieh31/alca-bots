@@ -70,8 +70,3 @@ export function personalConnectionRefusal(team: Pick<CloudTeam, "name">, what = 
 export function personalMoveRefusal(team: Pick<CloudTeam, "name">): UserError {
   return userError("serverError.team.personalMove", { team: team.name });
 }
-
-/** On a team a login belongs to the whole team, so only an admin saves one. */
-export function memberLoginRefusal(team: Pick<CloudTeam, "name">): UserError {
-  return userError("serverError.team.memberLogin", { team: team.name });
-}

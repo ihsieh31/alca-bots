@@ -1,4 +1,4 @@
-// Send to My Cloud: this computer's bots, their skills, logins, 1Password, settings and chats go to the person's own
+// Send to My Cloud: this computer's bots, their skills, settings and chats go to the person's own
 // Cloud. One direction; added and updated, never deleted; one action for every entry point. Chats go by row
 // (server/cloud-send-chats.ts): each conversation's rows after the last one My Cloud took, so its history goes once. A
 // Cloud too old for that gets Bring newer chats' copy, only from a send the person asked for.
@@ -18,7 +18,6 @@ import { createHash } from "node:crypto";
 import { AUTOMATION_KINDS, BOT_PARTS, EMPTY, MOVE_BOT_PARTS, MOVE_KINDS, PICTURE_PART, differenceSignature, failedSummary, itemKey, parseSendSummary, pendingRows, planSend, resultKey } from "./cloud-send-parts.mjs";
 import { collectConnections, releaseConnections, sendConnections } from "./cloud-connections.mjs";
 import { createMoveKinds, mergeRoutines } from "./cloud-send-kinds.mjs";
-import { botsOnCloud } from "./cloud-logins.mjs";
 import { checkChats, checkPassed, checkSecrets, manifestGaps, missingAttachments, roomsRemovedThere, roomsThatGo, rowIdChunks } from "./cloud-send-check.mjs";
 import nativeText from "./native-text.cjs";
 
@@ -33,8 +32,7 @@ const ROW_IDS = 10_000;
 const ROW_ID_CONVERSATIONS = 200;
 const MEMORY_FILES = 100;
 const PICTURE_TYPES = { png: "image/png", jpg: "image/jpeg", gif: "image/gif", webp: "image/webp" };
-const VAULT_ID = /^[\w-]{1,128}$/u;
-/** Whole sends, which carry the chats too; a send of some items (Use this computer's, one login) never does. */
+/** Whole sends, which carry the chats too; a send of some items (Use this computer's) never does. */
 const CHAT_REASONS = new Set(["button", "my-cloud", "menu", "move"]);
 /** Bring newer chats' copy of the whole workspace, for a Cloud too old to take chats by row: never a move, which such a
  * Cloud refuses. */
@@ -77,16 +75,6 @@ function refusedError(code, answer, fallback) {
   return Object.assign(new CloudSendError(code, refusal(answer, fallback)), named ? { errorKey: named.errorKey, errorParams: named.errorParams } : {});
 }
 
-/** My Cloud's own 1Password refusal speaks to someone pasting a token on My Cloud's page; here it was this computer's.
- * 1Password refusing the token is final: sending it again can't help until 1Password is connected again here. */
-function onePasswordRefusal(answer) {
-  const said = sentence(answer.body?.error);
-  if (answer.status === 400 && said && /did not accept the token|not a whole 1Password|service account token/iu.test(said)) {
-    return Object.assign(new CloudSendError("refused", "My Cloud's 1Password did not accept this computer's token: it may have been revoked, expired, or lost access to its vault. Connect 1Password again in this computer's Settings → Logins, and it goes to My Cloud by itself."), { final: true });
-  }
-  return refusedError("refused", answer, "My Cloud could not connect 1Password.");
-}
-
 const pick = (source, names) => Object.fromEntries(names.filter((name) => source[name] !== undefined && source[name] !== null).map((name) => [name, source[name]]));
 
 /** A bot's fields for some parts, as My Cloud's PATCH takes them: nothing that names this computer's other bots unless
@@ -105,15 +93,15 @@ export function botPatch(bot, parts, cloudBots) {
 }
 
 const outcomeOf = (value) => record(value) && Number.isSafeInteger(value.at) && record(value.result) ? value : null;
-const COUNTED = ["bots", "updatedBots", "skills", "logins", "settings"];
+const COUNTED = ["bots", "updatedBots", "skills", "settings"];
 /** What reached My Cloud from this computer, all sends together. */
 function countsOf(value) {
   const chats = record(value?.chats) ? value.chats : {};
   const whole = (count) => Number.isSafeInteger(count) && count > 0 ? count : 0;
-  return { ...Object.fromEntries(COUNTED.map((key) => [key, whole(value?.[key])])), onePassword: value?.onePassword === true,
+  return { ...Object.fromEntries(COUNTED.map((key) => [key, whole(value?.[key])])),
     chats: { conversations: whole(chats.conversations), messages: whole(chats.messages) } };
 }
-const addCounts = (total, sent) => countsOf({ ...Object.fromEntries(COUNTED.map((key) => [key, total[key] + sent[key]])), onePassword: total.onePassword || sent.onePassword,
+const addCounts = (total, sent) => countsOf({ ...Object.fromEntries(COUNTED.map((key) => [key, total[key] + sent[key]])),
   chats: { conversations: total.chats.conversations + (sent.chats?.conversations ?? 0), messages: total.chats.messages + (sent.chats?.messages ?? 0) } });
 
 /** The state main keeps in its own folder: per Cloud what was sent, what the person kept here, the bots a send made
@@ -154,7 +142,7 @@ export function sendNotice(snapshot) {
     ready: snapshot.cloud === "ready",
     bots: rows.filter((row) => row.kind === "bot" && row.state === "only-here").map((row) => row.label),
     updatedBots: rows.filter((row) => row.kind === "bot" && row.state === "to-update").map((row) => row.label),
-    skills: count("skill"), logins: count("login"), onePassword: count("1password") > 0, settings: count("setting"),
+    skills: count("skill"), settings: count("setting"),
     signature: snapshot.signature ?? "",
     dismissed: Boolean(snapshot.signature) && snapshot.signature === snapshot.dismissed,
     running: Boolean(snapshot.running),
@@ -169,20 +157,20 @@ export function sendNotice(snapshot) {
 /** A send's outcome as My Cloud's page is told it: counts and reasons only. */
 function told(outcome, dismissed) {
   return { at: outcome.at, reason: outcome.reason, failed: outcome.result.failed.length, sent: sentCounts(outcome.result),
-    // Every failure is one trying again can't fix (1Password refused the token): no Try again.
+    // Every failure is one trying again can't fix: no Try again.
     final: !outcome.error && outcome.result.failed.length > 0 && outcome.result.failed.every((entry) => entry.final === true),
     seen: dismissed === resultKey(outcome), ...failedSummary(outcome) };
 }
 
 /** What a send got across, in counts only: My Cloud's page names nothing of this computer's but its bots. */
 function sentCounts(result) {
-  return { bots: result.bots.length, updatedBots: result.updatedBots.length, skills: result.skills, logins: result.logins, onePassword: result.onePassword,
+  return { bots: result.bots.length, updatedBots: result.updatedBots.length, skills: result.skills,
     settings: result.settings.length, chats: result.chats ? { conversations: result.chats.conversations, messages: result.chats.messages } : null };
 }
 
 /** What a send did, in counts and the names a person recognises. `connections`: apps and keys a move carried. */
 function emptyResult() {
-  return { bots: [], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: [], connections: 0, chats: null, failed: [], notes: [] };
+  return { bots: [], updatedBots: [], skills: 0, settings: [], connections: 0, chats: null, failed: [], notes: [] };
 }
 /** What a move carried beyond a send: automations and skill extras, memory merged, files, conversations' settings. */
 const movedResult = () => ({ moved: 0, memory: 0, files: { sent: 0, kept: 0 }, conversationSettings: 0 });
@@ -408,7 +396,7 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
       const cloudItems = new Map(theirs.items.map((item) => [item.key, item]));
       const ctx = { origin, session, result, cloudBots, localItems, cloudItems, planned: new Map(planned.rows.map((row) => [row.key, row])), bots: null, skillLists: new Map(),
         sentKeys: new Set(), sentParts: {}, recorded: new Set(), move, ownMove: move && !team, summaryRoute, computer: computer?.label ?? null };
-      const order = { "library-skill": 0, "imported-skill": 0, bot: 1, skill: 2, setting: 3, login: 4, "1password": 5 };
+      const order = { "library-skill": 0, "imported-skill": 0, bot: 1, skill: 2, setting: 3 };
       const automations = new Set(AUTOMATION_KINDS);
       const goRow = async (row) => {
         try { await sendRow(ctx, row); }
@@ -685,8 +673,6 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
     if (row.kind === "bot") return row.state === "only-here" ? addBot(ctx, row) : updateBot(ctx, row);
     if (row.kind === "skill") return sendSkill(ctx, row);
     if (row.kind === "setting") return sendSetting(ctx, row);
-    if (row.kind === "login") return sendLogin(ctx, row);
-    if (row.kind === "1password") return sendOnePassword(ctx, row);
   }
 
   async function patchBot(ctx, bot, parts) {
@@ -851,42 +837,11 @@ export function createCloudSend({ local, cloud, handoff, store, onChange = () =>
     ctx.result.settings.push(row.label);
   }
 
-  async function sendLogin(ctx, row) {
-    const handed = await handoff({ kind: "login", id: row.id });
-    const login = handed?.login;
-    if (!record(login)) throw new CloudSendError("local", "This login could not be read on this computer.");
-    const kept = botsOnCloud(login.bots, ctx.cloudBots);
-    const saved = await ctx.session.call("POST", "/api/logins", { site: login.site, username: login.username, password: login.password,
-      ...(login.totp ? { totp: login.totp } : {}), bots: kept, exactHost: login.exactHost === true });
-    if (!saved.ok) throw refusedError("refused", saved, "My Cloud could not save the login.");
-    if (Array.isArray(login.bots) && kept.length < login.bots.length) ctx.result.notes.push({ kind: "narrowed", login: row.label });
-    done(ctx, row.key);
-    ctx.result.logins++;
-  }
-
-  async function sendOnePassword(ctx, row) {
-    const handed = await handoff({ kind: "1password" });
-    const onePassword = handed?.onePassword;
-    if (!record(onePassword) || typeof onePassword.token !== "string") throw new CloudSendError("local", "1Password is not connected on this computer.");
-    const parts = row.parts ?? ["token", "vaults"];
-    if (row.state === "only-here" || parts.includes("token")) {
-      const connected = await ctx.session.call("POST", "/api/logins/1password", { token: onePassword.token });
-      if (!connected.ok) throw onePasswordRefusal(connected);
-    }
-    for (const [vault, bots] of Object.entries(onePassword.grants ?? {})) {
-      if (!VAULT_ID.test(vault)) continue;
-      const granted = await ctx.session.call("PATCH", `/api/logins/1password/vaults/${encodeURIComponent(vault)}`, { bots: botsOnCloud(bots, ctx.cloudBots) });
-      if (!granted.ok && granted.status !== 404) throw refusedError("refused", granted, "My Cloud connected 1Password but could not keep its vaults to the same bots.");
-    }
-    done(ctx, row.key);
-    ctx.result.onePassword = true;
-  }
-
   /**
    * What did not arrive of what a move carried, from both sides' own answers, over one owner session that counts as
    * someone using My Cloud: `gaps`, the manifests compared (cloud-send-check.mjs); `chats`, each conversation's rows, its
    * owner's lines and its visible path; `attachments`, the stored ones My Cloud lacks; `secrets`, each credential by its
-   * fingerprint. Left out: what was removed on My Cloud, and a 1Password token 1Password itself refused. `ok` when
+   * fingerprint. Left out: what was removed on My Cloud, and what it refused for good. `ok` when
    * nothing is missing.
    */
   async function check() {

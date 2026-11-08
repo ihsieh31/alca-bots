@@ -60,7 +60,7 @@ async function passDirect(threadId: string, to: string, message: string) {
 }
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, cloudEnv: { ALCA_TEST_INTERNAL_CAPABILITY_KEY: CLOUD_CAPABILITY_KEY },
+  fx = await launchCloudSendFixture({ cloudEnv: { ALCA_TEST_INTERNAL_CAPABILITY_KEY: CLOUD_CAPABILITY_KEY },
     team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   olive = (await team.pair(OLIVE)).token!;

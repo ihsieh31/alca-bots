@@ -16,14 +16,12 @@ node --test electron/cloud-send.node-test.mjs electron/cloud-send-move.node-test
 desktop app starts it (its private utility-process port over Node's IPC) and a
 Cloud home paired the way the Admin pairs it, with main's own wiring
 (`electron/one-home-main.mjs`, which installs `electron/cloud-send-main.mjs`)
-between them through a fake `ipcMain`. Temp homes, a synthetic Claude CLI and a
-fake 1Password SDK; no network. `fx.olderSend` sends as an older desktop's Send
+between them through a fake `ipcMain`. Temp homes and a synthetic Claude CLI;
+no network. `fx.olderSend` sends as an older desktop's Send
 everything did, so a test can start from what such a send left on My Cloud.
 
 `server/cloud-send.e2e.test.ts` checks:
 
-- when My Cloud's 1Password refuses this computer's token, everything else
-  arrives and My Cloud's notice says *1Password* and why, never a login's site;
 - an attachment a row names is kept on My Cloud under its own name, once;
 - **a long conversation, carried in pages by the move** (tool-heavy turns, so a
   few turns make several 300-row pages): a new bot's conversation of three
@@ -79,9 +77,8 @@ the sender's ids). `electron/cloud-send.node-test.mjs` covers main's paging (a
 page's `sent` as it goes, a conversation's later pages waiting once one is not
 taken) and a send that goes on once My Cloud is back after being away. `server/login-handoff.test.ts` and
 `electron/cloud-send.node-test.mjs` cover the
-rest of the reasons a person reads: a pass that stops as a whole, logins this
-computer's server did not hand over, and a 1Password token 1Password already
-refused here.
+rest of the reasons a person reads: a pass that stops as a whole, and a
+connection this computer's server did not hand over.
 
 My Cloud's welcome (`src/components/cloud-welcome/CloudWelcome.test.ts`): while
 the move runs, or once it has gone, **Bring your stuff** is done by itself, so
@@ -105,7 +102,8 @@ pnpm build:server && pnpm exec electron scripts/smoke-login-handoff.cjs
 ```
 
 CI's macOS smokes job runs it: main's own handoff client asks the packaged
-server, forked as a real Electron utility process, for a saved login. The
+server, forked as a real Electron utility process, for a saved API key, and
+an MCP server it no longer has is refused in words. The
 fixture above emulates that port over Node's IPC.
 
 ## A real Cloud

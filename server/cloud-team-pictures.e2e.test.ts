@@ -1,6 +1,5 @@
 // A real Team Cloud with three people: a teammate's name and picture are visible to everyone in the team, served to its
 // signed-in members only, and About you stays each person's own.
-import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchCloudSendFixture, type CloudSendFixture, type CloudTeamFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
@@ -31,7 +30,7 @@ const picture = (url: string, token?: string) =>
   fetch(`${team.base}${url}`, { headers: { ...fx.edge, ...(token ? { authorization: `Bearer ${token}` } : {}) } });
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-pictures-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme" } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme" } });
   team = fx.team!;
   ada = (await team.pair(ADA)).token!;
   bob = (await team.pair(BOB)).token!;

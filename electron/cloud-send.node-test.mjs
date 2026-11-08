@@ -19,7 +19,7 @@ test("a part goes when it changed here and not there; My Cloud's own change is k
   const here = summary([
     bot("ember", { soul: "s2", title: "t2", name: "n1" }),
     bot("juno", { soul: "j1" }),
-    { key: itemKey.login("example.test", "alice"), kind: "login", label: "example.test", id: "l1", parts: { saved: "a1" } },
+    { key: itemKey.setting("language"), kind: "setting", label: "language", parts: { value: "a1" } },
     { key: itemKey.setting("profile"), kind: "setting", label: "profile", parts: { name: "amit", about: "-" } },
   ]);
   const there = summary([
@@ -27,23 +27,19 @@ test("a part goes when it changed here and not there; My Cloud's own change is k
     { key: itemKey.setting("profile"), kind: "setting", label: "profile", parts: { name: "-", about: "-" } },
     bot("miso", { soul: "m1" }),
   ]);
-  const sent = { [itemKey.bot("ember")]: { soul: ["s1", "s1"], title: ["t1", "t1"] }, [itemKey.login("example.test", "alice")]: { saved: ["a1", "c1"] } };
+  const sent = { [itemKey.bot("ember")]: { soul: ["s1", "s1"], title: ["t1", "t1"] }, [itemKey.setting("language")]: { value: ["a1", "c1"] } };
   const plan = planSend({ local: here, cloud: there, sent });
   const by = Object.fromEntries(plan.rows.map((row) => [row.key, row]));
   assert.deepEqual([by["bot:ember"].state, by["bot:ember"].parts, by["bot:ember"].differs], ["to-update", ["soul"], ["title"]]);
   assert.equal(by["bot:juno"].state, "only-here");
-  assert.equal(by[itemKey.login("example.test", "alice")].state, "removed");
-  assert.deepEqual(plan.removed, [itemKey.login("example.test", "alice")]);
+  assert.equal(by[itemKey.setting("language")].state, "removed");
+  assert.deepEqual(plan.removed, [itemKey.setting("language")]);
   // My Cloud has no value: this computer's fills it; an equal part is remembered as in step.
   assert.deepEqual(by["setting:profile"].parts, ["name"]);
   assert.deepEqual(plan.baseline["bot:ember"], { name: ["n1", "n1"] });
   assert.deepEqual(plan.cloudOnly.map((row) => row.key), ["bot:miso"]);
   // The person chooses this computer's: the differing part goes too.
   assert.deepEqual(planSend({ local: here, cloud: there, sent, force: ["bot:ember"] }).rows.find((row) => row.key === "bot:ember").parts, ["soul", "title"]);
-  // A login both sides have, never sent from here: in step from now on (its secret can't be compared).
-  const logins = planSend({ local: summary([{ key: "login:a.test|amit", kind: "login", label: "a.test", parts: { saved: "1" } }]),
-    cloud: summary([{ key: "login:a.test|amit", kind: "login", label: "a.test", parts: { saved: "9" } }]) });
-  assert.deepEqual([logins.rows[0].state, logins.baseline["login:a.test|amit"]], ["on-both", { saved: ["1", "9"] }]);
   // Unchanged here, changed there: nothing goes.
   const quiet = planSend({ local: summary([bot("ember", { soul: "s1" })]), cloud: summary([bot("ember", { soul: "s5" })]), sent: { "bot:ember": { soul: ["s1", "s1"] } } });
   assert.equal(quiet.rows[0].state, "on-both");
@@ -76,8 +72,8 @@ test("a bot's fields reach My Cloud without Custom approval and without naming b
   const body = botPatch(ember, ["soul", "access", "team", "model"], new Set(["juno"]));
   assert.deepEqual(body, { soul: "Be brief.", alwaysAllow: ["Bash(ls)"], peers: ["juno"], modelSelection: { instanceId: "claude", model: "m" }, requireAvailableModel: true });
   assert.ok(!Object.values(BOT_PARTS).flat().includes("cwd"), "a working folder is this computer's");
-  assert.deepEqual(parseSendState({ auto: false, clouds: { "javascript:alert(1)": {}, [CLOUD]: { off: { a: "you", b: "nonsense" }, created: { "bot:x": true, "login:y": true }, creating: { "bot:z": true, "skill:q": true }, release: [{ id: "mcp:a", digest: "d" }, { id: 3 }] } } }),
-    { v: 1, clouds: { [CLOUD]: { sent: {}, off: { a: "you" }, dismissed: "", last: null, whole: null, arrived: { bots: 0, updatedBots: 0, skills: 0, logins: 0, settings: 0, onePassword: false, chats: { conversations: 0, messages: 0 } },
+  assert.deepEqual(parseSendState({ auto: false, clouds: { "javascript:alert(1)": {}, [CLOUD]: { off: { a: "you", b: "nonsense" }, created: { "bot:x": true, "skill:y": true }, creating: { "bot:z": true, "skill:q": true }, release: [{ id: "mcp:a", digest: "d" }, { id: 3 }] } } }),
+    { v: 1, clouds: { [CLOUD]: { sent: {}, off: { a: "you" }, dismissed: "", last: null, whole: null, arrived: { bots: 0, updatedBots: 0, skills: 0, settings: 0, chats: { conversations: 0, messages: 0 } },
       chats: {}, created: { "bot:x": true }, creating: { "bot:z": true }, release: [{ id: "mcp:a", digest: "d" }], files: {}, on: {} } } }, "nothing is kept of the switch that once sent by itself");
 });
 
@@ -133,16 +129,12 @@ test("a send adds a bot with its own id over one session, says what My Cloud ref
   assert.equal((await createCloudSend(outdated.deps).compare()).cloud, "outdated");
 });
 
-test("My Cloud's page is told names of bots and counts, with an opaque signature, and never a login's site", async () => {
-  const sides = fakeSides({
-    localItems: [bot("ember", { soul: "s" }), { key: itemKey.login("bank.example", "amit"), kind: "login", label: "bank.example", id: "l1", parts: { saved: "1" } }],
-    cloudItems: [{ key: itemKey.login("crm.example", "ops"), kind: "login", label: "crm.example", detail: "ops", parts: { saved: "2" } }, { key: "1password", kind: "1password", label: "1Password", parts: { token: "x" } }],
-  });
+test("My Cloud's page is told names of bots and counts, with an opaque signature", async () => {
+  const sides = fakeSides({ localItems: [bot("ember", { soul: "s" })], cloudItems: [] });
   const snapshot = await createCloudSend(sides.deps).compare();
   const notice = sendNotice(snapshot);
-  assert.deepEqual({ ...notice, signature: notice.signature.length }, { ready: true, bots: ["ember"], updatedBots: [], skills: 0, logins: 1, onePassword: false, settings: 0, signature: 32, dismissed: false, running: false, last: null,
-    whole: null, arrived: { bots: 0, updatedBots: 0, skills: 0, logins: 0, settings: 0, onePassword: false, chats: { conversations: 0, messages: 0 } } });
-  assert.ok(!JSON.stringify(notice).includes("bank.example"));
+  assert.deepEqual({ ...notice, signature: notice.signature.length }, { ready: true, bots: ["ember"], updatedBots: [], skills: 0, settings: 0, signature: 32, dismissed: false, running: false, last: null,
+    whole: null, arrived: { bots: 0, updatedBots: 0, skills: 0, settings: 0, chats: { conversations: 0, messages: 0 } } });
 });
 
 test("an owner session is made only at the person's own Cloud, and nothing is sent to an origin a grant names instead", async () => {
@@ -168,8 +160,8 @@ test("either page asks only for the move's line, its Try again and closing it; n
   assert.deepEqual([...handlers.keys()], ["cloud-send:notice", "cloud-send:dismiss", "cloud-send:move-retry"]);
   for (const channel of handlers.keys()) assert.throws(() => handlers.get(channel)({ page: null }), /only available/, channel);
   for (const page of ["local", "cloud"]) {
-    assert.deepEqual(await handlers.get("cloud-send:notice")({ page }), { ready: false, bots: [], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: 0, signature: "", dismissed: false, running: false, last: null,
-      whole: null, arrived: { bots: 0, updatedBots: 0, skills: 0, logins: 0, settings: 0, onePassword: false, chats: { conversations: 0, messages: 0 } } }, page);
+    assert.deepEqual(await handlers.get("cloud-send:notice")({ page }), { ready: false, bots: [], updatedBots: [], skills: 0, settings: 0, signature: "", dismissed: false, running: false, last: null,
+      whole: null, arrived: { bots: 0, updatedBots: 0, skills: 0, settings: 0, chats: { conversations: 0, messages: 0 } } }, page);
   }
 });
 
@@ -268,7 +260,8 @@ test("replacing a skill whose text changed here puts My Cloud's copy back when t
 });
 
 test("a send asked while another runs waits for it, then runs as it was asked", async () => {
-  const sides = fakeSides({ localItems: [bot("ember", { soul: "s" }), { key: itemKey.onePassword(), kind: "1password", label: "1Password", parts: { token: "t" } }] });
+  const sides = fakeSides({ localItems: [bot("ember", { soul: "s" }), { key: itemKey.setting("profile"), kind: "setting", label: "profile", parts: { name: "a" } }],
+    refuse: { "/api/config": { status: 503, error: "busy" } } });
   let release;
   const gate = new Promise((resolve) => { release = resolve; });
   const open = sides.deps.cloud.open;
@@ -276,12 +269,12 @@ test("a send asked while another runs waits for it, then runs as it was asked", 
   sides.deps.cloud.open = async () => { if (opened++ === 0) await gate; return open(); };
   const send = createCloudSend(sides.deps);
   const first = send.send({ keys: ["bot:ember"] });
-  const second = send.send({ keys: ["1password"], force: ["1password"] });
+  const second = send.send({ keys: ["setting:profile"], force: ["setting:profile"] });
   release();
   const [a, b] = await Promise.all([first, second]);
   assert.equal(opened, 2);
   assert.deepEqual([a.result.bots, b.result.bots], [["Ember"], []]);
-  assert.deepEqual(b.result.failed.map((entry) => entry.key), ["1password"], "the second send carried its own keys");
+  assert.deepEqual(b.result.failed.map((entry) => entry.key), ["setting:profile"], "the second send carried its own keys");
 });
 
 test("a send that stops as a whole is that send's outcome, so the strip and Settings say why instead of an earlier result", async () => {
@@ -308,7 +301,7 @@ test("a 403 My Cloud names by a serverError key goes on with its English and key
     };
     return createCloudSend(sides.deps).send({ reason: "move" }).then(() => assert.fail("the send went"), (error) => error);
   };
-  const english = "Moving a computer's bots, chats and logins goes to My Cloud only. Nothing personal comes into Acme.";
+  const english = "Moving a computer's bots and chats goes to My Cloud only. Nothing personal comes into Acme.";
   const named = await refusedWith({ error: english, errorKey: "serverError.team.personalMove", errorParams: { team: "Acme", bad: { x: 1 } } });
   assert.ok(named instanceof CloudSendError);
   assert.deepEqual({ message: named.message, errorKey: named.errorKey, errorParams: named.errorParams }, { message: english, errorKey: "serverError.team.personalMove", errorParams: { team: "Acme" } });
@@ -319,39 +312,17 @@ test("a 403 My Cloud names by a serverError key goes on with its English and key
   }
 });
 
-test("My Cloud's notice says what did not go, by kind, with each reason: logins only counted, never a site", async () => {
-  const login = (id, site) => ({ key: itemKey.login(site, "amit"), kind: "login", label: site, detail: "amit", id, parts: { saved: id } });
-  const sides = fakeSides({ localItems: [bot("ember", { soul: "s" }), login("l1", "bank.example"), login("l2", "crm.example"), { key: itemKey.onePassword(), kind: "1password", label: "1Password", parts: { token: "t" } }] });
-  sides.deps.handoff = async (what) => {
-    if (what.kind === "login") throw new Error("AlcaBots on this computer did not answer. Try again.");
-    throw new Error("1Password did not accept this computer's token, so it was not sent to My Cloud.");
-  };
+test("My Cloud's notice says what did not go, by kind, with each reason", async () => {
+  const sides = fakeSides({ localItems: [bot("ember", { soul: "s" }), { key: itemKey.setting("profile"), kind: "setting", label: "profile", parts: { name: "a" } }],
+    refuse: { "/api/config": { status: 503, error: "My Cloud is busy." } } });
   const send = createCloudSend(sides.deps);
   const outcome = await send.send();
   assert.deepEqual(outcome.result.bots, ["Ember"]);
-  assert.deepEqual(outcome.result.failed.map((entry) => entry.kind), ["login", "login", "1password"]);
+  assert.deepEqual(outcome.result.failed.map((entry) => entry.kind), ["setting"]);
   const notice = sendNotice(send.snapshot());
-  const none = { bots: [], skills: 0, logins: 0, onePassword: false, settings: 0, connections: 0, chats: false };
-  assert.deepEqual(notice.last.reasons, [
-    { what: { ...none, logins: 2 }, error: "AlcaBots on this computer did not answer. Try again." },
-    { what: { ...none, onePassword: true }, error: "1Password did not accept this computer's token, so it was not sent to My Cloud." },
-  ]);
+  const none = { bots: [], skills: 0, settings: 0, connections: 0, chats: false };
+  assert.deepEqual(notice.last.reasons, [{ what: { ...none, settings: 1 }, error: "My Cloud said: My Cloud is busy." }]);
   assert.equal(notice.last.error, undefined, "the send itself did not stop");
-  assert.ok(!JSON.stringify(notice).includes("bank.example") && !JSON.stringify(notice).includes("crm.example"));
-});
-
-test("1Password refused on My Cloud is told in words for this computer, not My Cloud's own paste-it-here", async () => {
-  const sides = fakeSides({ localItems: [{ key: itemKey.onePassword(), kind: "1password", label: "1Password", parts: { token: "t" } }],
-    refuse: { "/api/logins/1password": { status: 400, error: "1Password did not accept the token: it may have been revoked, expired, or lost access to its vault. Make a new service account token in 1Password and paste it here." } } });
-  sides.deps.handoff = async () => ({ onePassword: { token: "ops_fake", grants: {} } });
-  const outcome = await createCloudSend(sides.deps).send();
-  assert.deepEqual(outcome.result.failed, [{ key: "1password", kind: "1password", label: "1Password",
-    error: "My Cloud's 1Password did not accept this computer's token: it may have been revoked, expired, or lost access to its vault. Connect 1Password again in this computer's Settings → Logins, and it goes to My Cloud by itself.", final: true }]);
-  const other = fakeSides({ localItems: [{ key: itemKey.onePassword(), kind: "1password", label: "1Password", parts: { token: "t" } }],
-    refuse: { "/api/logins/1password": { status: 503, error: "busy" } } });
-  other.deps.handoff = async () => ({ onePassword: { token: "ops_fake", grants: {} } });
-  const busy = await createCloudSend(other.deps).send();
-  assert.equal(busy.result.failed[0].final, undefined, "any other refusal can be tried again");
 });
 
 test("chats by row: the cursor moves only past what My Cloud took; one removed there is never sent again; one being answered waits", async () => {
@@ -398,10 +369,10 @@ test("chats by row: the cursor moves only past what My Cloud took; one removed t
   assert.deepEqual(posted.length, 2, "nothing new but in a conversation removed on My Cloud: no request at all");
 });
 
-test("1Password refusing the token on My Cloud is final: My Cloud's page is told not to offer Try again; any other failure keeps it", () => {
-  const outcome = (failed, error) => ({ cloud: "ready", rows: [], last: { at: 1, reason: "auto", result: { bots: [], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: [], chats: null, notes: [], failed }, ...(error ? { error } : {}) } });
-  const refused = { key: "1password", kind: "1password", label: "1Password", error: "refused", final: true };
-  const other = { key: "login:a", kind: "login", label: "a.example", error: "did not answer" };
+test("a refusal that trying again cannot fix is final: My Cloud's page is told not to offer Try again; any other failure keeps it", () => {
+  const outcome = (failed, error) => ({ cloud: "ready", rows: [], last: { at: 1, reason: "auto", result: { bots: [], updatedBots: [], skills: 0, settings: [], chats: null, notes: [], failed }, ...(error ? { error } : {}) } });
+  const refused = { key: "mcp:docs", kind: "connection", label: "docs", error: "refused", final: true };
+  const other = { key: "bot:a", kind: "bot", label: "a", error: "did not answer" };
   assert.equal(sendNotice(outcome([refused])).last.final, true);
   assert.equal(sendNotice(outcome([refused, other])).last.final, false);
   assert.equal(sendNotice(outcome([])).last.final, false);
@@ -496,26 +467,25 @@ test("more attachments than My Cloud checks at once go in several checks, so the
   assert.equal(posted.length, 1);
 });
 
-test("My Cloud's page is told the latest whole send, which a later one-login send never replaces, and all that ever arrived", async () => {
-  const login = { key: itemKey.login("bank.example", "amit"), kind: "login", label: "bank.example", detail: "amit", id: "l1", parts: { saved: "1" } };
-  const sides = fakeSides({ localItems: [bot("ember", { soul: "s" }), login] });
-  sides.deps.handoff = async () => ({ login: { site: "bank.example", username: "amit", password: "fake-pass", bots: [] } });
+test("My Cloud's page is told the latest whole send, which a later one-item send never replaces, and all that ever arrived", async () => {
+  const profile = { key: itemKey.setting("profile"), kind: "setting", label: "profile", parts: { name: "a" } };
+  const sides = fakeSides({ localItems: [bot("ember", { soul: "s" }), profile] });
   const store = stored();
   const send = createCloudSend({ ...sides.deps, store });
-  await send.send({ keys: [login.key], force: [login.key], reason: "logins" });
-  assert.equal(sendNotice(send.snapshot()).whole, null, "one login is not a whole send");
+  await send.send({ keys: [profile.key], force: [profile.key], reason: "items" });
+  assert.equal(sendNotice(send.snapshot()).whole, null, "one item is not a whole send");
   await send.send({ reason: "button" });
-  await send.send({ keys: [login.key], force: [login.key], reason: "logins" });
+  await send.send({ keys: [profile.key], force: [profile.key], reason: "items" });
   const notice = sendNotice(send.snapshot());
-  assert.deepEqual([notice.last.reason, notice.whole.reason, notice.whole.sent.bots], ["logins", "button", 1]);
-  assert.deepEqual(notice.arrived, { bots: 1, updatedBots: 0, skills: 0, logins: 3, settings: 0, onePassword: false, chats: { conversations: 0, messages: 0 } });
+  assert.deepEqual([notice.last.reason, notice.whole.reason, notice.whole.sent.bots], ["items", "button", 1]);
+  assert.deepEqual(notice.arrived, { bots: 1, updatedBots: 0, skills: 0, settings: 3, chats: { conversations: 0, messages: 0 } });
   sides.deps.cloud.open = async () => { throw new Error("This app could not sign in to My Cloud. Try again."); };
   await assert.rejects(send.send({ reason: "my-cloud" }));
   assert.equal(sendNotice(send.snapshot()).whole.error, "This app could not sign in to My Cloud. Try again.");
   const kept = parseSendState(store.value).clouds[CLOUD];
-  assert.deepEqual([kept.whole.reason, kept.arrived.logins], ["my-cloud", 3]);
-  assert.deepEqual(parseSendState({ clouds: { [CLOUD]: { whole: { at: "x" }, arrived: { bots: -2, logins: 1.5, chats: "lots" } } } }).clouds[CLOUD].arrived,
-    { bots: 0, updatedBots: 0, skills: 0, logins: 0, settings: 0, onePassword: false, chats: { conversations: 0, messages: 0 } });
+  assert.deepEqual([kept.whole.reason, kept.arrived.settings], ["my-cloud", 3]);
+  assert.deepEqual(parseSendState({ clouds: { [CLOUD]: { whole: { at: "x" }, arrived: { bots: -2, settings: 1.5, chats: "lots" } } } }).clouds[CLOUD].arrived,
+    { bots: 0, updatedBots: 0, skills: 0, settings: 0, chats: { conversations: 0, messages: 0 } });
 });
 
 test("a room's chats go with the room, whatever bots My Cloud has, and never as a bot's", async () => {
@@ -599,7 +569,7 @@ test("an owner session that could not open says whether nothing answered or My C
 test("closing the move's done line closes the move's own send result with it, so My Cloud's page says it once", async () => {
   const dir = mkdtempSync(join(tmpdir(), "alca-move-line-"));
   const file = join(dir, "cloud-send.json");
-  const result = { bots: ["Ember"], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: [], chats: null, failed: [], notes: [] };
+  const result = { bots: ["Ember"], updatedBots: [], skills: 0, settings: [], chats: null, failed: [], notes: [] };
   writeFileSync(file, JSON.stringify({ v: 1, clouds: { [CLOUD]: { sent: {}, off: {}, dismissed: "", last: { at: 7, reason: "move", result }, whole: null, chats: {}, created: {}, release: [], files: {}, on: {} } } }));
   const handlers = new Map();
   let seen = 0;

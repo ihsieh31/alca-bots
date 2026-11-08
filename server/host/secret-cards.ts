@@ -37,7 +37,6 @@ import {
   type PhoneSecretContext,
   type PhoneSecretSubmissionRegistry,
 } from "../phone-secret.ts";
-import type { BotLogins } from "../bot-logins.ts";
 import type { BotRecord, GroupRecord, Message, Store } from "../store.ts";
 import { serverLine } from "../server-lines.ts";
 
@@ -55,7 +54,6 @@ export const phoneSecretEnvelopeSchema = z.object({
 export interface SecretCardsDeps {
   store: Pick<Store, "activePath" | "appendMessage" | "patchMessage" | "messagesFor" | "botByThread" | "groupByThread" | "onChange">;
   cfg: AppConfig;
-  botLogins: Pick<BotLogins, "credentialConfig">;
   phoneSecrets: Pick<PhoneSecretBridge, "provide" | "open">;
   phoneSecretSubmissions: PhoneSecretSubmissionRegistry;
   connectorThread(botId: string, threadId: string): { bot: BotRecord; group: GroupRecord | undefined } | null;
@@ -151,14 +149,14 @@ function customRequest(body: Record<string, unknown>): { label: string; reason: 
 }
 
 export function createSecretCards(deps: SecretCardsDeps) {
-  const { store, cfg, botLogins, phoneSecrets, phoneSecretSubmissions, connectorThread, answerCardNode } = deps;
+  const { store, cfg, phoneSecrets, phoneSecretSubmissions, connectorThread, answerCardNode } = deps;
   const vault = new SecretVault();
   addHeldSecretScrubber((text) => vault.scrub(text));
 
   const custom = (secret: SecretRequestCardData): boolean => secret.target === CUSTOM_SECRET_TARGET;
   /** Saved where the card says: a named key in the settings or Logins, a custom secret behind its card. */
   const secretSaved = (secret: SecretRequestCardData): boolean =>
-    secret.target === CUSTOM_SECRET_TARGET ? secret.savedAt !== undefined : credentialIsConfigured(botLogins.credentialConfig(cfg), secret.target);
+    secret.target === CUSTOM_SECRET_TARGET ? secret.savedAt !== undefined : credentialIsConfigured(cfg, secret.target);
 
   function updateText(messageId: string, secret: SecretRequestCardData, outcome: "provided" | "dismissed"): string {
     if (!custom(secret)) return credentialUpdateText(secret.label, outcome);
@@ -428,7 +426,7 @@ export function createSecretCards(deps: SecretCardsDeps) {
     }
     const credentialId: CredentialTargetId = body.credentialId;
     const target = CREDENTIAL_TARGETS[credentialId];
-    if (credentialIsConfigured(botLogins.credentialConfig(cfg), credentialId)) {
+    if (credentialIsConfigured(cfg, credentialId)) {
       return { status: 200, body: { alreadyConfigured: true, label: target.label } };
     }
     if (deps.providerKeysRefused && isProviderCredentialTarget(credentialId)) return { status: 403, body: { error: HOSTED_PROVIDER_SETTINGS_ERROR } };

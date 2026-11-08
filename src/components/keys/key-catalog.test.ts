@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { setLocale, t } from "@/lib/i18n";
 import type { ConfigStatus } from "@/state/store";
 import { WORKSPACE_CREDENTIAL_ENV } from "../../../server/credential-env.ts";
-import { CREDENTIAL_TARGETS, credentialConfigPatch, desktopCredentialSlot, isConfigCredentialTarget } from "../../../shared/credential-request";
+import { CREDENTIAL_TARGETS, credentialConfigPatch, desktopCredentialSlot } from "../../../shared/credential-request";
 import { KEY_CATALOG, KEY_SECTIONS, keyEntry, keyForInstance, keyMatches, looksLikeOtherKey, savedState, type KeyId } from "./key-catalog";
 
 const NOT_A_PERSONS_KEY: Record<string, string> = {
@@ -53,19 +53,18 @@ describe("every credential has one home on the keys page", () => {
 
   // A key saved from a bot's card lands exactly where its Settings row puts it: the same desktop slot, or the same config.
   it("covers every credential a bot can ask for in a chat, saved where Settings saves it", () => {
-    // The 1Password token goes to the saved-logins store, which has no Settings page.
-    const homes: Record<Exclude<keyof typeof CREDENTIAL_TARGETS, "onePasswordToken">, KeyId> = {
+    const homes: Record<keyof typeof CREDENTIAL_TARGETS, KeyId> = {
       xaiApiKey: "xai", boxToken: "box", opencodeGoApiKey: "opencodeGo", ttsKey: "elevenlabs", fishAudioKey: "fishAudio", geminiTtsKey: "geminiTts",
       openaiImageApiKey: "imageOpenai", composioApiKey: "composio", openaiApiKey: "openai",
       anthropicApiKey: "anthropic", openrouterApiKey: "openrouter", mistralApiKey: "mistral", cerebrasApiKey: "cerebras", groqApiKey: "groq",
       greenferenceApiKey: "greenference", metaApiKey: "meta", deepseekApiKey: "deepseek",
     };
-    expect(Object.keys(homes).sort()).toEqual(Object.keys(CREDENTIAL_TARGETS).filter((name) => name !== "onePasswordToken").sort());
+    expect(Object.keys(homes).sort()).toEqual(Object.keys(CREDENTIAL_TARGETS).sort());
     for (const [name, id] of Object.entries(homes) as Array<[keyof typeof homes, KeyId]>) {
       const entry = keyEntry(id);
       if (!entry.target) throw new Error(`${name} has no Settings home`);
       expect(desktopCredentialSlot(name), name).toBe(entry.target.slot ?? null);
-      if (isConfigCredentialTarget(name)) expect(credentialConfigPatch(name, "k"), name).toEqual(entry.target.patch("k", true));
+      expect(credentialConfigPatch(name, "k"), name).toEqual(entry.target.patch("k", true));
     }
   });
 

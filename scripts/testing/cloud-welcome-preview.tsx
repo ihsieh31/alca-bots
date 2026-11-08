@@ -13,13 +13,13 @@ const params = new URLSearchParams(location.search);
 
 function installCloudPage(move: string | null) {
   const name = params.get("name") ?? "My Cloud";
-  const sent = { bots: 6, updatedBots: 0, skills: 2, logins: 2, onePassword: true, settings: 1, chats: { conversations: 142, messages: 900 } };
+  const sent = { bots: 6, updatedBots: 0, skills: 2, settings: 1, chats: { conversations: 142, messages: 900 } };
   const notice: CloudSendNotice = {
-    ready: true, bots: [], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: 0, signature: "", dismissed: false,
+    ready: true, bots: [], updatedBots: [], skills: 0, settings: 0, signature: "", dismissed: false,
     running: move === "copy", ...(move === "copy" ? { runningReason: "move", progress: { done: 34, total: 142 }, phase: "chats" as const } : {}),
     last: move === "done" ? { at: Date.now(), reason: "move", failed: 0, seen: false, sent } : null, whole: null,
     ...(move === "copy" ? { move: { phase: "copy" as const, chats: { done: 34, total: 142 } } } : {}),
-    ...(move === "done" ? { move: { phase: "done" as const, counts: { bots: 6, skills: 2, logins: 2, onePassword: true, chats: 142, routines: 4 }, phone: true, held: [] } } : {}),
+    ...(move === "done" ? { move: { phase: "done" as const, counts: { bots: 6, skills: 2, chats: 142, routines: 4 }, phone: true, held: [] } } : {}),
   };
   window.abot = {
     platform: "darwin",

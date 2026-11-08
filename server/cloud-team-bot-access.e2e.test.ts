@@ -3,7 +3,6 @@
 // Eve is not added. Every route a member reaches is tried as each of them, the live stream follows a change, sharing
 // moves with the bot's owner, and bots set up before levels keep exactly the access they had. The engine is the
 // synthetic Claude CLI.
-import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { launchCloudSendFixture, type CloudSendFixture, type CloudTeamFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
@@ -54,7 +53,7 @@ async function listen(who: string) {
 }
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme" } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme" } });
   team = fx.team!;
   for (const [who, member] of Object.entries({ olive: OLIVE, ada: ADA, bob: BOB, cara: CARA, dan: DAN, eve: EVE })) {
     const paired = await team.pair(member);

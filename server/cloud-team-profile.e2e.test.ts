@@ -2,7 +2,6 @@
 // is their own, keyed by their verified claim; the server's one profile from config.json is nobody's there: it moves to
 // the person whose address it names. Bots name the person a conversation is for, and each group chat line its speaker.
 // The engine is the synthetic Claude CLI, so this proves the plumbing, not a model's judgement.
-import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -83,7 +82,7 @@ async function configFrames(token: string, trigger: () => Promise<unknown>, unti
 }
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-profile-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   // A Team Cloud from before: its owner set Settings → Profile inside the team, into the server's one profile.
   const config = JSON.parse(readFileSync(configFile(), "utf8")) as Record<string, unknown>;

@@ -30,13 +30,14 @@ The same TypeScript **harness server** (`server/`) runs in four places:
 Bots have tools:
 
 - the engine's shell and file tools;
-- a per-bot Chrome (agent-browser) whose traffic goes through an egress gate;
+- a browser on macOS and Windows desktops: ego lite, the person's own browser,
+  driven through its `ego-browser` CLI (`server/ego-browser*.ts`);
 - computer use: the local desktop, a local VM, and paid cloud computers;
 - MCP servers, both custom ones and the harness's own;
 - Composio connected apps, through `cloudflare/composio-broker/`;
 - routines (scheduled turns), rooms (several bots in one conversation),
   webhooks and app-event triggers;
-- file-based memory, saved website logins and 1Password;
+- file-based memory;
 - a phone companion (`companion/`), reached over the LAN, Tailscale, or a
   managed Cloudflare tunnel (`cloudflare/control-plane/`,
   `electron/managed-companion-tunnel.mjs`).
@@ -93,20 +94,13 @@ Bots have tools:
      on `:8812`, or the server's tunnel socket (`alcabots serve --tunnel`,
      `ALCA_TUNNEL_SOCKET`). It never reaches the LAN listener on `:8810`.
      Requests that arrive over the tunnel socket always need a paired session.
-6. **Egress gate for bots' browsers** (`server/browser/egress/`).
-   - Every connection a bot's Chrome makes goes through a SOCKS5 gate on
-     loopback. The gate resolves names itself and checks every address before
-     it connects.
-   - These are always refused, on every host: AlcaBots's own ports,
-     link-local addresses, cloud metadata (`169.254.169.254`,
-     `fd00:ec2::254`, `100.100.100.200`) and reserved ranges.
-   - The local network (including `fc00::/7`, which holds Fly's private
-     network) is closed on self-hosted servers unless
-     `browserEngine.egress.allow` lists it, and always closed on Cloud.
-   - Other loopback ports open only to servers the bot's own processes
-     started.
-   - The full table is in `docs/browser-packaging.md`, under "What a bot's
-     browser can reach".
+6. **A bot's browser** (`server/ego-browser.ts`, `server/ego-browser-proxy.ts`).
+   - A bot browses only through ego lite on the person's desktop. The
+     `browser` MCP server pipes the bot's script to `ego-browser nodejs`,
+     which runs it in ego lite's own Node.js runtime, outside AlcaBots's bot
+     box, with the person's files and network. The bot's browser switch is
+     the gate (`docs/plans/browser-engine.md`, "Known risk").
+   - Servers, Docker, Linux and Cloud homes have no browser.
 7. **Untrusted content reaching tools.** All of these are untrusted, and may
    try to steer a bot (prompt injection):
    - web pages a bot opens;
@@ -115,14 +109,13 @@ Bots have tools:
    - messages from other bots in a room.
 
    The harness itself must not let such content get past the boundaries in
-   this list. For example, a saved password is never given to the bot or to
-   page scripts (`server/login-fill.ts`, `server/browser-secret-hold.ts`).
+   this list. For example, a secret a person types on a secure card is never
+   given to the bot (`server/secret-vault.ts`).
    Bot and tool output that the web UI renders (Markdown, Mermaid, KaTeX,
    Vega, links, file names) must not run script in the UI.
 8. **Write-only secrets.**
    - Provider API keys and tokens live in `config.json` (mode 0600), and the
-     API reports only whether each is configured. Saved logins and the
-     1Password token are in a separately sealed store (`server/login-store.ts`).
+     API reports only whether each is configured.
    - On a Cloud home, launch secrets come over a pipe, never the environment
      (`server/cloud-secrets.ts`).
    - Text that crosses a boundary is redacted (`shared/redact.ts`).
@@ -192,8 +185,8 @@ These are deliberate product decisions. Do not report them.
     (`config.json`, the engine environment) are readable from a bot's shell.
   - The companion's direct LAN path and pairing over plain HTTP are
     cleartext, and documented as trusted-network-only.
-  - On the desktop, bots' browsers reach the local network and this
-    computer's other ports by default. The person can turn that off.
+  - A bot with the browser on runs scripts in ego lite's runtime, outside
+    the bot box, with the person's files and network.
 
 ## What we care about
 
@@ -206,18 +199,11 @@ These are deliberate product decisions. Do not report them.
   control page, or a `service`-trust server.
 - A web page or tool result making a bot use credentials or act outside what
   the person asked, beyond what the engine itself allows. Examples:
-  - filling a saved login on another origin;
-  - reading a saved password or a 1Password value;
-  - getting around `browser-secret-hold`;
   - reaching `/api/internal/*` or the admin API from a bot's browser;
   - script injection into the web UI.
 - Secrets echoed back in an API response, an SSE event, a log line, a chat
   message, or the argv or environment of a child process that should not
   have them.
-- The egress gate bypassed to reach loopback services, the LAN, link-local
-  addresses or cloud metadata. Routes to try: redirects, DNS rebinding,
-  IPv4-mapped, NAT64 or 6to4 addresses, WebRTC, agent-browser fetching
-  directly, or DevTools ports.
 - Bypasses of pairing, sessions or the tunnel: code reuse, fixation, scope
   confusion between `client` and `admin`, or a cookie session used
   cross-origin.
@@ -251,13 +237,11 @@ These are deliberate product decisions. Do not report them.
   - disclosure of a stored secret;
   - a pairing or session bypass;
   - one bot or turn reusing another's capability;
-  - egress-gate bypass to the LAN or cloud metadata;
-  - script injection into the web UI from bot, tool or web content;
-  - a page obtaining or misdirecting a saved login.
+  - script injection into the web UI from bot, tool or web content.
 - **Medium:**
   - issues that need a local unprivileged user;
   - issues that need a specific opt-in configuration, such as an
-    `egress.allow` entry, a non-default trust setting, or the LAN companion
+    a non-default trust setting, or the LAN companion
     path.
 - **Low:** hardening, defence in depth, and denial of service that needs a
   session or local access.
@@ -272,10 +256,10 @@ These are deliberate product decisions. Do not report them.
 - **Most:**
   - `server/request-auth.ts`, `server/sessions.ts`, `server/cli-pairing.ts`;
   - the router and internal capabilities in `server/index.ts`;
-  - `server/browser/egress/`;
+  - `server/ego-browser*.ts`;
   - `companion/src/`;
   - `electron/` (preload, the companion origin gateway, the managed tunnel);
-  - `shared/redact.ts`, `server/config.ts`, `server/login-*.ts`;
+  - `shared/redact.ts`, `server/config.ts`, `server/secret-*.ts`;
   - `server/webhook*.ts`;
   - `server/cloud-*.ts` and `deploy/fly/Caddyfile`;
   - `cloudflare/`;
@@ -297,14 +281,14 @@ These are deliberate product decisions. Do not report them.
 The image holds the full checkout at `/src`, with every workspace's
 dependencies installed by `pnpm install --frozen-lockfile`. It also has the
 bundled server (`dist-server/`) and the web UI (`dist/`). There is no
-Electron runtime, no bot browser (Chrome), and no engine logins. The test
+Electron runtime, no ego lite, and no engine logins. The test
 suite drives fake engine CLIs (`server/testing/fake-*`), so it needs no model
 and no network.
 
 ```sh
 cd /src
 pnpm exec vitest run server/request-auth.test.ts server/request-auth.e2e.test.ts
-pnpm exec vitest run server/browser/egress/
+pnpm exec vitest run server/ego-browser-proxy.test.ts
 pnpm exec vitest run companion/
 pnpm exec vitest run server/webhooks.test.ts server/webhook-ingress.test.ts
 pnpm broker:test                                             # composio-broker Worker
@@ -312,10 +296,8 @@ pnpm --filter @alcabots/control-plane test                # control-plane Worker
 ```
 
 The whole suite runs one file at a time and takes over an hour, so run
-focused files. Tests that need a real Electron binary, Chrome or a display
-cannot run here. Some skip themselves; for example
-`server/browser/egress/hostile-pages.e2e.test.ts` skips without
-`ALCA_TEST_CHROME`. Every test file gets its own throwaway `HOME`.
+focused files. Tests that need a real Electron binary or a display cannot run
+here. Every test file gets its own throwaway `HOME`.
 
 To reproduce against a live server, run it from source with a throwaway data
 directory. It prints a pairing code:

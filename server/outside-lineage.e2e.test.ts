@@ -36,7 +36,7 @@ const atFull = (turn: { argv: string[] }) => turn.argv[turn.argv.indexOf("--perm
 
 let fx: CloudSendFixture, team: CloudTeamFixture, ada: string;
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-${randomBytes(8).toString("hex")}`, cloudEngine: engine, desktopEngine: engine, env: { ALCA_TEST_INTERNAL_CAPABILITY_KEY: KEY },
+  fx = await launchCloudSendFixture({ cloudEngine: engine, desktopEngine: engine, env: { ALCA_TEST_INTERNAL_CAPABILITY_KEY: KEY },
     team: { id: "team-acme-1", name: "Acme", engine } });
   team = fx.team!;
   ada = (await team.pair({ email: "ada@acme.test", role: "admin" })).token!;

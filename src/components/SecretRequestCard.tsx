@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { ExternalLink, KeyRound, Loader2, LockKeyhole, RefreshCw, X } from "lucide-react";
 
-import { CUSTOM_SECRET_TARGET, credentialResumeOutcome, credentialSaveRequest, desktopCredentialSlot, isConfigCredentialTarget } from "../../shared/credential-request";
+import { CUSTOM_SECRET_TARGET, credentialResumeOutcome, credentialSaveRequest, desktopCredentialSlot } from "../../shared/credential-request";
 import { credentialProvider } from "@/lib/analytics-allowlist";
 import { cn } from "@/lib/cn";
 import { activeLocale, t } from "@/lib/i18n";
@@ -143,15 +143,12 @@ export function SecretRequestCard({
       if (!savedLocally && secret.target !== CUSTOM_SECRET_TARGET) {
         const next = value.trim();
         const target = secret.target;
-        // The 1Password token goes to this server's Logins, which checks it with 1Password first, never the settings file.
         const request = credentialSaveRequest(target, next);
         const slot = desktopCredentialSlot(target);
-        if (isConfigCredentialTarget(target)) {
-          const status: ConfigStatus = slot && window.abot?.setCredential
-            ? await window.abot.setCredential(slot, next)
-            : await api(request.path, { method: request.method, body: JSON.stringify(request.body) });
-          dispatch({ type: "configStatus", config: status });
-        } else await api(request.path, { method: request.method, body: JSON.stringify(request.body) });
+        const status: ConfigStatus = slot && window.abot?.setCredential
+          ? await window.abot.setCredential(slot, next)
+          : await api(request.path, { method: request.method, body: JSON.stringify(request.body) });
+        dispatch({ type: "configStatus", config: status });
         saved = true;
         keySaved(provider, "chat_request", savedKeyResult(provider));
         setValue("");

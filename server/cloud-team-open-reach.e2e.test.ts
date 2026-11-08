@@ -4,7 +4,6 @@
 // Bob's alone, his Chief still supervises only his own bots, and nothing from his private chat goes into a room. The
 // engine is the synthetic Claude CLI playing a scripted plan through the real agents tools, so it proves the routing,
 // not a model's judgement.
-import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -47,7 +46,7 @@ const settled = async () => {
 };
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   olive = (await team.pair(OLIVE)).token!;
   bob = (await team.pair(BOB)).token!;

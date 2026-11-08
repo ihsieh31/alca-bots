@@ -5,7 +5,6 @@
 // work moves on. On "Ask me first" a question waits for Marco however long it takes: an answer he gives through Fuchs
 // settles it, a restart neither drops nor posts it again, and a question whose turn is gone leaves Needs you and his
 // inbox. The engine is the scripted synthetic Claude CLI, so this proves where things land, not a model's judgement.
-import { randomBytes } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -18,7 +17,6 @@ const MARCO = { email: "marco@acme.test", role: "owner" as const };
 const SETTLED = "Your downstream room requests have settled.";
 const ENGINE = `const dir = process.env.FAKE_CLAUDE_FIXTURE_DIR;
 process.env.FAKE_CLAUDE_ROOM_PLAN = dir + "/room-plan.json";`;
-const TOKEN = `ops_fake-team-${randomBytes(8).toString("hex")}`;
 
 type Card = { requestId?: string; requestType?: string; subtitle?: string; options?: string[]; answered?: string; answeredText?: string; dismissed?: boolean;
   answeredBy?: { kind: string; name?: string } };
@@ -75,7 +73,7 @@ beforeAll(async () => {
   const binaryPath = join(browserTools, "agent-browser");
   // Answers the saved-login check a browser mount makes; every other command succeeds silently.
   writeFileSync(binaryPath, `#!/bin/sh\nif [ "$1" = session ] && [ "$2" = list ]; then printf '{"success":true,"data":{"sessions":[]}}'; fi\nexit 0\n`, { mode: 0o755 });
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, team: { id: "team-acme-qr", name: "Acme", engine: ENGINE,
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-qr", name: "Acme", engine: ENGINE,
     env: { ALCA_AGENT_BROWSER_PATH: binaryPath, AGENT_BROWSER_EXECUTABLE_PATH: join(browserTools, "chrome") } } });
   team = fx.team!;
   writeFileSync(file("room-plan.json"), "{}");

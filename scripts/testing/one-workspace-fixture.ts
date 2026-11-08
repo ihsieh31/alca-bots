@@ -440,7 +440,7 @@ export async function launchHomeWorld(fx: CloudSendFixture, { chrome, ports, ver
     "desktop-notices:state": () => ({ seen: [...NOTICES], cloud: false }),
     "desktop-notices:seen": () => null,
     "cloud-plan:state": () => ({ status: "paid", tier: "pro", home: true }),
-    "cloud-send:notice": () => ({ ready: false, bots: [], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: 0, signature: "", dismissed: false, running: false, last: null, whole: null }),
+    "cloud-send:notice": () => ({ ready: false, bots: [], updatedBots: [], skills: 0, settings: 0, signature: "", dismissed: false, running: false, last: null, whole: null }),
     "update:get-state": () => ({ status: "idle" }),
     "perm:status": () => ({ mic: "unsupported", pageMic: "refused" }),
   };

@@ -14,7 +14,6 @@ const NOTE = "[From an app, through the API · message · information only]";
 it("reads as an app with information only on a Team Cloud, and a caller can't write itself a person's note", async () => {
   const dump = join(tmpdir(), `bot-api-team-${randomBytes(6).toString("hex")}.json`);
   const fx = await launchCloudSendFixture({
-    onePasswordToken: `ops_fake-${randomBytes(8).toString("hex")}`,
     team: { id: "team-acme-1", name: "Acme", engine: `process.env.FAKE_CLAUDE_DUMP = ${JSON.stringify(dump)};` },
   });
   try {

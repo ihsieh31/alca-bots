@@ -1,7 +1,6 @@
 // A real Team Cloud (ALCA_CLOUD_ROLE=team) beside the cloud fixture's two servers: three people paired with the Admin's
 // signed member claims, the audience rule on chats, memory, recall and files, the team's connected apps, and a My Cloud
 // that refuses a team claim. The engine is the synthetic Claude CLI, so this proves the plumbing, not a model's judgement.
-import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -11,7 +10,6 @@ import { personKey } from "./person-key.ts";
 import { startBrokerFake, type BrokerFake } from "./testing/broker-fake.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
-const TOKEN = `ops_fake-team-${randomBytes(8).toString("hex")}`;
 const OWNER = { email: "olive@acme.test", role: "owner" as const };
 const ADMIN = { email: "ben@acme.test", role: "admin" as const };
 const MEMBER_A = { email: "ada@acme.test", role: "member" as const };
@@ -27,7 +25,7 @@ const adaKey = personKey({ id: "", email: MEMBER_A.email }), benKey = personKey(
 
 beforeAll(async () => {
   broker = await startBrokerFake();
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, broker, team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ broker, team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   owner = (await team.pair(OWNER)).token!;
   admin = (await team.pair(ADMIN)).token!;
@@ -286,7 +284,7 @@ it("a person's own connected apps cannot be brought into the team, and the team'
     const moved = await team.as(owner, method, route, method === "POST" ? { conversations: [] } : undefined);
     expect(moved.status, route).toBe(403);
     expect(moved.body).toEqual({
-      error: "Moving a computer's bots, chats and logins goes to My Cloud only. Nothing personal comes into Acme.",
+      error: "Moving a computer's bots and chats goes to My Cloud only. Nothing personal comes into Acme.",
       errorKey: "serverError.team.personalMove", errorParams: { team: "Acme" },
     });
   }
@@ -301,22 +299,6 @@ it("a person's own connected apps cannot be brought into the team, and the team'
   expect((await team.as(cleo, "GET", "/api/config")).body.composio).toEqual({ configured: true, mode: "managed" });
   const seen = await turn(cleo, await newThread(cleo, "Cleo and Scout"), "Check my mail.");
   expect(Object.keys(seen.mcpConfig.mcpServers)).toContain("composio");
-}, hostTimeout(120_000));
-
-it("a member cannot save a login from a sign-in card: the team's refusal arrives with its key, and nothing is saved", async () => {
-  const before = await team.as(admin, "GET", "/api/logins");
-  expect(before.status, JSON.stringify(before.body)).toBe(200);
-  const threadId = await newThread(ada, "Ada signs in");
-  const refused = await team.as(ada, "POST", `/api/bots/${bot.id}/sign-in-cards/card-1/save-login`, {
-    threadId, username: "ada@acme.test", password: "correct horse battery staple",
-  });
-  expect(refused.status).toBe(403);
-  expect(refused.body).toEqual({
-    error: "On Acme only an admin can save a login, and it is then used by every bot in Acme.",
-    errorKey: "serverError.team.memberLogin",
-    errorParams: { team: "Acme" },
-  });
-  expect((await team.as(admin, "GET", "/api/logins")).body.logins).toEqual(before.body.logins);
 }, hostTimeout(120_000));
 
 it("a member's private chat keeps its own folder when the team's bot is given a working folder; the Owner's own thread moves there", async () => {

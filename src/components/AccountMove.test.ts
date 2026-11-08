@@ -19,7 +19,7 @@ const noop = () => {};
 const tryAgainTag = (html: string) => html.match(/<button[^>]*data-move-retry[^>]*>/)?.[0] ?? "";
 const line = (move: OneHomeView, page: "local" | "cloud" = "local") => moveLine(move, page) as AccountMoveLine;
 
-const notice: CloudSendNotice = { ready: true, bots: ["Ember"], updatedBots: [], skills: 2, logins: 0, onePassword: true, settings: 0, signature: "sig-1", dismissed: false, running: false, last: null, whole: null };
+const notice: CloudSendNotice = { ready: true, bots: ["Ember"], updatedBots: [], skills: 2, settings: 0, signature: "sig-1", dismissed: false, running: false, last: null, whole: null };
 let page: CloudSendPageBridge;
 const pair = vi.fn(), open = vi.fn();
 const hook = (cloudHome = false) => { f.index = 0; f.effects = []; return useAccountMove(cloudHome, { onOpen: open, onPairPhone: pair }); };
@@ -163,10 +163,10 @@ describe("the move's row in the account menu", () => {
 
   it("done: what arrived and what was held, the phone to pair, and Got it", () => {
     const onPairPhone = vi.fn(), onClose = vi.fn();
-    const done = line({ phase: "done", counts: { bots: 4, skills: 2, logins: 2, onePassword: true, chats: 148, routines: 2 }, phone: true, held: ["OPENAI_API_KEY"] }, "cloud");
+    const done = line({ phase: "done", counts: { bots: 4, skills: 2, chats: 148, routines: 2 }, phone: true, held: ["OPENAI_API_KEY"] }, "cloud");
     const items = rows(done, { onPairPhone, onClose });
     expect(items.map((item) => item.key)).toEqual(["cloud-move", "cloud-move-phone", "cloud-move-close"]);
-    expect(items[0]!.label).toBe("Everything from this computer is here: 4 bots, 2 skills, 2 logins, 1Password, 148 chats, and 2 routines.");
+    expect(items[0]!.label).toBe("Everything from this computer is here: 4 bots, 2 skills, 148 chats, and 2 routines.");
     expect(items[0]!.note).toContain("OPENAI_API_KEY");
     expect(items[1]!.label).toBe("Pair your phone with My Cloud");
     expect(items[2]!.label).toBe("Got it");
@@ -187,8 +187,8 @@ describe("useAccountMove", () => {
   it("says nothing without the one-time move, whatever an older desktop's send did, nor in a browser", async () => {
     expect(await shown(notice)).toEqual({ kind: null, items: [] });
     f.values = [];
-    expect(await shown({ ...notice, running: true, runningReason: "first", last: { at: 3, reason: "first", failed: 2, seen: false, sent: { bots: 2, updatedBots: 0, skills: 0, logins: 0, onePassword: false, settings: 0, chats: null },
-      reasons: [{ what: { bots: [], skills: 0, logins: 2, onePassword: false, settings: 0, chats: false }, error: "AlcaBots on this computer did not answer." }] } })).toEqual({ kind: null, items: [] });
+    expect(await shown({ ...notice, running: true, runningReason: "first", last: { at: 3, reason: "first", failed: 2, seen: false, sent: { bots: 2, updatedBots: 0, skills: 0, settings: 0, chats: null },
+      reasons: [{ what: { bots: [], skills: 0, settings: 0, chats: false }, error: "AlcaBots on this computer did not answer." }] } })).toEqual({ kind: null, items: [] });
     f.values = [];
     vi.stubGlobal("window", {});
     expect(hook()).toEqual({ kind: null, items: [] });
@@ -243,7 +243,7 @@ describe("useAccountMove", () => {
   });
 
   it("My Cloud's page says once what arrived, with the phone to pair, until Got it", async () => {
-    const done = await shown({ ...notice, move: { phase: "done", counts: { bots: 4, skills: 2, logins: 2, onePassword: true, chats: 148, routines: 2 }, phone: true, held: [] } }, true);
+    const done = await shown({ ...notice, move: { phase: "done", counts: { bots: 4, skills: 2, chats: 148, routines: 2 }, phone: true, held: [] } }, true);
     expect(done.kind).toBe("done");
     expect(lineHook(true)).toEqual({ kind: "done", retry: null });
     done.items.find((item) => item.key === "cloud-move-phone")!.onSelect();

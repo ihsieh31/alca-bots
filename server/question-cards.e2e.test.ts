@@ -4,7 +4,6 @@
 // same choices; a tap there, or her own words in Ledger's chat, answers Ledger, who carries on with that answer, and Scout
 // hears the result once. Ledger's NEEDS INPUT question becomes the same card with a reply field. Cleo is never sent a
 // question twice. It proves where things land, not a model's judgement.
-import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -18,7 +17,6 @@ const OPEN = "What wording should the new footer text use?";
 const SETTLED = "Your downstream room requests have settled.";
 const ENGINE = `const dir = process.env.FAKE_CLAUDE_FIXTURE_DIR;
 process.env.FAKE_CLAUDE_ROOM_PLAN = dir + "/room-plan.json";`;
-const TOKEN = `ops_fake-team-${randomBytes(8).toString("hex")}`;
 
 type Card = { requestId?: string; requestType?: string; options?: string[]; subtitle?: string; answered?: string; answeredText?: string; stopped?: boolean };
 type Row = { id: string; role: string; kind: string; at: number; text?: string; card?: Card; replyToId?: string; tool?: { name: string };
@@ -103,7 +101,7 @@ async function cardIn(since: number, match: (card: Card) => boolean): Promise<{ 
 }
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, team: { id: "team-acme-qc", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-qc", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   writeFileSync(file("room-plan.json"), "{}");
   cleo = (await team.pair(CLEO)).token!;

@@ -2,7 +2,6 @@
 // way Claude Code does (the synthetic CLI's FAKE_CLAUDE_HOME_FILES): each audience's engine runs in its own engine home,
 // signed in with the team's sign-in, so a shell in one person's chat never finds another's transcripts. No bot box runs
 // here (it needs Linux bubblewrap: server/engine-homes/box.linux.test.ts proves the box side).
-import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -13,7 +12,6 @@ import { personKey } from "./person-key.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
 const posix = process.platform !== "win32";
-const TOKEN = `ops_fake-team-homes-${randomBytes(8).toString("hex")}`;
 const OWNER = { email: "olive@acme.test", role: "owner" as const };
 const ADMIN = { email: "ben@acme.test", role: "admin" as const };
 const BOB = { email: "bob@acme.test", role: "member" as const };
@@ -66,7 +64,7 @@ const transcriptsUnder = (dir: string): string[] => (existsSync(dir) ? readdirSy
 
 beforeAll(async () => {
   if (!posix) return;
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, team: { id: "team-acme-homes", name: "Acme", engine: HOME_FILES }, cloudEngine: HOME_FILES });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-homes", name: "Acme", engine: HOME_FILES }, cloudEngine: HOME_FILES });
   team = fx.team!;
   dataDir = join(team.home, ".alcabots");
   bobHome = audienceHome(dataDir, `member:${personKey({ id: "", email: BOB.email })}`);

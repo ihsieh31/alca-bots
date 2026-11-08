@@ -87,7 +87,7 @@ describe("app, role and key lists", () => {
     const expected = {
       boxToken: "boat", xaiApiKey: "xai", opencodeGoApiKey: "opencode_go", ttsKey: "elevenlabs", fishAudioKey: "fish_audio", geminiTtsKey: "gemini_tts",
       openaiImageApiKey: "openai_image",
-      onePasswordToken: "onepassword", composioApiKey: "composio", openaiApiKey: "openai", anthropicApiKey: "anthropic",
+      composioApiKey: "composio", openaiApiKey: "openai", anthropicApiKey: "anthropic",
       openrouterApiKey: "openrouter", mistralApiKey: "mistral", cerebrasApiKey: "cerebras", groqApiKey: "groq", greenferenceApiKey: "greenference", metaApiKey: "meta",
       deepseekApiKey: "deepseek",
     };

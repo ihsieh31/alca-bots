@@ -1,5 +1,5 @@
-// The private ask for one login's secrets, or one connection's (cloud-connections.mjs), which the one-time move
-// (cloud-send.mjs) carries to the person's own Cloud.
+// The private ask for one connection's secrets (cloud-connections.mjs), which the one-time move (cloud-send.mjs)
+// carries to the person's own Cloud.
 //
 // The secret leaves this computer's server only over Electron's private utility-process port (server/login-handoff.ts)
 // and is answered only to the process it was asked of; nothing here keeps or logs it.
@@ -39,16 +39,11 @@ export function createLoginHandoffClient({ timeoutMs = 10_000, randomId = random
       const waiting = typeof message.requestId === "string" ? pending.get(message.requestId) : undefined;
       if (!waiting || waiting.proc !== proc) return true;
       settle(message.requestId, ({ resolve, reject }) => {
-        if (message.ok === true && [message.onePassword, message.login, message.connection, message.share, message.release, message.secrets].some(record)) resolve(message);
-        else reject(new Error(sentence(message.error) ?? "AlcaBots on this computer could not read that login."));
+        if (message.ok === true && [message.connection, message.share, message.release, message.secrets].some(record)) resolve(message);
+        else reject(new Error(sentence(message.error) ?? "AlcaBots on this computer could not read that connection."));
       });
       return true;
     },
   };
 }
 
-/** A login kept to some bots keeps only those that exist on the Cloud too: a send never opens a login to more bots. */
-export function botsOnCloud(bots, cloudBotIds) {
-  if (bots === "all") return "all";
-  return Array.isArray(bots) ? bots.filter(id => cloudBotIds.has(id)) : [];
-}

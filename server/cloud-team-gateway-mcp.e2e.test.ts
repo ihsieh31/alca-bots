@@ -14,7 +14,6 @@ import { readMcpPaste } from "../src/lib/mcp-paste.ts";
 import { startFakeHttpMcp, type FakeHttpMcp } from "./testing/fake-http-mcp-server.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
-const TOKEN = `ops_fake-team-${randomBytes(8).toString("hex")}`;
 const ADMIN = { email: "ben@acme.test", role: "admin" as const };
 const ADA = { email: "ada@acme.test", role: "member" as const };
 const CLIENT_ID = `${randomBytes(8).toString("hex")}.access`;
@@ -40,7 +39,7 @@ beforeAll(async () => {
     requireHeaders: { "CF-Access-Client-Id": CLIENT_ID, "CF-Access-Client-Secret": CLIENT_SECRET },
     callResult: (params) => ({ content: [{ type: "text", text: `order ${String((params as { arguments?: { id?: unknown } }).arguments?.id)} shipped` }] }),
   });
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, team: { id: "team-acme-1", name: "Acme", engine: ENGINE, env: { ALCA_BOT_BOX: "0" } } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme", engine: ENGINE, env: { ALCA_BOT_BOX: "0" } } });
   team = fx.team!;
   admin = (await team.pair(ADMIN)).token!;
   ada = (await team.pair(ADA)).token!;

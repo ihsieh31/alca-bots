@@ -9,7 +9,7 @@ COPY apps/docs/package.json ./apps/docs/package.json
 COPY cloudflare/control-plane/package.json ./cloudflare/control-plane/package.json
 RUN pnpm install --frozen-lockfile
 COPY . .
-# The native modules the bundle cannot hold (DuckDB, resvg, 1Password), staged for the runtime stage.
+# The native modules the bundle cannot hold (DuckDB, resvg), staged for the runtime stage.
 RUN node scripts/prepare-duckdb.mjs
 RUN pnpm build:server && pnpm exec vite build
 

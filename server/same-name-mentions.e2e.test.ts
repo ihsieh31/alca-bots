@@ -5,7 +5,7 @@
 // is refused with each bot's id and goes again by id, and its reply wakes neither. A program on the machine is refused
 // with the ids too. The engine is the synthetic Claude CLI playing a scripted plan, so it proves the routing, not a
 // model's judgement.
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -54,7 +54,7 @@ const say = (text: string, extra: Record<string, unknown> = {}) =>
   team.as(olive, "POST", `/api/groups/${room.id}/messages`, { text, sendId: randomUUID(), ...extra });
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   olive = (await team.pair(OLIVE)).token!;
   lead = await create({ name: "Tessaly", title: "Support lead", reportsTo: OLIVE.email });

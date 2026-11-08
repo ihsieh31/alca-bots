@@ -53,8 +53,6 @@ export function manifestGaps(here, there, { sent = {}, removed = new Set(), skip
     if (item.kind === "bot") bots.add(item.id);
     const on = theirs.get(item.key);
     if (!on) { gaps.items.push({ key: item.key, kind: item.kind, label: item.label }); continue; }
-    // Logins and 1Password are compared by their secrets' fingerprints, never by when they changed.
-    if (item.kind === "login" || item.kind === "1password") continue;
     const differs = Object.entries(item.parts ?? {}).filter(([part, hash]) => {
       const cloud = on.parts?.[part] ?? EMPTY;
       const pair = sent[item.key]?.[part];

@@ -120,12 +120,6 @@ describe("SignInRequestCard once settled", () => {
     expect(html).not.toMatch(/>Done<|>Open</);
   });
 
-  it("says a login was saved, for the site it was saved for", () => {
-    const html = view({ done: true, resumed: true, savedLogin: "example.com and login.microsoftonline.com" });
-    expect(html).toContain("Login saved for example.com and login.microsoftonline.com");
-    expect(html).toContain("Pepper is continuing");
-  });
-
   it("says a declined sign-in was declined", () => {
     expect(view({ cancelled: true, resumed: true })).toContain("Sign-in to example.com declined");
   });

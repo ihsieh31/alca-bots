@@ -3,7 +3,6 @@
 // whole app in a headless Chrome whose requests reach the Team Cloud as that person.
 // Run: node --experimental-strip-types scripts/verify-team-bot-access.ts --shots <dir> [--only <shot,shot>]
 import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -101,7 +100,7 @@ async function openChrome(profile: string) {
 }
 
 const before = process.argv.includes("--before");
-const fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme" } });
+const fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme" } });
 const team = fx.team!;
 const token = {} as Record<Who, string>;
 const profile = mkdtempSync(join(tmpdir(), "alca-team-access-chrome-"));

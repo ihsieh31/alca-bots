@@ -30,7 +30,7 @@ const button = (component: () => ReactNode, label: string) => tree(component).fi
 
 const ACME = { id: "team-acme", name: "Acme" };
 const SCOUT = { id: "scout", name: "Scout", threadId: "scout-main", hidden: false } as Bot;
-const notice: CloudSendNotice = { ready: true, bots: [], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: 0, signature: "", dismissed: false, running: false, last: null, whole: null };
+const notice: CloudSendNotice = { ready: true, bots: [], updatedBots: [], skills: 0, settings: 0, signature: "", dismissed: false, running: false, last: null, whole: null };
 let page: CloudSendPageBridge & Required<Pick<CloudSendPageBridge, "teams" | "moveToTeam" | "teamRetry" | "openTeam">>;
 
 beforeEach(() => {

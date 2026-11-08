@@ -38,7 +38,7 @@ import { CLOUD_SETUP_MOVE_SKIPPED, CLOUD_WELCOME_DONE, CLOUD_WELCOME_SHOWN as SH
 import { resetCloudWelcome, useCloudWelcome } from "@/lib/cloud-welcome";
 
 const CLOUD = { name: "Studio Cloud", origin: "https://alca-u-1a2b3c4d5e6f.fly.dev" };
-const quiet: CloudSendNotice = { ready: true, bots: [], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: 0, signature: "", dismissed: false, running: false, last: null, whole: null };
+const quiet: CloudSendNotice = { ready: true, bots: [], updatedBots: [], skills: 0, settings: 0, signature: "", dismissed: false, running: false, last: null, whole: null };
 const claude = { instanceId: "claude", driverKind: "claudeAgent", displayName: "Claude", access: "subscription", authentication: { method: "paste-code" }, snapshot: { state: "available", authenticated: false }, models: { default: "", options: [] } };
 const codex = { ...claude, instanceId: "codex", driverKind: "codex", displayName: "Codex" };
 const credit = { instanceId: "trial", driverKind: "openai-compat", displayName: "Trial credit · Claude", readOnly: true, trialCredit: "active", snapshot: { state: "available" }, models: { default: "", options: [] } };
@@ -331,10 +331,10 @@ describe("CloudWelcome", () => {
     expect(welcome.current!.ended).toBe(true);
   });
   describe("when this computer's things come over (the move, or Send everything)", () => {
-    const counts = { bots: 4, updatedBots: 0, skills: 2, logins: 2, onePassword: true, settings: 1, chats: { conversations: 3, messages: 10 } };
+    const counts = { bots: 4, updatedBots: 0, skills: 2, settings: 1, chats: { conversations: 3, messages: 10 } };
     const sentLast = (extra: Record<string, unknown> = {}) => ({ at: 1, reason: "move", failed: 0, seen: false, sent: counts, ...extra }) as NonNullable<CloudSendNotice["last"]>;
     const notice = (extra: Partial<CloudSendNotice> = {}): CloudSendNotice => ({
-      ready: true, bots: [], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: 0, signature: "", dismissed: false,
+      ready: true, bots: [], updatedBots: [], skills: 0, settings: 0, signature: "", dismissed: false,
       running: false, last: null, whole: null, ...extra,
     });
     let pushNotice: (value: CloudSendNotice) => void = () => {};
@@ -356,13 +356,13 @@ describe("CloudWelcome", () => {
       expect(state(notice({ last: sentLast() }))).toBe("sent");
       expect(state(notice({ last: sentLast({ reason: "button" }) }))).toBe("sent");
       expect(state(notice({ last: sentLast({ error: "This app could not sign in to My Cloud. Try again." }) })), "a send that failed as a whole").toBeNull();
-      expect(state(notice({ last: sentLast({ reason: "logins" }) })), "one login sent by hand").toBeNull();
-      expect(state(notice({ running: true, runningReason: "logins" }))).toBeNull();
+      expect(state(notice({ last: sentLast({ reason: "items" }) })), "one item sent by hand").toBeNull();
+      expect(state(notice({ running: true, runningReason: "items" }))).toBeNull();
       // An older desktop that sends by itself: its first send, its later ones, and nothing gone yet while its switch is on.
       for (const older of ["first", "auto"]) expect(state(notice({ last: sentLast({ reason: older }) })), older).toBe("sent");
       expect(state(notice({ running: true, runningReason: "first" }))).toBe("sending");
       expect(state({ ...notice(), auto: true }), "its switch on, nothing gone yet: on its way").toBe("sending");
-      expect(state({ ...notice({ last: sentLast({ reason: "logins" }) }), auto: true })).toBe("sending");
+      expect(state({ ...notice({ last: sentLast({ reason: "items" }) }), auto: true })).toBe("sending");
     });
 
     it("started fresh while nothing came over (moves not on yet), Bring your stuff shows as skipped, never done, until things do come over", async () => {
@@ -425,11 +425,11 @@ describe("CloudWelcome", () => {
       await vi.waitFor(() => expect(host.querySelector('[data-welcome-step="engine"]')).not.toBeNull());
       flushSync(() => (rail() as HTMLButtonElement).click());
       expect(text()).toContain("Your bots are already here");
-      expect(text()).toContain("Bringing this computer's bots, chats and logins here…");
+      expect(text()).toContain("Bringing this computer's bots and chats here…");
       expect(host.querySelector("[data-bring-choice]")).toBeNull();
       for (const label of ["Continue", "Choose a team", "Skip for now"]) expect(button(label)).toBeUndefined();
       flushSync(() => pushNotice(notice({ last: sentLast() })));
-      await vi.waitFor(() => expect(text()).toContain("4 bots, 2 skills, 2 logins, 1Password, your settings, and 3 chats came over from This computer."));
+      await vi.waitFor(() => expect(text()).toContain("4 bots, 2 skills, your settings, and 3 chats came over from This computer."));
       expect(text()).not.toContain("by themselves");
       expect(host.querySelector('[data-welcome-step="bring"]'), "never moved off a step the person opened").not.toBeNull();
       click("More");
@@ -439,7 +439,7 @@ describe("CloudWelcome", () => {
     });
 
     it("a whole send says what arrived and nothing about more coming", async () => {
-      withSend(notice({ last: sentLast({ reason: "button", sent: { ...counts, skills: 0, logins: 0, onePassword: false, settings: 0, chats: null } }) }));
+      withSend(notice({ last: sentLast({ reason: "button", sent: { ...counts, skills: 0, settings: 0, chats: null } }) }));
       fixture.state.config.onboarding = { ...EMPTY_ONBOARDING, hintsSeen: [SHOWN, welcomeStepHint("bring")] };
       render();
       flushSync(() => (rail() as HTMLButtonElement).click());
@@ -448,8 +448,8 @@ describe("CloudWelcome", () => {
       expect(text()).not.toContain("by themselves");
     });
 
-    it("a whole send that failed, a single login sent by hand, or an older desktop keep the fresh start", async () => {
-      for (const value of [notice({ last: sentLast({ error: "This app could not sign in to My Cloud. Try again." }) }), notice({ last: sentLast({ reason: "logins" }) }),
+    it("a whole send that failed, a single item sent by hand, or an older desktop keep the fresh start", async () => {
+      for (const value of [notice({ last: sentLast({ error: "This app could not sign in to My Cloud. Try again." }) }), notice({ last: sentLast({ reason: "items" }) }),
         { ...notice({ last: sentLast() }), whole: undefined } as unknown as CloudSendNotice]) {
         flushSync(() => root.unmount());
         root = createRoot(host);

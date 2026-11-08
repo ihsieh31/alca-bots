@@ -134,10 +134,6 @@ export function assertPhoneSecretRequestMatches(
   authenticatedDeviceId: string,
   expected: { target: string; requestKey: string },
 ): void {
-  // Phone entry hands a key to the desktop's settings; the 1Password token goes to Logins, which a phone cannot reach.
-  if (expected.target === "onePasswordToken") {
-    throw new PhoneSecretError("Paste the 1Password token in AlcaBots on your computer, or in My Cloud: a phone cannot save it yet.", 409);
-  }
   // An AI provider key lives in the server's settings, which only the computer's own app writes.
   if (isCredentialTargetId(expected.target) && !desktopCredentialSlot(expected.target)) {
     throw new PhoneSecretError("Paste this key in AlcaBots on your computer, or in My Cloud: a phone cannot save it yet.", 409);

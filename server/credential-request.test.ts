@@ -11,11 +11,11 @@ import {
   isPendingCredentialRequest,
   isPendingCustomSecretRequest,
   isCredentialTargetId,
-  type ConfigCredentialTargetId,
+  type CredentialTargetId,
   type CredentialConfig,
 } from "../shared/credential-request.ts";
 
-const MAPPINGS: Array<[ConfigCredentialTargetId, CredentialConfig]> = [
+const MAPPINGS: Array<[CredentialTargetId, CredentialConfig]> = [
   ["xaiApiKey", { xai: { key: "secret" } }],
   ["boxToken", { box: { token: "secret" } }],
   ["opencodeGoApiKey", { opencodeGo: { apiKey: "secret" } }],
@@ -45,7 +45,7 @@ describe("credential request allowlist", () => {
   });
 
   it("maps each id to a fixed config location", () => {
-    expect([...MAPPINGS.map(([id]) => id), "onePasswordToken"].sort()).toEqual(Object.keys(CREDENTIAL_TARGETS).sort());
+    expect(MAPPINGS.map(([id]) => id).sort()).toEqual(Object.keys(CREDENTIAL_TARGETS).sort());
     for (const [id, patch] of MAPPINGS) {
       expect(credentialConfigPatch(id, "secret")).toEqual(patch);
       expect(credentialSaveRequest(id, "secret")).toEqual({ path: "/api/config", method: "PUT", body: patch });
@@ -54,29 +54,20 @@ describe("credential request allowlist", () => {
     }
   });
 
-  // The token goes to Logins, which checks it with 1Password before keeping it; it never lands in the settings file.
-  it("saves a 1Password token through Logins and counts it once Logins holds it", () => {
-    expect(credentialSaveRequest("onePasswordToken", "ops_fake")).toEqual({ path: "/api/logins/1password", method: "POST", body: { token: "ops_fake" } });
-    expect(credentialIsConfigured({ onePassword: { connected: true } }, "onePasswordToken")).toBe(true);
-    expect(credentialIsConfigured({}, "onePasswordToken")).toBe(false);
-    expect(CREDENTIAL_TARGETS.onePasswordToken).toMatchObject({ placeholder: "ops_…", helpUrl: "https://developer.1password.com/docs/service-accounts/get-started/" });
-  });
-
   it("checks configured state without exposing values", () => {
     expect(credentialIsConfigured({ tts: { key: "secret" } }, "ttsKey")).toBe(true);
     expect(credentialIsConfigured({ tts: { key: "" } }, "ttsKey")).toBe(false);
     expect(credentialIsConfigured({ tts: { fishKey: "secret" } }, "fishAudioKey")).toBe(true);
     expect(credentialIsConfigured({ tts: { fishKey: "" } }, "fishAudioKey")).toBe(false);
-    expect(Object.keys(CREDENTIAL_TARGETS)).toHaveLength(18);
+    expect(Object.keys(CREDENTIAL_TARGETS)).toHaveLength(17);
   });
 
   // The desktop's encrypted store has a slot only for these; a provider key goes to the server's config, as Settings does.
-  it("names the desktop slot a key is saved in, and none for a provider key or the 1Password token", () => {
+  it("names the desktop slot a key is saved in, and none for a provider key", () => {
     expect(Object.keys(CREDENTIAL_TARGETS).filter((id) => desktopCredentialSlot(id as never)).sort()).toEqual(
       ["boxToken", "composioApiKey", "fishAudioKey", "geminiTtsKey", "openaiImageApiKey", "opencodeGoApiKey", "ttsKey", "xaiApiKey"],
     );
     expect(desktopCredentialSlot("anthropicApiKey")).toBeNull();
-    expect(desktopCredentialSlot("onePasswordToken")).toBeNull();
   });
 
   it("supersedes a bot's own pending custom secret of the same name only", () => {

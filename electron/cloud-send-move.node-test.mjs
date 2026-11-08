@@ -268,7 +268,7 @@ test("an app or key that could not move is said with My Cloud's reason, counted,
   const outcome = await send.send({ reason: "move" });
   assert.deepEqual(outcome.result.bots, ["ember"]);
   assert.deepEqual(outcome.result.failed, [{ key: "key:openrouter", kind: "connection", label: "OpenRouter", error: "My Cloud said: this key is not for this Cloud", final: true }]);
-  assert.deepEqual(sendNotice(send.snapshot()).last.reasons, [{ what: { bots: [], skills: 0, logins: 0, onePassword: false, settings: 0, connections: 1, chats: false },
+  assert.deepEqual(sendNotice(send.snapshot()).last.reasons, [{ what: { bots: [], skills: 0, settings: 0, connections: 1, chats: false },
     error: "My Cloud said: this key is not for this Cloud" }]);
 });
 

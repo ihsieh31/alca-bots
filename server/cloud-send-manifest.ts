@@ -18,7 +18,7 @@ export interface ManifestConversation { threadId: string; bot?: string; room?: s
 export interface CloudSendManifest {
   v: 1;
   appVersion: string;
-  /** Bots, skills, logins, 1Password, settings and what only a move carries, as a move compares them (cloud-send.ts). */
+  /** Bots, skills, settings and what only a move carries, as a move compares them (cloud-send.ts). */
   items: CloudSendSummary["items"];
   /** Each memory file of the bots a move carries, with its pieces' identities (cloud-send-memory.ts). */
   memory: Array<{ bot: string; path: string; hash: string; lines: string[] }>;

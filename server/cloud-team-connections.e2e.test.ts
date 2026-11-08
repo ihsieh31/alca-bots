@@ -3,7 +3,6 @@
 // message started: her private chat, her own line in a group chat, and the work those hand on to other bots. Never
 // anyone else's request or the work it hands on, Cleo's chat or an admin; and no admin read ever holds them. The engine
 // is the synthetic Claude CLI, calling the connected-apps bridges it was launched with.
-import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { get } from "node:http";
 import { join } from "node:path";
@@ -15,7 +14,6 @@ import { startFakeHttpMcp, type FakeHttpMcp } from "./testing/fake-http-mcp-serv
 import { startFakeOAuth, type FakeOAuth } from "./testing/fake-oauth-server.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
-const TOKEN = `ops_fake-team-${randomBytes(8).toString("hex")}`;
 const OWNER = { email: "olive@acme.test", role: "owner" as const };
 const ADMIN = { email: "ben@acme.test", role: "admin" as const };
 const ADA = { email: "ada@acme.test", role: "member" as const };
@@ -38,7 +36,7 @@ beforeAll(async () => {
   mail = await startFakeHttpMcp({ tools: [{ name: "read_inbox" }] });
   oauth = await startFakeOAuth();
   notes = await startFakeHttpMcp({ tools: [{ name: "read_notes" }], acceptBearer: oauth.isValid, wwwAuthenticate: oauth.challenge });
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, broker, team: { id: "team-acme-1", name: "Acme", engine: ENGINE, env: { ALCA_BOT_BOX: "0" } } });
+  fx = await launchCloudSendFixture({ broker, team: { id: "team-acme-1", name: "Acme", engine: ENGINE, env: { ALCA_BOT_BOX: "0" } } });
   team = fx.team!;
   owner = (await team.pair(OWNER)).token!;
   admin = (await team.pair(ADMIN)).token!;

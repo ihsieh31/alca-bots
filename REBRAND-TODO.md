@@ -70,8 +70,6 @@ pnpm exec vitest run <檔案>   # 完整套件很慢（本機一小時以上）�
 
    **保留（不是殘留）**
    - UI 驗證 harness `scripts/testing/control-alca-ui.ts` 仍用開發者自己裝的 agent-browser（`scripts/testing/agent-browser-cli.ts` 是上個 commit 刻意留下的）；它驅動的是被測的 renderer，跟 bot 用哪個瀏覽器無關。砍掉會連帶毀掉 CI 的 `ui-smoke` job、約 30 個 e2e 與 `docs/verification/chat-ui.md` 等 recipe；要換 driver 得先重寫 snapshot／ref／session 語意，屬獨立工程。
-
-   **還留著、之後可再清**
-   - 已存的登入資料後端（`server/login-store.ts`、`server/onepassword.ts`、`/api/logins`、雲端搬移時的登入資料）：沒有 UI 在用，但 `secretForms`／`HeldSecrets` 被 email 與 secret vault 用、`BotLogins.credentialConfig` 被 credential card 用、`login-handoff.ts` 的通道被連線搬移用；要先解耦才能刪，不能整檔砍。
+   - 已存的登入資料與 1Password（`server/login-store.ts`、`server/onepassword.ts`、`server/bot-logins.ts`、`/api/logins`、`@1password/sdk` 與它的打包步驟、雲端搬移時的登入資料、`onePasswordToken` 憑證卡）：已刪。`secretForms` 移到 `server/secret-forms.ts`；`login-handoff.ts` 只留連線搬移用的通道，`scripts/smoke-login-handoff.cjs` 改成透過真的 utility port 交接一把 API key。目前沒有使用者，舊資料不做遷移。
 6. **macOS 使用者**：App 第一次打開要「右鍵 → 打開」；自動更新在 macOS 上不會運作，要手動下載新版。
 7. **發佈**：改 `package.json` 的 version 並推上 main 會觸發 Release workflow。npm 發佈（`alca-bots`）和 Docker（`ghcr.io/ihsieh31/...`）的 workflow 可能還需要調整 secrets。

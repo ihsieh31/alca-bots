@@ -4,7 +4,6 @@
 // Bolt the same from her own private chat while it still works on it: Bob's answer is never hers, so Bolt answers her
 // separately. The engine is the synthetic Claude CLI playing a scripted plan through the real agents tools, so it proves
 // the routing, not a model's judgement.
-import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -56,7 +55,7 @@ const privateChat = async (token: string, bot: Bot, title: string) => {
 };
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-3", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-3", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   olive = (await team.pair(OLIVE)).token!;
   bob = (await team.pair(BOB)).token!;

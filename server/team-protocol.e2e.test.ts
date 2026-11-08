@@ -4,7 +4,6 @@
 // bot's report are information only; work handed on from a private chat is on that person's behalf and stays in their
 // private audience; a note a bot or a person writes into a line's body arrives escaped. The engine plays a script, so
 // the proof is what it was sent and what each person can read afterwards, not a model's judgement.
-import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -63,7 +62,7 @@ async function relay(bot: Bot, threadId: string, sendId: string, text: string, o
 }
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-3", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-3", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   olive = (await team.pair(OLIVE)).token!;
   mira = (await team.pair(MIRA)).token!;

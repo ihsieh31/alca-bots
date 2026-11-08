@@ -3,7 +3,6 @@
 // right count, answered through the row's own conversation, and the turn goes on; message_person arrives once and its
 // reply reaches the bot. A guest's conversation left on a shared Cloud reaches the owner labelled, not as their own. It
 // proves where things land, not a model's judgement.
-import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -13,7 +12,6 @@ import { hostTimeout } from "./testing/host-timeout.ts";
 
 const ENGINE = `const dir = process.env.FAKE_CLAUDE_FIXTURE_DIR;
 process.env.FAKE_CLAUDE_ROOM_PLAN = dir + "/room-plan.json";`;
-const TOKEN = `ops_fake-inbox-${randomBytes(8).toString("hex")}`;
 
 type Card = { requestId?: string; tool?: string; answered?: string };
 type Row = { id: string; kind: string; tab: string; unread: boolean; replies?: true; text: string; from: { name: string; botId?: string }; workingFor?: { name: string }; askedBy?: { name: string };
@@ -67,7 +65,7 @@ function place(call: Call, home: () => string) {
 }
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, cloudEngine: ENGINE, desktopEngine: ENGINE });
+  fx = await launchCloudSendFixture({ cloudEngine: ENGINE, desktopEngine: ENGINE });
   writeFileSync(join(fx.root, "desktop", "room-plan.json"), "{}");
   writeFileSync(join(fx.root, "cloud", "room-plan.json"), "{}");
 }, hostTimeout(180_000));

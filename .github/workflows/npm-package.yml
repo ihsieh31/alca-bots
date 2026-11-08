@@ -81,7 +81,6 @@ jobs:
             const { Resvg } = require("@resvg/resvg-js");
             const png = new Resvg("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"2\" height=\"2\"/>").render().asPng();
             if (png.subarray(1, 4).toString() !== "PNG") throw new Error("resvg did not render a PNG");
-            require("@1password/sdk");
           '
       - name: Save the proven tarball (release tags only)
         if: startsWith(github.ref, 'refs/tags/v')

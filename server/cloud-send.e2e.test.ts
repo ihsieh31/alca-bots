@@ -2,39 +2,15 @@
 // (scripts/testing/cloud-send-fixture.ts). Disposable homes; no network.
 import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { CloudSendNotice } from "../electron/cloud-send.mjs";
 import { launchCloudSendFixture, type CloudSendFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
 // Obvious fakes only.
-const TOKEN = `ops_fake-send-${randomBytes(12).toString("hex")}`;
-const PASSWORD = `fake-send-Passw0rd-${randomBytes(6).toString("hex")}`;
 const DOT = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
 let fx: CloudSendFixture;
 
-beforeAll(async () => { fx = await launchCloudSendFixture({ onePasswordToken: TOKEN }); }, hostTimeout(60_000));
+beforeAll(async () => { fx = await launchCloudSendFixture(); }, hostTimeout(60_000));
 afterAll(async () => { await fx?.close(); });
-
-it("when My Cloud refuses this computer's 1Password token, the move says what failed and why, in words for this computer, and everything else arrives", async () => {
-  const refusing = await launchCloudSendFixture({ onePasswordToken: TOKEN, cloudOnePasswordToken: `ops_fake-other-${randomBytes(8).toString("hex")}` });
-  try {
-    const { local, onCloud } = refusing;
-    const ember = (await local("POST", "/api/bots", { name: "Ember", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } })).body.bot;
-    await local("PATCH", `/api/bots/${ember.id}`, { soul: "You are Ember." });
-    expect((await local("POST", "/api/logins", { site: "accounts.example.test", username: "alice", password: PASSWORD, bots: [ember.id] })).status).toBe(201);
-    expect((await local("POST", "/api/logins/1password", { token: TOKEN })).status).toBe(200);
-    await refusing.move();
-    const notice = await refusing.call<CloudSendNotice>("cloud-send:notice", "cloud");
-    const why = "My Cloud's 1Password did not accept this computer's token: it may have been revoked, expired, or lost access to its vault. Connect 1Password again in this computer's Settings → Logins, and it goes to My Cloud by itself.";
-    expect(notice.last).toMatchObject({ failed: 1, reasons: [{ what: { bots: [], skills: 0, logins: 0, onePassword: true, settings: 0, chats: false }, error: why }] });
-    expect(notice.last?.error).toBeUndefined();
-    expect(JSON.stringify(notice)).not.toContain("example.test");
-    // Everything else arrived, the login included.
-    expect((await onCloud("GET", "/api/logins")).body.logins).toEqual([expect.objectContaining({ site: "example.test", username: "alice", bots: [ember.id] })]);
-    expect((await onCloud("GET", "/api/logins")).body.onePassword).toEqual({ connected: false });
-    for (const where of [...refusing.answers, refusing.logs()]) for (const value of [TOKEN, PASSWORD]) expect(where).not.toContain(value);
-  } finally { await refusing.close(); }
-}, hostTimeout(120_000));
 
 it("My Cloud keeps an attachment a sent row names under its own name, once, and says which it lacks", async () => {
   const name = `${randomBytes(8).toString("hex")}.png`;
@@ -68,7 +44,7 @@ async function history(side: CloudSendFixture["local"], threadId: string) {
 
 describe("a long conversation, carried in pages by the move", () => {
   let heavy: CloudSendFixture;
-  beforeAll(async () => { heavy = await launchCloudSendFixture({ onePasswordToken: TOKEN, toolCalls: 150 }); }, hostTimeout(60_000));
+  beforeAll(async () => { heavy = await launchCloudSendFixture({ toolCalls: 150 }); }, hostTimeout(60_000));
   afterAll(async () => { await heavy?.close(); });
   const turn = async (bot: { id: string; threadId: string }, text: string) => {
     const before = (await history(heavy.local, bot.threadId)).stored;

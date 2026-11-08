@@ -1,13 +1,12 @@
 // A real Team Cloud: what a User's own AlcaBot says about connecting an AI, and that it names the owner once the owner has
 // opened the team.
-import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchCloudSendFixture, type CloudSendFixture, type CloudTeamFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
 let fx: CloudSendFixture, team: CloudTeamFixture;
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme" } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme" } });
   team = fx.team!;
 }, hostTimeout(120_000));
 afterAll(async () => { await fx?.close(); });

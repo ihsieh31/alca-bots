@@ -6,7 +6,6 @@
 // app restart, the rail past eight, the cloud badge in both looks, and a person with no Cloud, whose rail appears with a second
 // place. Each picture is the window as the person sees it: the rail's own page over or beside the page the window shows.
 // Pictures go to ALCA_ONE_WORKSPACE_SHOTS, else the fixture's folder.
-import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -104,7 +103,7 @@ function harness(get: () => { world: HomeWorld; shots: string }) {
   const workId = () => world.registry!.list().find((entry) => entry.name === "Work")?.id ?? "work";
 
   beforeAll(async () => {
-    fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-profile-${randomBytes(12).toString("hex")}`,
+    fx = await launchCloudSendFixture({
       desktopEngine: `process.env.FAKE_CLAUDE_MODE = "slow"; process.env.FAKE_CLAUDE_SLOW_FINISH_GATE = ${JSON.stringify(gate)};` });
     await welcomed(fx);
     // What a move leaves: the bots on My Cloud, this computer's copy of them frozen.
@@ -422,7 +421,7 @@ function harness(get: () => { world: HomeWorld; shots: string }) {
   const { until, page, tiles, onLocal, picture, click, menu, key, bots } = harness(() => ({ world, shots }));
 
   beforeAll(async () => {
-    fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-local-${randomBytes(12).toString("hex")}` });
+    fx = await launchCloudSendFixture();
     await welcomed(fx);
     await fx.local("POST", "/api/bots", { name: "Atlas", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } });
     const tools = await ensureUiBrowser(process.env);

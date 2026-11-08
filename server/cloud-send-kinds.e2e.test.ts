@@ -12,7 +12,6 @@ import { launchCloudSendFixture, type CloudSendFixture } from "../scripts/testin
 import { startBrokerFake, type BrokerFake } from "./testing/broker-fake.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
-const TOKEN = `ops_fake-kinds-${randomBytes(8).toString("hex")}`;
 const HOME_MODEL_KEY = `sk-fake-home-${randomBytes(8).toString("hex")}`;
 let broker: BrokerFake;
 let fx: CloudSendFixture;
@@ -20,7 +19,7 @@ let replyFile = "";
 
 beforeAll(async () => {
   broker = await startBrokerFake();
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, broker, desktopEngine: `process.env.FAKE_CLAUDE_REPLY_FILE = process.env.HOME + "/long-reply.txt";` });
+  fx = await launchCloudSendFixture({ broker, desktopEngine: `process.env.FAKE_CLAUDE_REPLY_FILE = process.env.HOME + "/long-reply.txt";` });
   replyFile = join(fx.root, "desktop", "long-reply.txt");
 }, hostTimeout(90_000));
 afterAll(async () => {
@@ -245,7 +244,7 @@ it("a move run again changes nothing on My Cloud, and its check still finds ever
   const manifest = async () => (await fx.onCloud("GET", "/api/cloud-send/manifest")).body;
   const before = await manifest();
   const again = await fx.move({ final: true });
-  expect(again.result).toMatchObject({ bots: [], updatedBots: [], skills: 0, logins: 0, onePassword: false, settings: [], failed: [], moved: 0, memory: 0,
+  expect(again.result).toMatchObject({ bots: [], updatedBots: [], skills: 0, settings: [], failed: [], moved: 0, memory: 0,
     files: { sent: 0, kept: 0 }, conversationSettings: 0, chats: { conversations: 0, messages: 0, left: 0 } });
   expect(await manifest()).toEqual(before);
   expect((await fx.check()).ok).toBe(true);

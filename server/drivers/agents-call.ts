@@ -569,9 +569,6 @@ export async function callTool(called: string, input: Json, context: ToolCallCon
     if (r.alreadyConfigured) {
       return { text: `${r.label ?? CREDENTIAL_TARGETS[credentialId].label} is already configured. Continue the task.` };
     }
-    if (credentialId === "onePasswordToken") {
-      return { text: `A secure ${r.label ?? CREDENTIAL_TARGETS[credentialId].label} request is ready: the person pastes it into its card in AlcaBots, on their computer or in My Cloud, and AlcaBots checks it with 1Password before keeping it. End this turn; AlcaBots will resume the task after they save or decline. Never ask them to paste the token into chat, and never pass it to a command line.` };
-    }
     return {
       text: `A secure ${r.label ?? CREDENTIAL_TARGETS[credentialId].label} request is now in this conversation, and the person was notified. The desktop app and a freshly QR-paired mobile app show its secure entry card; older mobile pairings explain how to pair again or finish on the computer. End this turn; AlcaBots will resume the task after the user saves or declines. Never ask them to paste the key into chat.`,
     };

@@ -264,7 +264,7 @@ describe("AlcaBot keeps an eye on the day", () => {
     const deps = (place: ReturnType<typeof start>): MoveKindsDeps => ({ dataDir: DATA_DIR, store: place.store, routines: () => place.routines, calls: () => null, webhooks: () => null,
       appEvents: () => null, claudeCodeSkills: () => [], instanceExists: () => true, owner: () => OWNER, ownRoutine: () => {} } as unknown as MoveKindsDeps);
     const sources = (withRoutines: boolean): CloudSendSources => ({
-      appVersion: "0.0.0", bots: () => here.store.bots, skills: () => [], picture: () => null, logins: () => [], onePassword: () => null, settings: () => ({}),
+      appVersion: "0.0.0", bots: () => here.store.bots, skills: () => [], picture: () => null, settings: () => ({}),
       greetingOnly: (threadId, name) => {
         const rows = here.store.messagesFor(threadId);
         return rows.length === 1 && rows[0]!.role === "bot" && Boolean(rows[0]!.text?.includes(name));

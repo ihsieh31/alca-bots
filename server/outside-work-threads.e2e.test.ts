@@ -12,7 +12,6 @@ import { hostTimeout } from "./testing/host-timeout.ts";
 it("a confined webhook turn can't open a thread that runs unconfined; a person's own turn still can", async () => {
   const dump = join(tmpdir(), `outside-work-${randomBytes(6).toString("hex")}.json`);
   const fx = await launchCloudSendFixture({
-    onePasswordToken: `ops_fake-${randomBytes(8).toString("hex")}`,
     team: { id: "team-acme-1", name: "Acme", engine: `process.env.FAKE_CLAUDE_MODE = "hang"; process.env.FAKE_CLAUDE_DUMP = ${JSON.stringify(dump)};` },
   });
   try {

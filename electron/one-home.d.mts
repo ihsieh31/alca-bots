@@ -27,7 +27,7 @@ type OneHomePhase =
    * computer moved to was deleted, or ended while another Cloud is My Cloud; its own copy is open as it was at the move, with
    * every automation off. */
   | { phase: "home-again" | "back"; lost?: true; elsewhere?: { name: string; since?: number }; kept?: true; gone?: true };
-export interface OneHomeCounts { bots: number; skills: number; logins: number; onePassword: boolean; chats: number; routines: number }
+export interface OneHomeCounts { bots: number; skills: number; chats: number; routines: number }
 
 export interface OneHomeCloud {
   origin: string | null; account: string; machine: string | null; ready: boolean; moves: boolean; ended: boolean; paid: boolean;

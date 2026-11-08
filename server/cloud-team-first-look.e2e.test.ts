@@ -1,6 +1,5 @@
 // A new member's first look at a Team Cloud: the list that makes their own AlcaBot shows it whole, its main chat
 // included, the first time. Disposable homes and a synthetic Claude CLI; nothing leaves this machine.
-import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
 
 import { launchCloudSendFixture, type CloudSendFixture, type CloudTeamFixture } from "../scripts/testing/cloud-send-fixture.ts";
@@ -11,7 +10,7 @@ type Bot = { id: string; threadId?: string; mainThreadId?: string; defaultBot?: 
 let fx: CloudSendFixture, team: CloudTeamFixture;
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-7", name: "Acme", engine: "" } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-7", name: "Acme", engine: "" } });
   team = fx.team!;
 }, hostTimeout(120_000));
 

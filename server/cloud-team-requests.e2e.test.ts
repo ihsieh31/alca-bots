@@ -1,7 +1,6 @@
 // What a Team Cloud refuses at the door: a request whose body never finishes arriving (ended with a 408 within the
 // deadline, while an event stream, which has no body, stays open past it), names that do not fit on one line, message
 // text that is not a string, and a member's webhook requests; and its refusals are plain sentences.
-import { randomBytes } from "node:crypto";
 import { connect } from "node:net";
 import { afterAll, beforeAll, expect, it } from "vitest";
 
@@ -17,7 +16,7 @@ let owner = "", ada = "";
 let bot: { id: string; mainThreadId: string; color: string };
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme", env: { ALCA_WEBHOOK_PUBLIC_URL: `https://${CLOUD_HOST}` } } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme", env: { ALCA_WEBHOOK_PUBLIC_URL: `https://${CLOUD_HOST}` } } });
   team = fx.team!;
   owner = (await team.pair(OWNER)).token!;
   ada = (await team.pair(ADA)).token!;

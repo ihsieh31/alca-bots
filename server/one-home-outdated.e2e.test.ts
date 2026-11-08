@@ -1,7 +1,6 @@
 // The one-time move to a Cloud still on an image too old to take one: this computer's server and a Cloud home
 // (scripts/testing/cloud-send-fixture.ts) with main's own wiring between them, My Cloud's environment answering as an
 // older Cloud's does until it updates. Disposable homes; no network.
-import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import type { CloudSendNotice } from "../electron/cloud-send.mjs";
@@ -10,7 +9,7 @@ import { hostTimeout } from "./testing/host-timeout.ts";
 
 let fx: CloudSendFixture;
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-outdated-${randomBytes(8).toString("hex")}` });
+  fx = await launchCloudSendFixture();
 }, hostTimeout(90_000));
 afterAll(async () => { await fx?.close(); });
 

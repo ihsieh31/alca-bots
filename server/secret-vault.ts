@@ -8,7 +8,7 @@ import { randomBytes } from "node:crypto";
 import { chmodSync, closeSync, constants, fsyncSync, lstatSync, mkdirSync, openSync, readdirSync, rmSync, writeSync } from "node:fs";
 import { join } from "node:path";
 
-import { secretForms } from "./login-store.ts";
+import { secretForms } from "./secret-forms.ts";
 import { HELD_SECRET_MASK } from "./redact.ts";
 import { inSecretFolder, SECRET_FOLDER } from "./secret-folder.ts";
 

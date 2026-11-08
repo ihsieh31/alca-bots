@@ -6,7 +6,7 @@
 // leaves decisions and his private chats alone. The asks waiting on him are counted on his inbox, live, and each stops
 // waiting however he answers it: in the bot's own chat, through either respond route, or with a 👍. It proves where
 // things land and what is read, not a model's judgement.
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { connect, type Socket } from "node:net";
 import { join } from "node:path";
@@ -31,7 +31,6 @@ process.env.FAKE_CLAUDE_REPLY_FILE = dir + "/reply.txt";
 process.env.FAKE_CLAUDE_TEXT_ROUTES = dir + "/text-routes.json";
 process.env.FAKE_CLAUDE_TEXT_LOG = dir + "/text-log.jsonl";
 if (existsSync(dir + "/hang-mode")) { process.env.FAKE_CLAUDE_MODE = "hang"; process.env.FAKE_CLAUDE_RELEASE = dir + "/release"; }`;
-const TOKEN = `ops_fake-team-${randomBytes(8).toString("hex")}`;
 
 type Row = { id: string; role: string; kind: string; text?: string; card?: { requestId?: string; answered?: string }; replyToId?: string;
   relay?: { kind: string; email: string; name: string }; peerAsk?: { botId: string; name: string };
@@ -149,7 +148,7 @@ async function askedOfBen(ask: (requestId: string) => Record<string, unknown>) {
 
 beforeAll(async () => {
   broker = await startBrokerFake();
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, broker, team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ broker, team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   writeFileSync(file("release"), "");
   cleo = (await team.pair(CLEO)).token!;

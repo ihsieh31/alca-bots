@@ -1,5 +1,4 @@
 // A real Team Cloud with no AI: what a User reads when they press Send, what stays theirs, and what reaches the owner.
-import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchCloudSendFixture, type CloudSendFixture, type CloudTeamFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
@@ -9,7 +8,7 @@ const USER = { email: "dana@acme.test", role: "member" as const };
 const WORDS = "Our private numbers for the launch";
 let fx: CloudSendFixture, team: CloudTeamFixture;
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme", noAi: true } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme", noAi: true } });
   team = fx.team!;
 }, hostTimeout(120_000));
 afterAll(async () => { await fx?.close(); });

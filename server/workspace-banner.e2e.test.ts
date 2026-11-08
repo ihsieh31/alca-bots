@@ -1,7 +1,6 @@
 // A real Team Cloud with an owner and a member: the workspace's banner picture is changed by its Super admin only,
 // seen by everyone signed in to the team, and never served to anyone who isn't. This computer's own server and My Cloud
 // beside it: the desktop app's own page and a Cloud's owner change their own.
-import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchCloudSendFixture, type CloudSendFixture, type CloudTeamFixture } from "../scripts/testing/cloud-send-fixture.ts";
@@ -23,7 +22,7 @@ const banner = (token?: string) => fetch(`${team.base}${BANNER}`, { headers: { .
 const put = (token: string, bytes: Buffer, type = "image/png") => team.as(token, "PUT", BANNER, new Uint8Array(bytes), { "content-type": type });
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-banner-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-2", name: "Acme" } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-2", name: "Acme" } });
   team = fx.team!;
   ada = (await team.pair(ADA)).token!;
   bob = (await team.pair(BOB)).token!;

@@ -2,7 +2,6 @@
 // Cloud home, and the Admin's word in each app's sign-in. When My Cloud ends, everything comes home to the computer the
 // Admin names (the one used most recently); the other opens its own copy with every automation off. Both servers' and
 // My Cloud's schedules are watched. Disposable homes; no network.
-import { randomBytes } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,7 +9,6 @@ import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchCloudSendFixture, type CloudSendDesk, type CloudSendFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
-const TOKEN = `ops_fake-two-desks-${randomBytes(8).toString("hex")}`;
 const GATES = mkdtempSync(join(tmpdir(), "alca-two-desks-"));
 const HOLD = join(GATES, "hold"), RELEASE = join(GATES, "release");
 /** Either computer's turns that start while HOLD exists run until RELEASE does. */
@@ -18,7 +16,7 @@ const HOLD_TURNS = `if ((await import("node:fs")).existsSync(${JSON.stringify(HO
 let fx: CloudSendFixture, studio: CloudSendDesk;
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, env: { ALCA_ENVIRONMENT_LABEL: "MacBook Air" }, desktopEngine: HOLD_TURNS });
+  fx = await launchCloudSendFixture({ env: { ALCA_ENVIRONMENT_LABEL: "MacBook Air" }, desktopEngine: HOLD_TURNS });
   studio = await fx.addDesk({ label: "Studio iMac" });
 }, hostTimeout(120_000));
 afterAll(async () => { writeFileSync(RELEASE, ""); await fx?.close(); rmSync(GATES, { recursive: true, force: true }); });

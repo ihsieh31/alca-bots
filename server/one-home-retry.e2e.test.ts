@@ -1,7 +1,6 @@
 // The one-time move when its check can't pass: this computer's server and a Cloud home
 // (scripts/testing/cloud-send-fixture.ts) with main's own wiring between them, and My Cloud's check route failing until
 // it answers again. Disposable homes; no network.
-import { randomBytes } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import type { CloudSendNotice } from "../electron/cloud-send.mjs";
@@ -11,7 +10,7 @@ import { hostTimeout } from "./testing/host-timeout.ts";
 
 let fx: CloudSendFixture;
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-retry-${randomBytes(8).toString("hex")}` });
+  fx = await launchCloudSendFixture();
 }, hostTimeout(90_000));
 afterAll(async () => { await fx?.close(); });
 

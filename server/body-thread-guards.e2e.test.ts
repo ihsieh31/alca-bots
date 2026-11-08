@@ -4,7 +4,7 @@ import { launchCloudSendFixture } from "../scripts/testing/cloud-send-fixture.ts
 import { hostTimeout } from "./testing/host-timeout.ts";
 
 it("gives a member the same 404 for missing and hidden bots with invalid handoff bodies", async () => {
-  const fixture = await launchCloudSendFixture({ onePasswordToken: "synthetic-owner-lookup-token",
+  const fixture = await launchCloudSendFixture({
     team: { id: "team-owner-lookup", name: "Owner lookup" } });
   try {
     const team = fixture.team!;
@@ -22,7 +22,7 @@ it("gives a member the same 404 for missing and hidden bots with invalid handoff
 }, hostTimeout(120_000));
 
 it("keeps a Team Cloud server alive when a member posts request-sized threadIds arrays", async () => {
-  const fixture = await launchCloudSendFixture({ onePasswordToken: "synthetic-route-guard-token",
+  const fixture = await launchCloudSendFixture({
     team: { id: "team-guards", name: "Guards" } });
   try {
     const team = fixture.team!;

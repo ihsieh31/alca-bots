@@ -3,7 +3,6 @@
 // piece of work to Quill, which saves another preference of Bob's from the work Bob's message handed on. Every bot reads
 // both lines in Bob's work, nothing goes to each bot, and Olive's About me never changes. The engine is the synthetic
 // Claude CLI playing a scripted plan through the real agents tools, so it proves where things land, not a model's judgement.
-import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -43,7 +42,7 @@ const settled = async () => {
 };
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-2", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-2", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   olive = (await team.pair(OLIVE)).token!;
   bob = (await team.pair(BOB)).token!;

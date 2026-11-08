@@ -3,18 +3,16 @@
 // automations run there again and stop on My Cloud, the other computer and its bots on My Cloud don't change, and turning
 // it off again moves it again. Each computer's server and app (main's own wiring), one Cloud home; disposable homes; no
 // network.
-import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchCloudSendFixture, type CloudSendDesk, type CloudSendFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { webhookHomeLine } from "./cloud-send-arrived.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
-const TOKEN = `ops_fake-keep-${randomBytes(8).toString("hex")}`;
 let fx: CloudSendFixture, studio: CloudSendDesk;
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, env: { ALCA_ENVIRONMENT_LABEL: "MacBook Air" } });
+  fx = await launchCloudSendFixture({ env: { ALCA_ENVIRONMENT_LABEL: "MacBook Air" } });
   studio = await fx.addDesk({ label: "Studio iMac" });
 }, hostTimeout(120_000));
 afterAll(async () => { await fx?.close(); });

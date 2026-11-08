@@ -687,7 +687,7 @@ describe("agents-proxy MCP surface", () => {
     }
     const credential = tool("request_credential");
     expect(credential.description).toContain("on a secure card in the app or a QR-paired phone, never in chat");
-    expect(credential.description).toContain("onePasswordToken: a 1Password service account token");
+    expect(credential.description).toContain("email: a mailbox on any mail host");
     expect(credential.description).toContain("You never see the value");
     expect(Object.keys(credential.inputSchema.properties)).toEqual(["credential_id", "address", "label", "reason", "placeholder", "delivery"]);
     expect(credential.inputSchema.properties.address.description).toMatch(/^credential_id email only/);

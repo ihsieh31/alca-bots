@@ -16,9 +16,8 @@ import { cloudSendManifest } from "../cloud-send-manifest.ts";
 import { moveMemoryRoute, type MoveMemoryDeps } from "../cloud-send-memory.ts";
 import { cloudSendSummary, partHash, type CloudSendSources } from "../cloud-send.ts";
 import { cloudSendChatsRoute, type CloudSendChatsDeps } from "../cloud-send-chats.ts";
-import { loginFingerprints, VERIFY_NONCE } from "../cloud-send-verify.ts";
+import { VERIFY_NONCE } from "../cloud-send-verify.ts";
 import type { AppConfig } from "../config.ts";
-import type { LoginStore } from "../login-store.ts";
 import type { MoveAutomations } from "../move-freeze.ts";
 import { threadHeads } from "../message-db.ts";
 import type { LineLanguage } from "../server-lines.ts";
@@ -29,7 +28,6 @@ import { PASS, type RouteHandler } from "./table.ts";
 
 export interface CloudSendRouteDeps extends Pick<CloudSendSources, "appVersion" | "bots" | "skills"> {
   messagesTail(threadId: string, limit: number): { messages: ReadonlyArray<{ role: string; text?: string }>; hasMore: boolean };
-  logins: Pick<LoginStore, "changes" | "get" | "onePasswordConnectedAt" | "onePasswordGrants" | "onePasswordToken">;
   config(): Pick<AppConfig, "profile" | "language">;
   lineLanguage?: LineLanguage;
   chats?: CloudSendChatsDeps;
@@ -65,11 +63,6 @@ export function createCloudSendRoutes(deps: CloudSendRouteDeps): RouteHandler {
     automated: (botId) => Boolean(deps.move && automatedBot(deps.move, botId)),
     skills: deps.skills,
     picture: (avatarUrl) => botAvatarUrlSchema.safeParse(avatarUrl).success ? readAttachment(avatarUrl.slice("/api/attachments/".length))?.bytes ?? null : null,
-    logins: () => deps.logins.changes(),
-    onePassword: () => {
-      const connectedAt = deps.logins.onePasswordConnectedAt();
-      return connectedAt === null ? null : { connectedAt, grants: deps.logins.onePasswordGrants() };
-    },
     settings: () => { const { profile, language } = deps.config(); return { profile, language }; },
     ...(deps.move ? { move: { items: (bots: ReadonlySet<string>, only?: BotRecord) => moveItems(deps.move!, bots, only), botParts: (bot: BotRecord) => moveBotParts(bot, partHash) } } : {}),
   };
@@ -102,7 +95,7 @@ export function createCloudSendRoutes(deps: CloudSendRouteDeps): RouteHandler {
       const asked = z.object({ nonce: z.string().regex(VERIFY_NONCE) }).safeParse(await readBody(req, 4096));
       if (!asked.success) return json(res, 400, { error: "send { nonce }: at least 32 random bytes, base64url" });
       res.setHeader("cache-control", "no-store");
-      return json(res, 200, { v: 1, secrets: { ...loginFingerprints(asked.data.nonce, deps.logins), ...deps.connectionFingerprints(asked.data.nonce) } });
+      return json(res, 200, { v: 1, secrets: deps.connectionFingerprints(asked.data.nonce) });
     }
     if (path !== "/api/cloud-send") return PASS;
     if (method !== "GET") return json(res, 405, { error: "method not allowed" });

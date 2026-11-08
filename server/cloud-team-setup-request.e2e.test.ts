@@ -1,7 +1,6 @@
 // Set me up on a real Team Cloud, where a bot's main chat is the whole team's: the press is the presser's alone. Another
 // member's line in that chat runs as typed and leaves the request waiting; only the presser's next line sets the bot up,
 // and only they can stop it. The engine is the synthetic Claude CLI.
-import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -19,7 +18,7 @@ let fx: CloudSendFixture, team: CloudTeamFixture;
 let owner = "", ben = "", ada = "";
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-2", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-2", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   owner = (await team.pair(OWNER)).token!;
   ben = (await team.pair(ADMIN)).token!;

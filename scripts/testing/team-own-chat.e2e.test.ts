@@ -1,7 +1,6 @@
 // Clicking a team bot opens the person's own conversation with it (src/state/team-chats.ts), checked against a real
 // Team Cloud (T2: ALCA_CLOUD_ROLE=team, members paired with the Admin's signed claims, per-conversation audiences). Runs
 // once the cloud fixture can start a Team Cloud (T2); until then it is skipped.
-import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -36,7 +35,7 @@ if (!teamFixture) console.info("skipping the team own-chat e2e: the cloud fixtur
 
   beforeAll(async () => {
     const launch = launchCloudSendFixture as unknown as (options: Record<string, unknown>) => Promise<typeof fx>;
-    fx = await launch({ onePasswordToken: `ops_fake-own-chat-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme" } });
+    fx = await launch({ team: { id: "team-acme-1", name: "Acme" } });
     team = fx.team!;
     for (const [who, member] of Object.entries({ olive: { email: "olive@acme.test", role: "owner" }, ben: { email: "ben@acme.test", role: "admin" },
       ada: { email: "ada@acme.test", role: "member" }, cleo: { email: "cleo@acme.test", role: "member" } } as Record<string, Member>)) {

@@ -2,7 +2,6 @@
 // (scripts/testing/cloud-send-fixture.ts) with main's own wiring between them (electron/one-home-main.mjs), the app
 // killed and started again at each phase, both servers' schedules watched, a check that fails, and My Cloud ending with
 // everything coming home. Disposable homes; no network.
-import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -12,12 +11,11 @@ import { hostTimeout } from "./testing/host-timeout.ts";
 import { MOVED_REFUSAL } from "./move-freeze.ts";
 import { webhookMovedLine } from "./cloud-send-arrived.ts";
 
-const TOKEN = `ops_fake-one-home-${randomBytes(8).toString("hex")}`;
 const COMPUTER = "MacBook Air";
 let fx: CloudSendFixture;
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, env: { ALCA_ENVIRONMENT_LABEL: COMPUTER } });
+  fx = await launchCloudSendFixture({ env: { ALCA_ENVIRONMENT_LABEL: COMPUTER } });
 }, hostTimeout(90_000));
 afterAll(async () => { await fx?.close(); });
 

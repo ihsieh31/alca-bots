@@ -100,7 +100,7 @@ beforeAll(async () => {
   gateway = await startFakeHttpMcp({ tools: [{ name: "lookup_order", inputSchema: { type: "object", properties: {} } }], callResult: () => ({ content: [{ type: "text", text: "ok" }] }) });
   broker = await startBrokerFake();
   const relayBase = `http://127.0.0.1:${(relay.address() as AddressInfo).port}`;
-  fx = await launchCloudSendFixture({ onePasswordToken: "ops_fake-rules", broker, team: { id: "team-acme-1", name: "Acme", engine: ENGINE, env: {
+  fx = await launchCloudSendFixture({ broker, team: { id: "team-acme-1", name: "Acme", engine: ENGINE, env: {
     ALCA_BOT_BOX: "0", FIXTURE_ADMIN_STAND_IN: `http://127.0.0.1:${(adminServer.address() as AddressInfo).port}`,
     ALCA_CLOUD_BOAT_URL: `${relayBase}/relay/api/box/v1`, ALCA_CLOUD_BOAT_TOKEN: "box_alca_rules",
   } } });

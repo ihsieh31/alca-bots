@@ -4,7 +4,7 @@
 // blocking an MCP server applies to the next thing each bot does; the Owner's export carries nothing of a member's alone; and
 // a question left for a day is mentioned in the person's inbox chat, on a fake clock. It proves what the engine was sent and
 // what each person sees, not a model's judgement.
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { createServer, type Server } from "node:http";
@@ -91,7 +91,7 @@ beforeAll(async () => {
   await new Promise<void>((resolve) => adminServer.listen(0, "127.0.0.1", resolve));
   gateway = await startFakeHttpMcp({ tools: [{ name: "lookup_order", inputSchema: { type: "object", properties: {} } }], callResult: () => ({ content: [{ type: "text", text: "ok" }] }) });
   broker = await startBrokerFake();
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, broker, team: { id: "team-acme-3", name: "Acme", engine: ENGINE,
+  fx = await launchCloudSendFixture({ broker, team: { id: "team-acme-3", name: "Acme", engine: ENGINE,
     env: { ALCA_BOT_BOX: "0", ALCA_TEST_WAIT_CLOCK: CLOCK, NODE_OPTIONS: `--import=${new URL("./testing/wait-clock-hooks.mjs", import.meta.url).href}`, FIXTURE_ADMIN_STAND_IN: `http://127.0.0.1:${(adminServer.address() as AddressInfo).port}` } } });
   team = fx.team!;
   ada = (await team.pair(ADA)).token!;

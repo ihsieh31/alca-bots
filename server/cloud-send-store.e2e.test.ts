@@ -11,7 +11,7 @@ const LIMIT = 64 * 1024;
 let fx: CloudSendFixture;
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-store-${randomBytes(8).toString("hex")}`, cloudEnv: { ALCA_ATTACHMENTS_MAX_BYTES: String(LIMIT) } });
+  fx = await launchCloudSendFixture({ cloudEnv: { ALCA_ATTACHMENTS_MAX_BYTES: String(LIMIT) } });
 }, hostTimeout(90_000));
 afterAll(async () => { await fx?.close(); });
 

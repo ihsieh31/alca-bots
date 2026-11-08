@@ -619,11 +619,6 @@ person as before, and `message_person` and the inbox do not exist.
 
 ## What is not closed here
 
-- **Saved logins per member.** A login saved from a sign-in card is the team's (an Admin saves it, for every bot in the
-  team); per-member saved logins are not built. Sign-ins a member makes in their own browser stay in it (above).
-- **The new browser engine and temporary browsers in a box.** The new engine (`browserEngine.engine: "chrome"`, off by
-  default) starts Chrome itself over a pipe and is not boxed; a temporary browser is boxed, but a file a turn uploads
-  into it is not reachable from its box.
 - **Per-member engine sign-ins.** Every audience's engine signs in as the team (its key through the broker, or the
   team's sign-in files in each engine home, above); a member cannot sign an engine in as themselves, by design.
 - **A roster read from the Admin.** Without the Admin's `member-left` request (above), removal takes effect within the

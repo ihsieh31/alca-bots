@@ -7,7 +7,7 @@ import { personKey } from "./person-key.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
 it("lets a Team Cloud member list and read only their own notification feed", async () => {
-  const fixture = await launchCloudSendFixture({ onePasswordToken: "synthetic-notifications-token",
+  const fixture = await launchCloudSendFixture({
     team: { id: "team-notifications", name: "Notifications" } });
   try {
     const team = fixture.team!;
@@ -49,7 +49,7 @@ it("lets a Team Cloud member list and read only their own notification feed", as
 }, hostTimeout(120_000));
 
 it("keeps admin spend alerts unread when a Team Cloud member opens a shared conversation", async () => {
-  const fixture = await launchCloudSendFixture({ onePasswordToken: "synthetic-spend-read-token",
+  const fixture = await launchCloudSendFixture({
     team: { id: "team-spend-read", name: "Spend reads" } });
   try {
     const team = fixture.team!;

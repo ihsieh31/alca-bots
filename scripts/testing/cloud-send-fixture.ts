@@ -2,8 +2,7 @@
 // utility-process port emulated over Node's IPC, the owner's capability delivered through it), and the person's Cloud
 // home, paired the way the Admin pairs it. Main's own wiring (electron/one-home-main.mjs, which installs
 // cloud-send-main.mjs) sits between them with a fake ipcMain and a fake AlcaBot Cloud sign-in. Either server can be
-// killed and started again on its own data, as an app that quits or crashes is. Disposable homes, a synthetic Claude CLI
-// and a fake 1Password SDK; no network.
+// killed and started again on its own data, as an app that quits or crashes is. Disposable homes, a synthetic Claude CLI; no network.
 import { randomBytes } from "node:crypto";
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, writeFileSync } from "node:fs";
@@ -140,30 +139,13 @@ export interface CloudTeamFixture {
   relaunch(env?: NodeJS.ProcessEnv): Promise<void>;
 }
 
-function fakeOnePassword(at: string, token: string): string {
-  const sdk = join(at, "node_modules", "@1password", "sdk");
-  mkdirSync(sdk, { recursive: true });
-  writeFileSync(join(sdk, "package.json"), JSON.stringify({ name: "@1password/sdk", version: "0.5.0", main: "index.js" }));
-  writeFileSync(join(sdk, "index.js"), `"use strict";
-exports.createClient = async ({ auth }) => {
-  if (auth !== ${JSON.stringify(token)}) throw new Error("error authenticating: invalid service account token");
-  return {
-    vaults: { list: async () => [{ id: "v1", title: "Shared with AlcaBots" }] },
-    items: { list: async () => [], getAll: async () => ({ individualResponses: [] }) },
-  };
-};
-`);
-  return at;
-}
-
-/** `cloudOnePasswordToken`: the token My Cloud's 1Password accepts (default: this computer's), so a test can make 1Password
- * refuse this computer's token on My Cloud. `toolCalls`: each turn on this computer makes that many tool calls first, so a
+/** `toolCalls`: each turn on this computer makes that many tool calls first, so a
  * few turns make a conversation of several pages. `broker`: the connected-apps service both servers use, this computer
  * with an installation of its own as the desktop app registers one, My Cloud registering itself as a Cloud home does.
  * `env`: more of both servers' environment. `cloudEngine`: lines run at the start of My Cloud's synthetic Claude CLI, to
  * script its turns (fake-claude-cli.ts). */
-export async function launchCloudSendFixture({ onePasswordToken, cloudOnePasswordToken = onePasswordToken, toolCalls = 0, broker, env = {}, cloudEnv = {}, cloudEngine = "", desktopEngine = "", space, cloudSignedIn = true, team }: {
-  onePasswordToken: string; cloudOnePasswordToken?: string; toolCalls?: number;
+export async function launchCloudSendFixture({ toolCalls = 0, broker, env = {}, cloudEnv = {}, cloudEngine = "", desktopEngine = "", space, cloudSignedIn = true, team }: {
+  toolCalls?: number;
   /** A Team Cloud too (ALCA_CLOUD_ROLE=team), with its own environment and synthetic Claude CLI lines. */
   team?: { id: string; name: string; env?: NodeJS.ProcessEnv; engine?: string; noAi?: boolean };
   broker?: { url: string; install(): Promise<{ id: string; token: string; userId: string }> };
@@ -177,7 +159,7 @@ export async function launchCloudSendFixture({ onePasswordToken, cloudOnePasswor
   space?: { disk(): unknown; grow(sizeGb: number): Promise<unknown> };
   /** False: My Cloud's own Claude is signed out, as on a new Cloud. */
   cloudSignedIn?: boolean;
-}): Promise<CloudSendFixture> {
+} = {}): Promise<CloudSendFixture> {
   const root = mkdtempSync(join(tmpdir(), "alca-cloud-send-"));
   const secret = randomBytes(32).toString("base64url");
   const ownerCapability = randomBytes(32).toString("base64url");
@@ -187,10 +169,12 @@ export async function launchCloudSendFixture({ onePasswordToken, cloudOnePasswor
   const children = new Set<ChildProcess>();
   const remember = async (response: Response) => { answers.push(await response.clone().text()); return response; };
 
-  async function start(name: string, own: NodeJS.ProcessEnv, port: number, extra: string[] = [], ipc = false, acceptedToken = onePasswordToken, calls = 0, engine = "", signedIn = true): Promise<ChildProcess> {
+  async function start(name: string, own: NodeJS.ProcessEnv, port: number, extra: string[] = [], ipc = false, calls = 0, engine = "", signedIn = true): Promise<ChildProcess> {
     const home = join(root, name);
     const dataDir = join(home, ".alcabots");
     mkdirSync(dataDir, { recursive: true });
+    const native = join(home, "native");
+    mkdirSync(native, { recursive: true });
     const cli = join(home, "fixture-claude.mjs");
     const tools = calls ? JSON.stringify(Array.from({ length: calls }, (_, i) => ({ name: "Bash", input: { command: `echo step ${i}` } }))) : "";
     writeFileSync(cli, `#!/usr/bin/env node
@@ -209,7 +193,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     const child = spawn(process.execPath, ["--import", offline, ...extra, join(SERVER_DIR, "index.ts")], {
       cwd: join(SERVER_DIR, ".."),
       env: { PATH: process.env.PATH, ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}), HOME: home, USERPROFILE: home, ALCA_DATA_DIR: dataDir,
-        ALCA_PORT: String(port), ALCA_WEBHOOK_PORT: String(port + 1), ALCA_DUCKDB_DIR: fakeOnePassword(join(home, "native"), acceptedToken), ...env, ...own },
+        ALCA_PORT: String(port), ALCA_WEBHOOK_PORT: String(port + 1), ALCA_DUCKDB_DIR: native, ...env, ...own },
       stdio: ["ignore", "pipe", "pipe", ...(ipc ? ["ipc" as const] : [])],
     });
     children.add(child);
@@ -239,7 +223,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
   const desktopInstallation = broker ? await broker.install() : null;
   const startDesktop = async (dataDir?: string) => {
     const child = await start("desktop", { ALCA_DESKTOP_PARENT: "1", ...(dataDir ? { ALCA_DATA_DIR: dataDir } : {}),
-      ...(broker && desktopInstallation ? { ALCA_COMPOSIO_BROKER_URL: broker.url, ALCA_COMPOSIO_BROKER_TOKEN: desktopInstallation.token } : {}) }, desktopPort, ["--import", parentPort], true, onePasswordToken, toolCalls, desktopEngine);
+      ...(broker && desktopInstallation ? { ALCA_COMPOSIO_BROKER_URL: broker.url, ALCA_COMPOSIO_BROKER_TOKEN: desktopInstallation.token } : {}) }, desktopPort, ["--import", parentPort], true, toolCalls, desktopEngine);
     child.send({ type: "alcabots:desktop-mutation-token", token: ownerCapability });
     return child;
   };
@@ -247,7 +231,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
   const cloudPort = await freePortBlock([0, 1]);
   const cloudBase = `http://127.0.0.1:${cloudPort}`;
   const startCloud = (more: NodeJS.ProcessEnv = {}) => start("cloud", { ALCA_CLOUD_ROLE: "home", ALCA_CLOUD_MACHINE_ID: "7c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f", ALCA_CLOUD_ADMIN_URL: "https://cloud.example.test",
-    ALCA_CLOUD_BOOTSTRAP_SECRET: secret, ALCA_PUBLIC_URL: `https://${CLOUD_HOST}`, ...(broker ? { ALCA_COMPOSIO_BROKER_URL: broker.url } : {}), ...cloudEnv, ...more }, cloudPort, [], false, cloudOnePasswordToken, 0, cloudEngine, cloudSignedIn);
+    ALCA_CLOUD_BOOTSTRAP_SECRET: secret, ALCA_PUBLIC_URL: `https://${CLOUD_HOST}`, ...(broker ? { ALCA_COMPOSIO_BROKER_URL: broker.url } : {}), ...cloudEnv, ...more }, cloudPort, [], false, 0, cloudEngine, cloudSignedIn);
   let cloud = await startCloud();
 
   const mintCode = async (label: string) => {
@@ -289,7 +273,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     const startTeam = (more: NodeJS.ProcessEnv = {}) => start("team", { ALCA_CLOUD_ROLE: "team", ALCA_CLOUD_TEAM_ID: team.id, ALCA_CLOUD_TEAM_NAME: team.name,
       ALCA_CLOUD_MACHINE_ID: "0d9e8f7a-6b5c-4d3e-9f8a-7b6c5d4e3f2a", ALCA_CLOUD_ADMIN_URL: "https://cloud.example.test", ALCA_CLOUD_BOOTSTRAP_SECRET: secret,
       ALCA_PUBLIC_URL: `https://${CLOUD_HOST}`, ALCA_TEST_INTERNAL_CAPABILITY_KEY: CAPABILITY_KEY, ...(broker ? { ALCA_COMPOSIO_BROKER_URL: broker.url } : {}), ...team.env, ...more },
-      teamPort, stopOverIpc ? ["--import", stopOnMessage] : [], stopOverIpc, onePasswordToken, 0, team.engine ?? "", true);
+      teamPort, stopOverIpc ? ["--import", stopOnMessage] : [], stopOverIpc, 0, team.engine ?? "", true);
     let teamServer = await startTeam();
     const as: CloudTeamFixture["as"] = async (token, method, path, body, headers = {}) => {
       const init: RequestInit = { method, headers: { ...EDGE, authorization: `Bearer ${token}`, ...headers,
@@ -452,7 +436,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     const name = `desktop-${desks.length + 2}`, deskPort = await freePortBlock([0, 1]), base = `http://127.0.0.1:${deskPort}`;
     const capability = randomBytes(32).toString("base64url");
     const startIt = async () => {
-      const child = await start(name, { ALCA_DESKTOP_PARENT: "1", ALCA_ENVIRONMENT_LABEL: label }, deskPort, ["--import", parentPort], true, onePasswordToken, toolCalls, desktopEngine);
+      const child = await start(name, { ALCA_DESKTOP_PARENT: "1", ALCA_ENVIRONMENT_LABEL: label }, deskPort, ["--import", parentPort], true, toolCalls, desktopEngine);
       child.send({ type: "alcabots:desktop-mutation-token", token: capability });
       return child;
     };

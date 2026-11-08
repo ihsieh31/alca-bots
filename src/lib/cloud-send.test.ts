@@ -10,7 +10,7 @@ afterEach(() => { setLocale("en"); });
 
 describe("the one-time move's line", () => {
   it("never says everything is here when a connector stayed on this computer, and says why", () => {
-    const done = { phase: "done" as const, phone: false, held: [], counts: { bots: 13, skills: 0, logins: 0, onePassword: false, chats: 0, routines: 0 } };
+    const done = { phase: "done" as const, phone: false, held: [], counts: { bots: 13, skills: 0, chats: 0, routines: 0 } };
     expect(moveLine(done, "cloud")?.text).toContain("Everything from this computer is here");
     const line = moveLine({ ...done, stayed: [{ name: "fetch", needs: "uvx" }, { name: "easy" }] }, "cloud");
     expect(line).toMatchObject({ kind: "done", text: "Everything else from this computer is here. These stayed on it:" });
@@ -85,8 +85,8 @@ describe("the one-time move's line", () => {
   });
 
   it("says once on My Cloud's page what arrived, a key kept for after the trial, and the phone to pair; on this computer, coming home", () => {
-    const done = moveLine({ phase: "done", counts: { bots: 4, skills: 2, logins: 2, onePassword: true, chats: 148, routines: 2 }, phone: true, held: ["OpenRouter"] }, "cloud");
-    expect(done).toMatchObject({ kind: "done", text: "Everything from this computer is here: 4 bots, 2 skills, 2 logins, 1Password, 148 chats, and 2 routines.", phone: true,
+    const done = moveLine({ phase: "done", counts: { bots: 4, skills: 2, chats: 148, routines: 2 }, phone: true, held: ["OpenRouter"] }, "cloud");
+    expect(done).toMatchObject({ kind: "done", text: "Everything from this computer is here: 4 bots, 2 skills, 148 chats, and 2 routines.", phone: true,
       extra: ["Your OpenRouter key is saved on My Cloud. Your bots use it once the trial's Claude credit runs out."] });
     expect(moveLine({ phase: "done", phone: false, held: [] }, "cloud")).toMatchObject({ text: "Everything from this computer is here.", extra: [] });
     expect(moveLine({ phase: "done", phone: true, held: [] }, "local"), "the done line is My Cloud's").toBeNull();

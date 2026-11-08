@@ -21,7 +21,6 @@ const OPENROUTER_KEY = `sk-or-v1-fake${hex(16)}`;
 const ACCESS = `fake-access-${hex(8)}`, REFRESH = `fake-refresh-${hex(8)}`;
 const NEW_ACCESS = `fake-access-${hex(8)}`, NEW_REFRESH = `fake-refresh-${hex(8)}`;
 const SECRETS = [DODO_KEY, DOCS_TOKEN, CLIENT_SECRET, OPENROUTER_KEY, ACCESS, REFRESH, NEW_ACCESS, NEW_REFRESH];
-const TOKEN = `ops_fake-send-${hex(12)}`;
 const LINEAR_URL = "https://mcp.linear.example.test/mcp";
 
 /** A command-line MCP server that lists its tool only when started with the key it was made for: it works on My Cloud
@@ -51,7 +50,7 @@ const refreshes: Array<{ refresh: string; client: string; secret: string }> = []
 
 beforeAll(async () => {
   broker = await startBrokerFake();
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, broker });
+  fx = await launchCloudSendFixture({ broker });
   signIns = createServer((req, res) => {
     let body = "";
     req.on("data", (chunk) => { body += chunk; });
@@ -166,7 +165,7 @@ it("moves the MCP servers with their secrets and sign-ins, the keys and the conn
 }, hostTimeout(120_000));
 
 it("a My Cloud with connected apps of its own keeps them, and a bot there is told which of its apps to connect once", async () => {
-  const fresh = await launchCloudSendFixture({ onePasswordToken: TOKEN, broker });
+  const fresh = await launchCloudSendFixture({ broker });
   try {
     const cloudInstallation = await cloudInstallationOf([fresh.desktopInstallation!.id, fx.desktopInstallation!.id]);
     const ownSlack = broker.account(broker.userFor(cloudInstallation), "slack");

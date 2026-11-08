@@ -1,7 +1,6 @@
 // A Team Cloud member's own AlcaBot: its main chat is theirs alone, on a Team Cloud with the synthetic Claude CLI. No
 // admin or other member reads it through any route, and its notes go to the person's own layer. A AlcaBot made before
 // this gets the same at the next start, its earlier notes moved out of the bot's own folder.
-import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -42,7 +41,7 @@ async function everything(token: string, bot: Bot): Promise<string> {
 }
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-6", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-6", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   olive = (await team.pair(OLIVE)).token!;
   mira = (await team.pair(MIRA)).token!;

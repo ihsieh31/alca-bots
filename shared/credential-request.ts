@@ -46,12 +46,6 @@ export const CREDENTIAL_TARGETS = {
     placeholder: "sk-…",
     helpUrl: "https://platform.openai.com/api-keys",
   },
-  onePasswordToken: {
-    label: "1Password service account token",
-    description: "Lets bots sign in with the website logins in the 1Password vault this token can read, the way Settings → Logins does.",
-    placeholder: "ops_…",
-    helpUrl: "https://developer.1password.com/docs/service-accounts/get-started/",
-  },
   composioApiKey: {
     label: "Composio API key",
     description: "Connects apps such as Gmail, Slack and GitHub through your own Composio project.",
@@ -115,14 +109,11 @@ export const CREDENTIAL_TARGETS = {
 } as const;
 
 export type CredentialTargetId = keyof typeof CREDENTIAL_TARGETS;
-/** Saved in the sealed login store, not the settings file. */
-export type LoginCredentialTargetId = "onePasswordToken";
-export type ConfigCredentialTargetId = Exclude<CredentialTargetId, LoginCredentialTargetId>;
 /** AI provider keys: the server's config only, like Settings → Keys, and refused where Admin manages the models. */
 export const PROVIDER_CREDENTIAL_TARGETS = [
   "openaiApiKey", "anthropicApiKey", "openrouterApiKey", "mistralApiKey", "cerebrasApiKey", "groqApiKey", "greenferenceApiKey", "metaApiKey", "deepseekApiKey",
-] as const satisfies readonly ConfigCredentialTargetId[];
-export type DesktopCredentialSlot = Exclude<ConfigCredentialTargetId, (typeof PROVIDER_CREDENTIAL_TARGETS)[number]>;
+] as const satisfies readonly CredentialTargetId[];
+export type DesktopCredentialSlot = Exclude<CredentialTargetId, (typeof PROVIDER_CREDENTIAL_TARGETS)[number]>;
 export type CredentialConfig = {
   xai?: { key?: string };
   box?: { token?: string };
@@ -139,8 +130,6 @@ export type CredentialConfig = {
   greenference?: { key?: string };
   meta?: { key?: string };
   deepseek?: { key?: string };
-  /** Not in the settings file: the server fills it from its login store. */
-  onePassword?: { connected?: boolean };
 };
 
 /** A secret AlcaBots does not keep itself: the bot names it, and gets a one-use reference or a private file. */
@@ -154,10 +143,6 @@ export function isCredentialTargetId(value: unknown): value is CredentialTargetI
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(CREDENTIAL_TARGETS, value);
 }
 
-export function isConfigCredentialTarget(id: CredentialTargetId): id is ConfigCredentialTargetId {
-  return id !== "onePasswordToken";
-}
-
 export function isProviderCredentialTarget(id: CredentialTargetId): boolean {
   return (PROVIDER_CREDENTIAL_TARGETS as readonly string[]).includes(id);
 }
@@ -165,17 +150,15 @@ export function isProviderCredentialTarget(id: CredentialTargetId): boolean {
 /** The desktop's encrypted-store slot that holds this key, where Settings saves it; null for a key Settings keeps in the
  * server's config. A paired phone can save only a key with a slot. */
 export function desktopCredentialSlot(id: CredentialTargetId): DesktopCredentialSlot | null {
-  return isConfigCredentialTarget(id) && !isProviderCredentialTarget(id) ? id as DesktopCredentialSlot : null;
+  return !isProviderCredentialTarget(id) ? id as DesktopCredentialSlot : null;
 }
 
-/** Where a card saves what the person typed: the 1Password token goes to Logins, which checks it reaches 1Password. */
-export function credentialSaveRequest(id: CredentialTargetId, value: string): { path: string; method: "PUT" | "POST"; body: object } {
-  return isConfigCredentialTarget(id)
-    ? { path: "/api/config", method: "PUT", body: credentialConfigPatch(id, value) }
-    : { path: "/api/logins/1password", method: "POST", body: { token: value } };
+/** Where a card saves what the person typed. */
+export function credentialSaveRequest(id: CredentialTargetId, value: string): { path: string; method: "PUT"; body: object } {
+  return { path: "/api/config", method: "PUT", body: credentialConfigPatch(id, value) };
 }
 
-export function credentialConfigPatch(id: ConfigCredentialTargetId, value: string): CredentialConfig {
+export function credentialConfigPatch(id: CredentialTargetId, value: string): CredentialConfig {
   switch (id) {
     case "xaiApiKey":
       return { xai: { key: value } };
@@ -231,8 +214,6 @@ export function credentialIsConfigured(config: CredentialConfig, id: CredentialT
       return Boolean(config.tts?.fishKey);
     case "openaiImageApiKey":
       return Boolean(config.imageGen?.key);
-    case "onePasswordToken":
-      return Boolean(config.onePassword?.connected);
     case "composioApiKey":
       return Boolean(config.composio?.apiKey);
     case "openaiApiKey":

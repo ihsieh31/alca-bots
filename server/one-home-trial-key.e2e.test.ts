@@ -40,7 +40,7 @@ beforeAll(async () => {
   await new Promise<void>((resolve) => relay.listen(0, "127.0.0.1", resolve));
   const url = `http://127.0.0.1:${(relay.address() as AddressInfo).port}${RELAY_PATH}/v1`;
   // A new Cloud on its trial: its own Claude is signed out, and the credit is all it has.
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-trial-${randomBytes(8).toString("hex")}`, cloudSignedIn: false,
+  fx = await launchCloudSendFixture({ cloudSignedIn: false,
     cloudEnv: { ALCA_CLOUD_AI_URL: url, ALCA_CLOUD_AI_TOKEN: CREDIT_TOKEN } });
 }, hostTimeout(90_000));
 afterAll(async () => {

@@ -8,7 +8,6 @@ const manifest = (extra = {}) => ({
   items: [
     { key: "bot:ember", kind: "bot", label: "Ember", id: "ember", parts: { soul: "s1", team: "t1" } },
     { key: "skill:ember:notes", kind: "skill", label: "notes", id: "notes", bot: "ember", parts: { text: "n1", on: "on" } },
-    { key: "login:example.test|alice", kind: "login", label: "example.test", parts: { saved: "1" } },
     { key: "bot:juno", kind: "bot", label: "Juno", id: "juno", parts: { soul: "j1" } },
   ],
   memory: [{ bot: "ember", path: "MEMORY.md", hash: "m1" }],
@@ -21,8 +20,7 @@ const manifest = (extra = {}) => ({
 
 test("a move's check finds nothing missing when My Cloud holds all this computer sent, its own way of holding a part included", () => {
   const here = manifest();
-  const there = manifest({ items: here.items.map((item) => item.key === "bot:ember" ? { ...item, parts: { soul: "s1", team: "t9" } }
-    : item.kind === "login" ? { ...item, parts: { saved: "7" } } : item) });
+  const there = manifest({ items: here.items.map((item) => item.key === "bot:ember" ? { ...item, parts: { soul: "s1", team: "t9" } } : item) });
   const sent = { "bot:ember": { team: ["t1", "t9"] } };
   assert.equal(noGaps(manifestGaps(here, there, { sent })), true, "My Cloud's own hash for what it took is in step");
   assert.deepEqual(manifestGaps(here, there).parts, [{ key: "bot:ember", label: "Ember", parts: ["team"] }], "the same part never recorded as taken is not");
@@ -134,7 +132,7 @@ test("each conversation's check says the rows My Cloud lacks and whether its pat
 test("a move's check passes only when nothing is missing, every path holds, and every line of the owner's carries them", () => {
   const passing = { gaps: { items: [], parts: [], memory: [], rooms: [], connections: [], conversations: [] },
     chats: [{ threadId: "t-a", missing: 0, unstamped: 0, path: "equal" }, { threadId: "t-b", missing: 0, unstamped: 0, path: "inside" }],
-    attachments: [], secrets: { equal: ["1password"], differs: [], missing: [] } };
+    attachments: [], secrets: { equal: ["key:openai"], differs: [], missing: [] } };
   assert.equal(checkPassed(passing), true);
   for (const [why, failing] of [
     ["a gap", { ...passing, gaps: { ...passing.gaps, memory: [{ bot: "ember", path: "MEMORY.md" }] } }],
@@ -153,14 +151,14 @@ test("the attachments and credentials My Cloud lacks or holds otherwise are name
   const session = {
     call: async (_method, route, body) => {
       if (route === "/api/cloud-send/chats/attachments") { checked.push(body.names.length); return { ok: true, status: 200, body: { missing: body.names.filter((name) => name.startsWith("00000001")) } }; }
-      return { ok: true, status: 200, body: { v: 1, secrets: { "login:a|b": `h:${body.nonce}`, "key:openrouter": "other", "mcp:gone": "x" } } };
+      return { ok: true, status: 200, body: { v: 1, secrets: { "key:openai": `h:${body.nonce}`, "key:openrouter": "other", "mcp:gone": "x" } } };
     },
   };
   assert.deepEqual(await missingAttachments(session, names), names.filter((name) => name.startsWith("00000001")));
   assert.deepEqual(checked, [2_000, 500]);
-  const handoff = async (what) => ({ secrets: { "login:a|b": `h:${what.nonce}`, "key:openrouter": "mine", "mcp:docs": "d", "1password": "p" } });
-  const secrets = await checkSecrets({ handoff, session, skip: new Set(["1password"]) });
-  assert.deepEqual(secrets, { equal: ["login:a|b"], differs: ["key:openrouter"], missing: ["mcp:docs"] });
+  const handoff = async (what) => ({ secrets: { "key:openai": `h:${what.nonce}`, "key:openrouter": "mine", "mcp:docs": "d", "composio": "p" } });
+  const secrets = await checkSecrets({ handoff, session, skip: new Set(["composio"]) });
+  assert.deepEqual(secrets, { equal: ["key:openai"], differs: ["key:openrouter"], missing: ["mcp:docs"] });
   await assert.rejects(checkSecrets({ handoff: async () => ({}), session }), /could not be checked/u);
 });
 

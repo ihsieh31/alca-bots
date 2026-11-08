@@ -1,7 +1,7 @@
 // Who a Team Cloud bot reports to, end to end: Acme's Owner (Olive), an Admin (Ada) and a User (Bob), the synthetic
 // Claude CLI asking real question and approval cards through the permission socket, and each person's Needs you,
 // notifications, Chief of Staff and inbox. It proves the routing and the audience rule, not a model's judgement.
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { connect, type Socket } from "node:net";
 import { join } from "node:path";
@@ -11,7 +11,6 @@ import { personKey } from "./person-key.ts";
 import { startBrokerFake, type BrokerFake } from "./testing/broker-fake.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
-const TOKEN = `ops_fake-team-${randomBytes(8).toString("hex")}`;
 const OLIVE = { email: "olive@acme.test", role: "owner" as const };
 const ADA = { email: "ada@acme.test", role: "admin" as const };
 const BOB = { email: "bob@acme.test", role: "member" as const };
@@ -37,7 +36,7 @@ const letGo = () => writeFileSync(release(), "");
 
 beforeAll(async () => {
   broker = await startBrokerFake();
-  fx = await launchCloudSendFixture({ onePasswordToken: TOKEN, broker, team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
+  fx = await launchCloudSendFixture({ broker, team: { id: "team-acme-1", name: "Acme", engine: ENGINE } });
   team = fx.team!;
   letGo();
   olive = (await team.pair(OLIVE)).token!;

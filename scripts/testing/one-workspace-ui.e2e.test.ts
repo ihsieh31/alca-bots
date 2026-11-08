@@ -1,7 +1,6 @@
 // Once the person's bots moved to My Cloud, the desktop window is one window onto it: main's own handlers in a real
 // headless Chrome (testing/one-workspace-fixture.ts), My Cloud a real Cloud-mode server and this computer its real,
 // frozen server (testing/cloud-send-fixture.ts). Screenshots go to ALCA_ONE_WORKSPACE_SHOTS, else the fixture's folder.
-import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { resolveAgentBrowserBinary } from "./agent-browser-cli.ts";
@@ -40,7 +39,7 @@ const PAIR_FORM = "Boolean(document.querySelector('form input') && /pairing code
   const blank = async () => { await world.window.loadURL("about:blank"); await new Promise((resolve) => setTimeout(resolve, 200)); };
 
   beforeAll(async () => {
-    fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-window-${randomBytes(12).toString("hex")}` });
+    fx = await launchCloudSendFixture();
     await welcomed(fx);
     nova = (await fx.onCloud("POST", "/api/bots", { name: "Nova", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } })).body.bot.id;
     const tools = await ensureUiBrowser(process.env);

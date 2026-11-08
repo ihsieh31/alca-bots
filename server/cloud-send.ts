@@ -1,11 +1,9 @@
 // GET /api/cloud-send: what this server holds that Send to My Cloud compares, as a short hash per part. Read only, and
-// never a secret: a login is its site and username (as GET /api/logins shows them), 1Password is when it was connected
-// and which bots its vaults are kept to.
+// never a secret.
 import { createHash } from "node:crypto";
 
 import { BOT_PARTS, EMPTY, PICTURE_PART, itemKey } from "../electron/cloud-send-parts.mjs";
 import type { SendKind } from "../electron/cloud-send-parts.mjs";
-import type { LoginBots } from "../shared/logins.ts";
 import { canonicalJson } from "../shared/package-format.ts";
 import type { BotRecord } from "./store.ts";
 
@@ -14,7 +12,7 @@ export interface CloudSendItem {
   kind: SendKind;
   label: string;
   detail?: string;
-  /** This server's own id for it: the bot's, the login's or the skill's name. */
+  /** This server's own id for it: the bot's or the skill's name. */
   id?: string;
   bot?: string;
   parts: Record<string, string>;
@@ -34,8 +32,6 @@ export interface CloudSendSources {
   skills(bot: BotRecord): ReadonlyArray<{ name: string; description?: string; sha256: string; enabled: boolean }>;
   /** The stored picture's bytes, or null when it is gone. */
   picture(avatarUrl: string): Uint8Array | null;
-  logins(): ReadonlyArray<{ id: string; site: string; hosts: readonly string[]; exactHost: boolean; username: string; updatedAt: number }>;
-  onePassword(): { connectedAt: number; grants: Record<string, LoginBots> } | null;
   settings(): { profile?: { name?: string; email?: string; aboutMe?: string }; language?: string };
   /** What only a move carries, of the bots it carries (cloud-send-kinds.ts), and a bot's parts only a move compares.
    * `only`: a move of that one bot into a team. */
@@ -115,15 +111,6 @@ export function cloudSendSummary(sources: CloudSendSources, { move = false, bot:
     const bot = sources.bots().find((candidate) => candidate.id === only);
     if (move && sources.move && bot) items.push(...sources.move.items(carried, bot));
     return { v: 1, appVersion: sources.appVersion, items };
-  }
-  for (const login of sources.logins()) {
-    items.push({ key: itemKey.login(login.site, login.username, login.exactHost ? login.hosts[0] : undefined), kind: "login", label: login.hosts[0] ?? login.site, detail: login.username, id: login.id,
-      parts: { saved: partHash(login.updatedAt) } });
-  }
-  const onePassword = sources.onePassword();
-  if (onePassword) {
-    items.push({ key: itemKey.onePassword(), kind: "1password", label: "1Password",
-      parts: { token: partHash(onePassword.connectedAt), vaults: partHash(onePassword.grants) } });
   }
   const { profile = {}, language } = sources.settings();
   items.push({ key: itemKey.setting("profile"), kind: "setting", label: "profile",

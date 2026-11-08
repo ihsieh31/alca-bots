@@ -67,7 +67,7 @@ describe("a move-in's sign-in", () => {
       ["DELETE", `/api/bots/${SCOUT}/skills/trip-plan`], ["POST", `/api/team-move-in/${SCOUT}/done`], ["POST", "/api/attachments"]] as const) {
       expect(moveInRefusal(own, method, path, url(path)), `${method} ${path}`).toBeNull();
     }
-    for (const [method, path] of [["GET", "/api/bots"], ["PATCH", `/api/bots/${OTHER}`], ["POST", `/api/bots/${OTHER}/skill-template`], ["GET", "/api/logins"],
+    for (const [method, path] of [["GET", "/api/bots"], ["PATCH", `/api/bots/${OTHER}`], ["POST", `/api/bots/${OTHER}/skill-template`],
       ["GET", "/api/config"], ["POST", `/api/team-move-in/${OTHER}/done`], ["POST", "/api/team-move-in"], ["GET", "/api/cloud-send/kind"], ["POST", "/api/cloud-send/memory"],
       ["GET", "/api/threads/x/messages"], ["DELETE", `/api/bots/${SCOUT}`]] as const) {
       expect(moveInRefusal(own, method, path, url(path)), `${method} ${path}`).toBe("This sign-in only moves one bot in.");
@@ -77,7 +77,7 @@ describe("a move-in's sign-in", () => {
     expect(moveInRefusal(own, "POST", "/api/cloud-send/files", url(`/api/cloud-send/files?path=workspaces/${OTHER}/a.md`))).not.toBeNull();
     expect(moveInRefusal(own, "POST", "/api/cloud-send/files", url(`/api/cloud-send/files?path=workspaces/${SCOUT}--member-p_x/a.md`))).not.toBeNull();
     expect(moveInRefusal(own, "GET", "/api/cloud-send/files", url(`/api/cloud-send/files?path=workspaces/${SCOUT}/a.md`))).not.toBeNull();
-    expect(moveInRefusal({}, "GET", "/api/logins", url("/api/logins")), "any other sign-in is not narrowed here").toBeNull();
+    expect(moveInRefusal({}, "GET", "/api/config", url("/api/config")), "any other sign-in is not narrowed here").toBeNull();
     expect(moveInBot(moveInSession())).toBe(SCOUT);
     expect(moveInBot(session())).toBeNull();
   });

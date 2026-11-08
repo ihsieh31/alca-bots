@@ -2,14 +2,13 @@
 // the person's own Cloud: one routine whose definition is the one changed last and whose runs are both sides', so the
 // move's check passes. This computer's server and a Cloud home (scripts/testing/cloud-send-fixture.ts) with main's own
 // wiring between them. Disposable homes; no network.
-import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchCloudSendFixture, type CloudSendFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
 let fx: CloudSendFixture;
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-routines-${randomBytes(8).toString("hex")}` });
+  fx = await launchCloudSendFixture();
 }, hostTimeout(90_000));
 afterAll(async () => { await fx?.close(); });
 

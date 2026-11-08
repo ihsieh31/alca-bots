@@ -1,7 +1,6 @@
 // A real Team Cloud (ALCA_CLOUD_ROLE=team): the phones its members paired with "Open on your phone" are listed beside the
 // code, each as its device and its member. A member sees and removes their own; the team's admins see and remove every
 // member's. Removing a phone ends its session, its open stream too. Nothing here runs a turn.
-import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchCloudSendFixture, type CloudSendFixture, type CloudTeamFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
@@ -32,7 +31,7 @@ async function pairPhone(made: { code: string }, label: string): Promise<{ token
 }
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-phones-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme" } });
+  fx = await launchCloudSendFixture({ team: { id: "team-acme-1", name: "Acme" } });
   team = fx.team!;
   owner = (await team.pair(OWNER)).token!;
   admin = (await team.pair(ADMIN)).token!;

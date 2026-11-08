@@ -23,28 +23,24 @@ export function ipcErrorText(cause: unknown): string | null {
   return text !== null && Object.hasOwn(BRIDGE_REFUSALS, text) ? t(BRIDGE_REFUSALS[text]!) : text;
 }
 
-/** "12 bots, 3 skills, 2 logins, 1Password and 48 chats", from counts only. */
+/** "12 bots, 3 skills and 48 chats", from counts only. */
 export function countedList(sent: CloudSendCounts): string[] {
   const chats = sent.chats;
   return [
     ...(sent.bots ? [counted(sent.bots, "cloudSend.list.botOne", "cloudSend.list.bots")] : []),
     ...(sent.updatedBots ? [counted(sent.updatedBots, "cloudSend.list.changedBotOne", "cloudSend.list.changedBots")] : []),
     ...(sent.skills ? [counted(sent.skills, "cloudSend.list.skillOne", "cloudSend.list.skills")] : []),
-    ...(sent.logins ? [counted(sent.logins, "cloudSend.list.loginOne", "cloudSend.list.logins")] : []),
-    ...(sent.onePassword ? [t("cloudSend.list.onePassword")] : []),
     ...(sent.settings ? [t("cloudSend.list.settings")] : []),
     ...(chats?.conversations ? [counted(chats.conversations, "cloudSend.list.chatOne", "cloudSend.list.chats")]
       : chats?.messages ? [counted(chats.messages, "cloudSend.list.messageOne", "cloudSend.list.messages")] : []),
   ];
 }
 
-/** "4 bots, 2 skills, 2 logins, 1Password, 148 chats and 2 routines": what the move checked on both sides. */
+/** "4 bots, 2 skills, 148 chats and 2 routines": what the move checked on both sides. */
 export function arrivedList(counts: OneHomeCounts): string[] {
   return [
     ...(counts.bots ? [counted(counts.bots, "cloudSend.list.botOne", "cloudSend.list.bots")] : []),
     ...(counts.skills ? [counted(counts.skills, "cloudSend.list.skillOne", "cloudSend.list.skills")] : []),
-    ...(counts.logins ? [counted(counts.logins, "cloudSend.list.loginOne", "cloudSend.list.logins")] : []),
-    ...(counts.onePassword ? [t("cloudSend.list.onePassword")] : []),
     ...(counts.chats ? [counted(counts.chats, "cloudSend.list.chatOne", "cloudSend.list.chats")] : []),
     ...(counts.routines ? [counted(counts.routines, "cloudSend.list.routineOne", "cloudSend.list.routines")] : []),
   ];

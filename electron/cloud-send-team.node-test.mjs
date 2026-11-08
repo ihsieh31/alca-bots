@@ -18,7 +18,7 @@ function sides() {
   const local = async (route) => {
     reads.push(route);
     const bare = route.replace(/[?&]bot=scout$/u, "");
-    if (bare === "/api/cloud-send?move=1") return json(summary(route.includes("bot=scout") ? [scout] : [scout, { key: "login:x|y", kind: "login", label: "x", parts: { saved: "1" } }]));
+    if (bare === "/api/cloud-send?move=1") return json(summary(route.includes("bot=scout") ? [scout] : [scout, { key: "setting:theme", kind: "setting", label: "x", parts: { value: "1" } }]));
     if (bare === "/api/bots?messages=0") return json({ bots: [{ id: "scout", name: "Scout", threadId: "scout-main", soul: "Plans trips." }] });
     if (/^\/api\/bots\/scout\/skills$/u.test(bare)) return json({ skills: [] });
     if (bare === "/api/cloud-send/files") return json({ v: 1, files: [] });
@@ -57,11 +57,11 @@ function sides() {
   return { send, reads, calls };
 }
 
-test("a bot moving into a team carries its own things only: no apps, keys, logins, settings or notes, every read kept to it", async () => {
+test("a bot moving into a team carries its own things only: no apps, keys, settings or notes, every read kept to it", async () => {
   const { send, reads, calls } = sides();
   await send.send({ reason: "move" });
   const routes = calls.map(([method, route]) => `${method} ${route}`);
-  for (const personal of ["/api/cloud-connections", "/api/cloud-send/memory", "/api/logins", "/api/config", "/api/cloud-send/verify-secrets"]) {
+  for (const personal of ["/api/cloud-connections", "/api/cloud-send/memory", "/api/config", "/api/cloud-send/verify-secrets"]) {
     assert.ok(!routes.some((route) => route.includes(personal)), personal);
     assert.ok(!reads.some((route) => route.includes(personal)), personal);
   }

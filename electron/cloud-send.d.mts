@@ -8,8 +8,6 @@ export interface CloudSendResult {
   /** Bots My Cloud had, updated with what changed here. */
   updatedBots: string[];
   skills: number;
-  logins: number;
-  onePassword: boolean;
   /** "profile" and/or "language". */
   settings: string[];
   /** Apps and keys a move carried (MCP servers, AI keys, mailboxes, connected apps); 0 or absent for any other send. */
@@ -24,17 +22,17 @@ export interface CloudSendResult {
   memory?: number;
   files?: { sent: number; kept: number };
   conversationSettings?: number;
-  /** model: kept My Cloud's engine; settings: a setting My Cloud refused; narrowed: a login kept to bots My Cloud lacks; memory: notes not copied;
+  /** model: kept My Cloud's engine; settings: a setting My Cloud refused; memory: notes not copied;
    * held: a key a trial's Cloud keeps unused while its Claude credit lasts. */
-  notes: Array<{ kind: "model" | "settings" | "narrowed" | "memory" | "held"; bot?: string; login?: string; connection?: string }>;
+  notes: Array<{ kind: "model" | "settings" | "memory" | "held"; bot?: string; connection?: string }>;
 }
 /** `error`: the send failed as a whole (nothing after that point went), in words for the person. */
 export interface CloudSendOutcome { at: number; reason: string; result: CloudSendResult; error?: string }
-/** What did not go, grouped by reason (bots by name, logins only counted, at most three reasons), and `error`: why the
+/** What did not go, grouped by reason (bots by name, the rest only counted, at most three reasons), and `error`: why the
  * send stopped as a whole. */
 export interface CloudSendFailure {
   /** `connections`: apps and keys a move could not carry; absent from an older desktop. */
-  reasons?: Array<{ what: { bots: string[]; skills: number; logins: number; onePassword: boolean; settings: number; connections?: number; chats: boolean }; error: string }>;
+  reasons?: Array<{ what: { bots: string[]; skills: number; settings: number; connections?: number; chats: boolean }; error: string }>;
   error?: string;
 }
 
@@ -49,7 +47,7 @@ export interface CloudSendSnapshot {
   signature: string;
   dismissed: string;
   last: CloudSendOutcome | null;
-  /** The latest send of everything (Send everything, a move), which a later send of one login or item never replaces. */
+  /** The latest send of everything (Send everything, a move), which a later send of one item never replaces. */
   whole: CloudSendOutcome | null;
   /** What reached My Cloud from this computer, all sends together. */
   arrived: CloudSendArrived;
@@ -57,7 +55,7 @@ export interface CloudSendSnapshot {
   localVersion: string | null;
 }
 
-/** What My Cloud's own page is told: names of this computer's bots that wait, and counts, never logins' sites. */
+/** What My Cloud's own page is told: names of this computer's bots that wait, and counts. */
 export interface CloudSendNotice {
   ready: boolean;
   /** Sent only by an older desktop whose Keep My Cloud up to date was on: its things come over by themselves. */
@@ -65,8 +63,6 @@ export interface CloudSendNotice {
   bots: string[];
   updatedBots: string[];
   skills: number;
-  logins: number;
-  onePassword: boolean;
   settings: number;
   signature: string;
   dismissed: boolean;
@@ -76,9 +72,9 @@ export interface CloudSendNotice {
   progress?: { done: number; total: number };
   phase?: "chats";
   /** `sent`: counts only; `seen`: the person closed this result on the strip. */
-  /** `final`: every failure is one trying again can't fix (1Password refused the token), so no Try again. */
+  /** `final`: every failure is one trying again can't fix, so no Try again. */
   last: CloudSendTold | null;
-  /** The latest send of everything, which a send of one login or item never replaces; absent from an older desktop. */
+  /** The latest send of everything, which a send of one item never replaces; absent from an older desktop. */
   whole?: CloudSendTold | null;
   /** What reached My Cloud from this computer, all sends together; absent from an older desktop. */
   arrived?: CloudSendArrived;
@@ -90,7 +86,7 @@ export interface CloudSendNotice {
 export type CloudSendTold = { at: number; reason: string; failed: number; seen: boolean; sent: CloudSendCounts; final?: boolean } & CloudSendFailure;
 export interface CloudSendArrived extends CloudSendCounts { chats: { conversations: number; messages: number } }
 export interface CloudSendCounts {
-  bots: number; updatedBots: number; skills: number; logins: number; onePassword: boolean; settings: number;
+  bots: number; updatedBots: number; skills: number; settings: number;
   chats: { conversations: number; messages: number } | null;
 }
 

@@ -2,7 +2,6 @@
 // (scripts/testing/cloud-send-fixture.ts) with main's own wiring between them. Every shape of room a person has: one with
 // history, one nobody wrote in yet, one whose bots were all deleted here, and one removed on My Cloud after an older
 // send carried it. Then the check, which must agree with what was meant to go. Disposable homes; no network.
-import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { launchCloudSendFixture, type CloudSendFixture } from "../scripts/testing/cloud-send-fixture.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
@@ -10,7 +9,7 @@ import { hostTimeout } from "./testing/host-timeout.ts";
 let fx: CloudSendFixture;
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-rooms-${randomBytes(8).toString("hex")}` });
+  fx = await launchCloudSendFixture();
 }, hostTimeout(90_000));
 afterAll(async () => {
   await fx?.close();

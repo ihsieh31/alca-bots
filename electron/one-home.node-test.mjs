@@ -62,7 +62,7 @@ function world({ cloud = {}, switches = { "routine:r1": true, "routine:r2": fals
           async json(route) {
             if (route === "/api/cloud-connections") return { computer: { label: "MacBook Air" } };
             if (route.startsWith("/api/bots")) return { bots: [{ id: "b1", cwd: "/Users/p/code/shop" }, { id: "b2" }] };
-            if (route === "/api/cloud-send/manifest") return { items: [{ key: "bot:b1", kind: "bot" }, { key: "bot:b2", kind: "bot" }, { key: "login:l1", kind: "login" }], conversations: [{ threadId: "t1" }], automations: [{ key: "routine:r1" }] };
+            if (route === "/api/cloud-send/manifest") return { items: [{ key: "bot:b1", kind: "bot" }, { key: "bot:b2", kind: "bot" }], conversations: [{ threadId: "t1" }], automations: [{ key: "routine:r1" }] };
             return {};
           },
           async call(method, route, body) { w.localCalls.push([method, route, body]); return reply(200); },
@@ -72,7 +72,7 @@ function world({ cloud = {}, switches = { "routine:r1": true, "routine:r2": fals
           return {
             async call(method, route, body) {
               w.cloudCalls.push([method, route, body]);
-              if (route === "/api/cloud-send/manifest") return reply(200, { items: [{ key: "bot:b1", kind: "bot" }, { key: "bot:b2", kind: "bot" }, { key: "login:l1", kind: "login" }], conversations: [{ threadId: "t1" }], automations: [{ key: "routine:r1" }] });
+              if (route === "/api/cloud-send/manifest") return reply(200, { items: [{ key: "bot:b1", kind: "bot" }, { key: "bot:b2", kind: "bot" }], conversations: [{ threadId: "t1" }], automations: [{ key: "routine:r1" }] });
               return w.cloudAnswer?.(method, route) ?? reply(200, { v: 1 });
             },
             async close() {},
@@ -111,7 +111,7 @@ test("a new buyer's move runs every phase and ends with home on My Cloud, this c
   assert.equal(w.phone.stopped, 0, "a phone paired here hears from the frozen copy where its bots went, and reaches a workspace of this computer's own once one is open");
   assert.deepEqual(w.opened, ["cloud"]);
   assert.equal(w.home.away(), true);
-  assert.deepEqual(w.home.view(), { phase: "done", at: w.journal.doneAt, counts: { bots: 2, skills: 0, logins: 1, onePassword: false, chats: 1, routines: 1 }, phone: true, held: ["OpenRouter"] });
+  assert.deepEqual(w.home.view(), { phase: "done", at: w.journal.doneAt, counts: { bots: 2, skills: 0, chats: 1, routines: 1 }, phone: true, held: ["OpenRouter"] });
   assert.equal(w.home.seen(), null, "the done line shows until it is closed");
 
   await w.relaunch().kick();
@@ -509,9 +509,9 @@ test("automations switch on through their own routes, and the done line counts o
   assert.deepEqual(switchOn("call:c1"), { method: "PATCH", route: "/api/calendar-calls/c1", body: {} });
   assert.deepEqual(switchOn("app-event:a1"), { method: "PATCH", route: "/api/app-triggers/a1", body: { enabled: true } });
   assert.equal(switchOn("bot:b1"), null);
-  assert.deepEqual(arrivedCounts({ items: [{ key: "bot:a", kind: "bot" }, { key: "bot:b", kind: "bot" }, { key: "1password", kind: "1password" }], conversations: [{ threadId: "t1" }, { threadId: "t2" }] },
-    { items: [{ key: "bot:a", kind: "bot" }, { key: "1password", kind: "1password" }], conversations: [{ threadId: "t1" }] }),
-  { bots: 1, skills: 0, logins: 0, onePassword: true, chats: 1, routines: 0 });
+  assert.deepEqual(arrivedCounts({ items: [{ key: "bot:a", kind: "bot" }, { key: "bot:b", kind: "bot" }], conversations: [{ threadId: "t1" }, { threadId: "t2" }] },
+    { items: [{ key: "bot:a", kind: "bot" }], conversations: [{ threadId: "t1" }] }),
+  { bots: 1, skills: 0, chats: 1, routines: 0 });
 });
 
 test("a move left off while My Cloud was away goes on as soon as it is back; a switch that fails waits before it tries again", async () => {

@@ -27,7 +27,6 @@ function producedCard(target: CredentialTargetId, reason: string, language?: str
   const cards = createSecretCards({
     store,
     cfg: loadConfig(),
-    botLogins: { credentialConfig: (config) => ({ ...config, onePassword: { connected: false } }) },
     phoneSecrets: { provide: vi.fn(), open: vi.fn() },
     phoneSecretSubmissions: new PhoneSecretSubmissionRegistry(),
     connectorThread: () => ({ bot, group: undefined }),

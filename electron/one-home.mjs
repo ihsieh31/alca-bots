@@ -147,7 +147,7 @@ export function arrivedCounts(here, there) {
   const threads = new Set((there?.conversations ?? []).map((head) => head.threadId));
   const automations = new Set((there?.automations ?? []).map((entry) => entry.key));
   return {
-    bots: count("bot"), skills: count("skill", "imported-skill", "library-skill"), logins: count("login"), onePassword: count("1password") > 0,
+    bots: count("bot"), skills: count("skill", "imported-skill", "library-skill"),
     chats: (here?.conversations ?? []).filter((head) => threads.has(head.threadId)).length,
     routines: (here?.automations ?? []).filter((entry) => entry.key.startsWith("routine:") && automations.has(entry.key)).length,
   };

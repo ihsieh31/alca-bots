@@ -26,7 +26,7 @@ const adaKey = personKey({ id: "", email: ADA.email });
 type Bot = { id: string; threadId: string; name: string; tasks?: Array<{ threadId: string; private?: true; title?: string }>; movedTo?: { team: { id: string; name: string }; state: string }; hidden?: boolean };
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-move-${randomBytes(8).toString("hex")}`, team: { ...ACME, engine: ENGINE } });
+  fx = await launchCloudSendFixture({ team: { ...ACME, engine: ENGINE } });
   team = fx.team!;
   for (const [who, member] of Object.entries({ olive: OWNER, ben: ADMIN, ada: ADA, cleo: CLEO })) tokens[who] = (await team.pair(member)).token!;
   // Ada's AlcaBot Cloud sign-in lists Acme, and the Admin pairs her there as herself.

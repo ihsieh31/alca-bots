@@ -30,8 +30,8 @@ export function passwdIds(passwd: string, name: string): { uid: number; gid: num
 }
 
 /** An allow-list by name, so a secret the platform adds later never reaches the server. Every setting the image's ENV
- * gives the server belongs here too (docker-image.test.ts checks): without ALCA_DUCKDB_DIR the server found neither the
- * 1Password SDK nor DuckDB, which the image keeps in /app/duckdb, and said 1Password was "not available in this build". */
+ * gives the server belongs here too (docker-image.test.ts checks): without ALCA_DUCKDB_DIR the server did not find
+ * DuckDB, which the image keeps in /app/duckdb. */
 const SERVER_ENV_NAMES = new Set([
   "PATH", "SHELL", "HOSTNAME", "LANG", "LANGUAGE", "TZ", "TERM", "TMPDIR", "NO_COLOR", "NODE_ENV", "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "SSL_CERT_DIR",
   "ALCA_STATIC_DIR", "ALCA_DATA_DIR", "ALCA_DUCKDB_DIR",
