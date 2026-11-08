@@ -99,9 +99,9 @@ must say the setting is Off and that no computer and no built-in browser are
 mounted. Repeat through a channel — the room path resolves its surface
 separately — and mention a second Auto bot in the same room as the control.
 
-Proving the browser server's own absence from `mcpConfig` needs a fixture with
-a real browser engine; see [Live browser and profiles](browser-live.md). The
-dump above proves what the model was told, not what a native browser would do.
+Proving the browser server's own absence from `mcpConfig` needs a fixture
+where the `ego-browser` command is found (`ALCA_EGO_BROWSER_PATH`). The dump
+above proves what the model was told, not what ego lite would do.
 
 ### Last exercised
 

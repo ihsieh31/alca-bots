@@ -380,8 +380,9 @@ Cloud · always on**; in a browser, a plain label says the same.
 
 ### Where bots work
 
-A Cloud home is a headless Linux server, so its bots have two places: the
-built-in browser and cloud computers. It never offers **This computer** (that
+A Cloud home is a headless Linux server, so its bots have one place: cloud
+computers. It has no bot browser: bots browse through ego lite, which runs only
+on a macOS or Windows desktop (docs/plans/browser-engine.md). It never offers **This computer** (that
 would be the server itself) or a **Local VM** (a Fly machine has no container
 runtime). The person's own computer is reached only while it lends itself to
 the Cloud (see "This computer works for your Clouds"), through the
@@ -392,24 +393,17 @@ shared-computer tools.
   `"cloudHome": true`), nor in `select_computer`, which also drops `vm_exec`.
   Auto never lands on either.
 - A bot still set to either (an older or imported setting) has each task
-  refused with a sentence saying so, suggesting Auto, Cloud or Browser and,
+  refused with a sentence saying so, suggesting Auto or Cloud and,
   for This computer, the person's own computer while AlcaBots is open on it.
 - Every turn's system prompt says the bot runs in the cloud. Asked about the
   person's own computer, a bot with the shared-computer tools checks for a lent
   Mac and, finding none, says so and asks them to open AlcaBots on it; a bot
-  without them says it cannot reach it. Either offers the browser and cloud computers, never a
+  without them says it cannot reach it. Either offers cloud computers, never a
   place that cannot exist.
-- The built-in browser is on unless the person switches it off in Settings.
-  The desktop turns it on in its first-run welcome, which a Cloud home skips.
-- The built-in browser never opens Reddit (`reddit.com`, `redd.it`,
+- A cloud computer's `open_url` never opens Reddit (`reddit.com`, `redd.it`,
   `redditmedia.com`, `redditstatic.com`, `reddit.app.link` and their
   subdomains): Reddit blocks bots that browse from data-centre addresses and can
-  ban the person's account. The egress gate refuses those names, whether the
-  page was typed, linked, redirected to or framed, and a bot's call that would
-  open one is told so and pointed at the Reddit connected app or the person's
-  own computer (`server/browser/egress/reddit.ts`). A cloud computer's
-  `open_url` refuses them the same way. The desktop's and a self-hosted
-  server's browsers are not limited.
+  ban the person's account (`server/egress/reddit.ts`).
 
 `shared/cloud-home.ts` decides which places are offered, for the server and
 the app alike.
@@ -579,7 +573,7 @@ frames the web UI: the desktop app shows it in its own window.
 
 The Cloud is home: bots and chats live there. The person's Mac or PC is a computer
 the Cloud uses while it is awake: its folders, its screen and apps, its home
-internet connection and their Chrome. There is no setting for it. Every Cloud of
+internet connection. There is no setting for it. Every Cloud of
 the person's own uses this computer by itself while the desktop app runs and is
 signed in as them (`lendAutomatically` in `electron/computer-sharing.mjs`): My
 Cloud and each other Cloud the verified session lists as theirs
@@ -599,11 +593,6 @@ The grant (`automaticGrant`) is the same for every Cloud of the person's own:
   YouTube, Google sign-in) open for the bots' browser on that Cloud through this
   computer, so they see the person's home connection; every other site loads
   straight from the Cloud (see "The internet connection" below).
-- **Your Chrome**: bots whose browser profile is **My Chrome** act inside Chrome
-  on this computer, signed in as the person, in their own conversations and
-  routines only (see "Your Chrome" below). Chrome needs remote debugging on
-  (`chrome://inspect/#remote-debugging`) and asks the person to allow the
-  connection. Activity lists it as **Used your Chrome**.
 - **The home folder, to read and edit.** A write overwrites a file only after
   reading its current version (checked against its hash), and nothing is ever
   deleted. A read takes a file of up to 2 MiB (text whose escaping would not fit
@@ -697,7 +686,7 @@ pauses again. A **Not now** to the old popup was no Off: lending had only the
 internet connection then, and becomes automatic like anyone else's.
 
 Anyone else gets the automatic grant at the next start. A grant kept from before
-keeps its folders, gains the home folder, the internet connection and Chrome, and
+keeps its folders, gains the home folder and the internet connection, and
 keeps a terminal it had: when every grant of one account lent the terminal and
 nobody said no to lending, **Let Clouds run commands on this Mac** starts on for
 that account and no other; a **Settings → Servers → Computer access** grant kept for
@@ -706,12 +695,15 @@ should runs as it is: one that doesn't never connects, even for a moment.
 
 ### The internet connection
 
-Every bot browser on a Cloud home already connects through its per-session
-SOCKS egress gate (`server/browser/egress/gate.ts`). While the owner's lent
+Since ego lite replaced the built-in browser, a Cloud home has no bot browser,
+so no browser traffic takes this route any more; the device link below stays
+for the other lent tools. What follows describes how it worked.
+Every bot browser on a Cloud home connected through its per-session
+SOCKS egress gate (`server/egress/gate.ts`). While the owner's lent
 computer is online with the internet connection on, the gate has one more way
 out for the sites that turn away data centres, the computer itself
-(`server/device-links.ts`, offered by `server/browser/egress/registry.ts` for
-the names in `server/browser/egress/home-sites.ts`):
+(`server/device-links.ts`, offered by the old browser egress registry for
+its list of home-connection sites):
 
 - **The device link.** One WebSocket per lent computer, opened by the desktop's
   main process to `wss://<My Cloud>/api/shared-computers/<id>/link` with the
@@ -754,39 +746,6 @@ the names in `server/browser/egress/home-sites.ts`):
   is told once, the first time one of them loads that way: "The person's Mac is
   away, so sites that turn away data centres, such as Instagram, YouTube and
   Google sign-in, load from My Cloud's own connection for now and may refuse…".
-
-### Your Chrome
-
-A browser profile set to **My Chrome** on My Cloud uses the person's own Chrome
-on the computer that lends it, over the same device link as the internet
-connection. Only a personal Cloud home advertises `capabilities.myChromeLink`,
-and a desktop sends its Chrome only to a Cloud that does; on a Team
-Cloud every profile stays built-in.
-
-- **One door per browser session** (`server/browser/lent-chrome.ts`). The
-  profile's agent-browser attaches to `ws://127.0.0.1:<port>/devtools/browser/<token>`,
-  a loopback listener with a 32-byte token. Each connection is checked against
-  who may use the lent computer, then opened as a Chrome stream on the newest
-  online link of a computer that lends Chrome. My Cloud never names a host or a
-  port for Chrome.
-- **The computer finds Chrome itself** (`electron/device-chrome.mjs`). It reads
-  `DevToolsActivePort` from Chrome's own data folders (Google Chrome, Chrome
-  Canary, Brave), connects to `127.0.0.1` on that port only, and lets through
-  one WebSocket upgrade to Chrome's browser or a page, with Chrome's own browser
-  path and Host and no Origin; anything else gets 403. It opens a Chrome stream
-  only while its own grant lends Chrome, whatever My Cloud asks.
-- **Who may use it**: exactly the turns that may use the lent computer, so the
-  person's own conversations and routines. agent-browser keeps its connection
-  across turns, so when a turn that may not lend takes the browser, the open
-  connection is dropped, and each of its calls gets "Someone else wrote in this
-  conversation, so it can't use your Chrome. Start a new conversation to use it."
-- **When it can't**, the call says why in one line the bot can pass on: the
-  computer is offline, no computer lends Chrome (open AlcaBots there), Chrome
-  isn't open with remote debugging on, or Chrome did not accept the connection
-  (it may be waiting for Allow). It never falls back to the built-in browser,
-  whose sign-ins differ. A connection no bot has used for the desktop's browser
-  idle time (10 minutes by default) is closed, so Chrome stops showing it as
-  controlled; the next call connects again by itself.
 
 ### How it is enforced
 
@@ -835,8 +794,7 @@ On the Mac (the authority; `electron/computer-sharing.mjs`,
   arguments or inspector port and opens only `http`/`https` addresses, and a
   cursor image cannot be read from a path. Any other argument is refused, and
   the tool list the Cloud sees shows only what is accepted. Chrome's DevTools
-  are never reached through the screen: Chrome is lent only over the device
-  link, to the port this computer finds itself (see "Your Chrome" above).
+  are never reached through the screen.
 - **Activity log**: `lending-activity.jsonl` in the app's data folder, owner
   only: time, action, folder and relative path, tool name or website name, and
   whether it ran (a refused website keeps the computer's reason). Never contents, output or typed text. The app only ever appends to it

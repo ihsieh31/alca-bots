@@ -84,7 +84,6 @@ Use only mapped, tested commands:
 - [Cline engine and native loopback qualification](cline.md)
 - [Claude coordination and turn-scoped tools](claude-tool-lifecycle.md)
 - [Codex bot instructions](codex-instructions.md)
-- [Codex browser routing and native search](codex-browser-routing.md)
 - [Codex helper event isolation](codex-helpers.md)
 - [Qwen model route selection](qwen-models.md)
 - [Team backups](team-backups.md)
@@ -189,14 +188,6 @@ against an isolated server for image decoding, loading, and recovery UI checks.
 
 The [VPS recovery fixtures](vps-recovery.md) reproduce preview/startup contention
 and Docker-over-SSH timeout cleanup without contacting a real server.
-
-The [live browser fixture](browser-live.md) mounts the real Browser panel with
-an explicitly selected native engine and Chrome in a disposable home, covering
-watching, takeover, input, and profile switching.
-
-The [page health and recorded browser steps check](browser-steps.md) drives the
-real engine against a fixture page with failing requests and page errors, and
-reads the recorded steps back through the server.
 
 The [Local VM resume fixture](local-vm-resume.md) checks idle stop, restart
 recovery, guarded resume and the stopped-to-ready Computer panel flow.

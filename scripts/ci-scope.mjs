@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 // where the event runs it), and the subsets in VITEST_SUBSETS.
 export const SELECTABLE_JOBS = [
   "build", "vitest", "behavior-evals", "packaged-server", "windows-cua", "electron-smokes", "cloudflared-linux-arm64",
-  "foss", "control-plane", "ui-smoke", "browser-identity", "package-linux", "browser-driver", "relay",
+  "foss", "control-plane", "ui-smoke", "package-linux", "relay",
 ];
 
 // The server imports Electron and renderer modules, and the macOS smokes run
@@ -17,7 +17,7 @@ export const SELECTABLE_JOBS = [
 // can affect the same checks.
 const SERVER_CHECKS = [
   "build", "linux-tests", "host-tests", "behavior-evals", "packaged-server", "foss", "electron-smokes",
-  "ui-smoke", "browser-identity", "browser-driver", "package-linux",
+  "ui-smoke", "package-linux",
 ];
 const EVERY_CHECK = [...SERVER_CHECKS, "windows-cua", "cloudflared-linux-arm64", "control-plane", "relay"];
 
@@ -26,7 +26,7 @@ export const AREA_CHECKS = {
   docs: ["docs-tests"],
   locales: ["build", "locale-tests"],
   web: ["build", "linux-tests", "ui-smoke"],
-  "script-tests": ["linux-tests", "host-tests", "ui-smoke", "browser-identity"],
+  "script-tests": ["linux-tests", "host-tests", "ui-smoke"],
   server: SERVER_CHECKS,
   desktop: SERVER_CHECKS,
   // The Windows CUA job starts these the way the installed app does, then lends the PC's screen through them.
@@ -63,8 +63,6 @@ export const VITEST_SUBSETS = {
       "server/body-thread-guards.e2e.test.ts",
       "server/client-notifications.e2e.test.ts",
       "server/cloud-connections.e2e.test.ts",
-      "server/cloud-lending-browser.e2e.test.ts",
-      "server/cloud-lending-chrome.e2e.test.ts",
       "server/cloud-lending-memory.e2e.test.ts",
       "server/cloud-lending.e2e.test.ts",
       "server/cloud-lent-mcp.e2e.test.ts",
@@ -75,7 +73,6 @@ export const VITEST_SUBSETS = {
       "server/cloud-send-store.e2e.test.ts",
       "server/cloud-send.e2e.test.ts",
       "server/cloud-sync.e2e.test.ts",
-      "server/cloud-team-browser.e2e.test.ts",
       "server/cloud-team-connections.e2e.test.ts",
       "server/cloud-team-engine-homes.e2e.test.ts",
       "server/cloud-team-gateway-mcp.e2e.test.ts",
@@ -207,12 +204,12 @@ export function areaOf(file) {
 export const FULL_SCOPE = { areas: ["everything"], checks: [...EVERY_CHECK].sort() };
 
 /** A push to main and a merge group: the build, every test file on Linux and the Windows shards, the macOS smokes and
- * the Linux checks no longer than a shard. The macOS shards, the Windows CUA smoke, the Linux package, the browser driver
- * and the ARM installer run in the full lane only: nightly, manual runs and the release lane. */
+ * the Linux checks no longer than a shard. The macOS shards, the Windows CUA smoke, the Linux package and the
+ * ARM installer run in the full lane only: nightly, manual runs and the release lane. */
 export const MAIN_SCOPE = {
   areas: ["main"],
   checks: [
-    "behavior-evals", "browser-identity", "build", "control-plane", "electron-smokes", "foss", "host-tests", "linux-tests", "packaged-server",
+    "behavior-evals", "build", "control-plane", "electron-smokes", "foss", "host-tests", "linux-tests", "packaged-server",
     "ui-smoke",
   ],
 };

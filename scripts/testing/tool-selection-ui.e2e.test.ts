@@ -2,7 +2,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
-import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
+import { resolveAgentBrowserBinary } from "./agent-browser-cli.ts";
 import { waitForExit } from "../../server/testing/cleanup.ts";
 import { runControlOmb } from "../control-alca.ts";
 import { UI_TOOLS_DIR } from "./control-alca-ui.ts";

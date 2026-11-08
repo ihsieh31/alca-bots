@@ -8,7 +8,6 @@ export const E2E = /\.e2e\.test\.[cm]?[jt]s$/;
 
 export const HOST_E2E: Readonly<Record<string, string>> = {
   "server/acp-shutdown.e2e.test.ts": "Windows ends an engine on SIGTERM at once, without its exit handlers",
-  "server/browser/egress/hostile-pages.e2e.test.ts": "a real Chrome behind the egress gate on each OS",
   "server/cloud-lending.e2e.test.ts": "Windows keeps a running process's working folder, and the lent computer is named for its OS",
   "server/cloud-send-kinds.e2e.test.ts": "this computer's paths, Windows backslashes included, in what a moved bot is told",
   "server/cloud-sync.e2e.test.ts": "a PC folder's paths and copies on the desktop's own file system",
@@ -20,7 +19,6 @@ export const HOST_E2E: Readonly<Record<string, string>> = {
   "server/portable-hermes.e2e.test.ts": "a portable Hermes install's launcher shims, which only Windows has",
   "server/room-roots.e2e.test.ts": "the host desktop fallback, macOS and Windows only",
   "server/runtime-roots.e2e.test.ts": "the host desktop fallback, macOS and Windows only",
-  "server/saved-login.e2e.test.ts": "a sign-in started on the person's own desktop screen, which only macOS and Windows have",
   "server/session-credentials.e2e.test.ts": "Auto on this computer, macOS and Windows only",
   "server/setup-import.e2e.test.ts": "importing through links, which Windows makes as junctions",
   "server/shared-computers.e2e.test.ts": "PowerShell commands and Windows process trees on a shared computer",

@@ -77,7 +77,6 @@ vi.mock("./AndroidDevicePanel", () => ({
   AndroidDevicePanel: () => null,
   useAndroidUsbDevices: () => ({ devices: fixture.android ? [{ serial: "p1" }] : [] }),
 }));
-vi.mock("./BrowserPanel", () => ({ BrowserPanel: () => createElement("div", null, "BROWSER-PANEL") }));
 vi.mock("./CloudScreenPreview", () => ({ CloudScreenPreview: () => null }));
 vi.mock("./LocalScreenPreview", () => ({ LocalScreenPreview: () => null }));
 vi.mock("./LinuxLocalControl", () => ({ LinuxLocalControl: () => null }));
@@ -308,7 +307,7 @@ describe("Simple Browser tab with the browser off", () => {
     fixture.config = { features: { browser: false }, browserEngine: { kind: "engine" } };
     const rendered = render(makeBot());
     expect(rendered.html).toContain("The browser is off");
-    expect(rendered.html).not.toContain("BROWSER-PANEL");
+    expect(rendered.html).not.toContain("Browsing in ego lite");
     (browserSwitch(rendered).props.onClick as () => void)();
     await vi.waitFor(() => expect(fixture.dispatch).toHaveBeenCalledWith({ type: "configStatus", config: { features: { browser: true } } }));
     expect(fixture.api).toHaveBeenCalledWith("/api/config", {
@@ -334,10 +333,10 @@ describe("Simple Browser tab with the browser off", () => {
     expect(browserSwitch(rendered).props.disabled).toBe(true);
   });
 
-  it("shows the real browser once it is on, under a switch that turns it off for this bot only", () => {
+  it("shows the ego lite note once it is on, under a switch that turns it off for this bot only", () => {
     fixture.view.current = "browser";
     const rendered = render(makeBot());
-    expect(rendered.html).toContain("BROWSER-PANEL");
+    expect(rendered.html).toContain("Browsing in ego lite");
     expect(browserSwitch(rendered).props.checked).toBe(true);
     (browserSwitch(rendered).props.onClick as () => void)();
     expect(fixture.dispatch).toHaveBeenCalledWith({ type: "updateBot", botId: "scout", patch: { browser: false } });

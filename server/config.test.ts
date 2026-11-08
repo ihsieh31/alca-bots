@@ -39,7 +39,6 @@ import { cacheUntilConfigChanges,
   stripWorkspaceCredentialEnv,
   syncCredentialEnv,
   vpsSshAlias,
-  browserEngineAttachCdpUrl,
   withInstanceCli,
   WORKSPACE_CREDENTIAL_ENV,
   PROVIDER_CREDENTIAL_ENV,
@@ -505,30 +504,6 @@ describe("configuration boundaries", () => {
     expect(vpsSshAlias({ vps: { sshAlias: "-bad" } })).toBeNull();
   });
 
-  it("validates browserEngine.attachCdpUrl as a bare CDP port or an http(s)/ws(s) URL, and forwards it only when configured", () => {
-    expect(parseStoredConfig({})).toEqual({});
-    expect(browserEngineAttachCdpUrl({})).toBeNull();
-    for (const value of ["9333", "1", "65535", "http://127.0.0.1:9333", "https://cdp.internal:9333/", "ws://127.0.0.1:9333/devtools/browser/abc"]) {
-      expect(parseStoredConfig({ browserEngine: { attachCdpUrl: value } })).toEqual({ browserEngine: { attachCdpUrl: value } });
-      expect(parseConfigPatch({ browserEngine: { attachCdpUrl: value } })).toEqual({ browserEngine: { attachCdpUrl: value } });
-      expect(browserEngineAttachCdpUrl({ browserEngine: { attachCdpUrl: value } })).toBe(value);
-    }
-    for (const value of ["0", "70000", "not-a-url", "ftp://127.0.0.1:9333", "javascript:alert(1)"]) {
-      expect(() => parseConfigPatch({ browserEngine: { attachCdpUrl: value } })).toThrow("browserEngine.attachCdpUrl");
-    }
-    expect(parseConfigPatch({ browserEngine: { attachCdpUrl: "" } })).toEqual({ browserEngine: { attachCdpUrl: "" } });
-    expect(browserEngineAttachCdpUrl({ browserEngine: { attachCdpUrl: "" } })).toBeNull();
-  });
-
-  it("takes browserEngine.idleTimeoutMinutes as whole minutes up to the engine's own hour", () => {
-    for (const value of [1, 10, 60]) {
-      expect(parseStoredConfig({ browserEngine: { idleTimeoutMinutes: value } })).toEqual({ browserEngine: { idleTimeoutMinutes: value } });
-      expect(parseConfigPatch({ browserEngine: { idleTimeoutMinutes: value } })).toEqual({ browserEngine: { idleTimeoutMinutes: value } });
-    }
-    for (const value of [0, 61, 2.5, -1, "10"]) expect(() => parseConfigPatch({ browserEngine: { idleTimeoutMinutes: value } })).toThrow();
-    expect(parseConfigPatch({ browserEngine: { attachCdpUrl: "9333", idleTimeoutMinutes: 5 } })).toEqual({ browserEngine: { attachCdpUrl: "9333", idleTimeoutMinutes: 5 } });
-  });
-
   it("keeps a browser profile's My Chrome choice through saving, loading and migration, and nothing else", () => {
     const mine = { id: "profile-mine", name: "Mine", browser: "chrome" };
     expect(parseConfigPatch({ browserProfiles: [mine, { id: "profile-work", name: "Work" }] })).toEqual({ browserProfiles: [mine, { id: "profile-work", name: "Work" }] });
@@ -731,20 +706,6 @@ describe("a config.json saved with a byte order mark", () => {
         mcpServers: { notes: { command: "npx", args: ["notes-mcp"] } },
         budgets: { monthlyUsd: 25, warnAtPercent: 70 },
       });
-    } finally {
-      rmSync(path, { force: true });
-    }
-  });
-
-  it("keeps the browser's allow-list when the owner flips its local-sites switch", () => {
-    const path = join(DATA_DIR, "config.json");
-    mkdirSync(DATA_DIR, { recursive: true });
-    writeFileSync(path, JSON.stringify({ browserEngine: { engine: "chrome", egress: { allow: ["10.0.0.5"] } } }));
-    try {
-      saveConfig({ browserEngine: { egress: { localNetwork: true } } });
-      expect(JSON.parse(readFileSync(path, "utf8")).browserEngine).toEqual({ engine: "chrome", egress: { allow: ["10.0.0.5"], localNetwork: true } });
-      saveConfig({ browserEngine: { egress: { localNetwork: false } } });
-      expect(JSON.parse(readFileSync(path, "utf8")).browserEngine).toEqual({ engine: "chrome", egress: { allow: ["10.0.0.5"], localNetwork: false } });
     } finally {
       rmSync(path, { force: true });
     }

@@ -441,7 +441,6 @@ const PENDING: Readonly<Record<string, ReadonlyArray<readonly [file: string, sni
     ["server/quota-switch.ts", "could not continue on  …  —  …"],
   ],
   "computers and the browser": [
-    ["server/browser/viewers/stream-v2.ts", "The browser could not restart. Wait for active work to finish and try"],
     ["server/computer-wait.ts", "…  is running  …"],
     ["server/computer-wait.ts", "…  is using it"],
     ["server/computer-wait.ts", "—  …  in queue"],

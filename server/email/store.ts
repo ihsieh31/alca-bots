@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { writeFileAtomic } from "../atomic.ts";
-import { decryptBrowserState, encryptBrowserState } from "../browser-sites.ts";
+import { decryptSealedState, encryptSealedState } from "../sealed-state.ts";
 
 export const EMAIL_FILE = "email.json.enc";
 export const EMAIL_KEY_FILE = "email-key";
@@ -84,7 +84,7 @@ export class EmailStore {
       const key = this.key(false);
       try {
         if (!key) throw new Error("missing key");
-        const parsed = fileSchema.parse(JSON.parse(decryptBrowserState(readFileSync(this.file), key)));
+        const parsed = fileSchema.parse(JSON.parse(decryptSealedState(readFileSync(this.file), key)));
         data = { ...parsed, accounts: parsed.accounts.map(withoutReadOnlyProblem) };
       } catch {
         // Never log an unreadable file's contents.
@@ -100,7 +100,7 @@ export class EmailStore {
     const parsed = fileSchema.parse({ version: 1, accounts });
     const key = this.key(true)!;
     mkdirSync(join(this.file, ".."), { recursive: true });
-    writeFileAtomic(this.file, encryptBrowserState(JSON.stringify(parsed), key), { mode: 0o600 });
+    writeFileAtomic(this.file, encryptSealedState(JSON.stringify(parsed), key), { mode: 0o600 });
     this.cache = parsed;
   }
 

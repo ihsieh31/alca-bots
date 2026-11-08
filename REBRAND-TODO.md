@@ -59,12 +59,11 @@ pnpm exec vitest run <檔案>   # 完整套件很慢（本機一小時以上）�
    npx wrangler deploy
    ```
 4. **手機中繼 relay**：需要一台 VPS 跑 `relay/`（有 Dockerfile 和 Caddyfile），DNS 指到 `bots-relay1.alca-corp.me`；之後在 control-plane 的 `wrangler.jsonc` 設 `RELAY_NODES`、`RELAY_DISABLED: "0"` 和 `RELAY_TOKEN_SIGNING_KEY`。
-5. **瀏覽器換成 ego lite（第二階段）**：分支 `ego-lite-browser` 已完成第一階段：bot 的瀏覽器改用 ego lite（`server/ego-browser.ts`、`server/ego-browser-proxy.ts`，設計見 `docs/plans/browser-engine.md`），文件與 `alcabots browser` 指令也已修正。舊的內置瀏覽器程式碼還在，只是 bot 已經不會用到。第二階段要刪除：
-   - server：`server/browser*.ts`、`server/browser/`、`server/host/browser*.ts`、fill_login／saved logins（`login-fill*`、agents-bridge 的 `fill_login` 和 goldens）、`/api/internal/browser/mcp`、browser viewer routes、browser-sites、evidence routes、browser-engine install route、config 的 `browserEngine.*`。
-   - electron：`device-chrome.mjs`、My Chrome 借用、`electron-builder.yml` 打包的 agent-browser／Chromium。
-   - UI：`BrowserPanel`、`BrowserProfilesManager`、`BrowserSettingsRows`、`SignedInSites`、`bot-panel/browser-logins`、`LoginsSettings` 等。
-   - 建置與 CI：`scripts/prepare-browser*`、`smoke-browser-bundle`、`build-windows-browser-vendor*`、`.github/workflows/browser-vendor-windows.yml`、Dockerfile 裡的 agent-browser。
-   - 測試：依賴舊瀏覽器的測試（例如 `server/index.test.ts` 裡打 `/api/internal/browser/mcp` 的區塊、`server/parallel-threads.e2e.test.ts` 的 browse），在第一階段會失敗，要一起刪掉。
-   - 文件：`docs/browser-packaging.md`、`docs/verification/browser-*.md`、`docs/cloud-pro.md` 的 Your Chrome 段落。
+5. **瀏覽器換成 ego lite**：分支 `ego-lite-browser` 兩個階段都已完成。bot 只透過 ego lite 瀏覽（`server/ego-browser.ts`、`server/ego-browser-proxy.ts`，設計見 `docs/plans/browser-engine.md`），舊的內置瀏覽器（agent-browser、alca-cdp、瀏覽器面板、瀏覽器設定檔、fill_login、My Chrome、打包的 Chromium 及其 CI）已刪除。還留著、之後可再清的：
+   - Docker 映像檔仍安裝 agent-browser 和 Chrome（`Dockerfile`、`.github/workflows/docker.yml`、`scripts/docker-image.test.ts`）；UI 測試工具 `scripts/testing/control-alca-ui.ts` 也用全域安裝的 agent-browser。
+   - 已存的登入資料後端（`server/login-store.ts`、`server/onepassword.ts`、`/api/logins`、雲端搬移時的登入資料），目前沒有 UI 會用到。
+   - 設定裡的 `browserProfiles`、bot 的 `browserProfile`／`recordBrowserSteps` 欄位、`browserMatesOf`。
+   - Electron 借電腦時的 Chrome 授權欄位（已不會生效），以及伺服器端 `server/device-links.ts` 的網路借用路線（已沒有呼叫者）。
+   - 其他語系裡關於舊瀏覽器的字串。
 6. **macOS 使用者**：App 第一次打開要「右鍵 → 打開」；自動更新在 macOS 上不會運作，要手動下載新版。
 7. **發佈**：改 `package.json` 的 version 並推上 main 會觸發 Release workflow。npm 發佈（`alca-bots`）和 Docker（`ghcr.io/ihsieh31/...`）的 workflow 可能還需要調整 secrets。

@@ -670,7 +670,7 @@ describe("a bot's link to a page it published", () => {
     }
   }
 
-  it("in the desktop app, opens like the card's Open: in the bot's browser panel, never as a message", async () => {
+  it("in the desktop app, opens like the card's Open: in the person's own browser, never as a message", async () => {
     const openExternal = vi.fn(async () => {});
     window.abot = { platform: "darwin", openExternal } as unknown as typeof window.abot;
     const dispatch = vi.fn();
@@ -678,8 +678,8 @@ describe("a bot's link to a page it published", () => {
       const state = { ...initialState, selectedId: "pepper", bots: [{ id: "pepper" }], config: { features: { browser: true }, browserEngine: { kind: "engine" } } };
       const click = await clickPage({ state, dispatch, flushBotPatches: async () => null, refreshInstances: async () => {}, refreshModels: async () => {} } as never);
       expect(click.defaultPrevented).toBe(true);
-      expect(dispatch.mock.calls).toEqual([[{ type: "toggleComputer", open: true }]]);
-      expect(openExternal).not.toHaveBeenCalled();
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(openExternal).toHaveBeenCalledWith(PAGE);
     } finally {
       delete window.abot;
     }

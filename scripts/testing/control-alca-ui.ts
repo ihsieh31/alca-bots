@@ -15,14 +15,9 @@ import {
   runControlOmb,
   type VerificationServer,
 } from "../control-alca.ts";
-import {
-  closeBrowserSession,
-  ensureChrome,
-  installAgentBrowserBinary,
-  resolveAgentBrowserBinary,
-} from "../../server/browser-engine.ts";
+import { closeBrowserSession, ensureChrome, resolveAgentBrowserBinary } from "./agent-browser-cli.ts";
 import { fixtureApi, mountPreview, type MountedPreview } from "./preview-fixture.ts";
-import { credentialStoreFlags } from "../../server/browser/egress/gate.ts";
+import { credentialStoreFlags } from "../../server/egress/gate.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 /** Gitignored, persistent: the binary and its Chrome download once per checkout. */
@@ -168,12 +163,8 @@ export async function ensureUiBrowser(
   toolsDir = UI_TOOLS_DIR,
 ): Promise<{ binary: string; chrome: string | null }> {
   mkdirSync(toolsDir, { recursive: true, mode: 0o700 });
-  let binary = resolveAgentBrowserBinary({ dataDir: toolsDir, env: parentEnv });
-  if (!binary) {
-    const started = Date.now();
-    binary = await installAgentBrowserBinary({ dataDir: toolsDir, log });
-    log(`agent-browser installed at ${binary} in ${Date.now() - started}ms`);
-  }
+  const binary = resolveAgentBrowserBinary(parentEnv);
+  if (!binary) throw new ControlOmbError("agent-browser was not found", "install it (npm i -g agent-browser) or set ALCA_AGENT_BROWSER_PATH");
   const explicit = parentEnv.AGENT_BROWSER_EXECUTABLE_PATH?.trim();
   if (explicit) {
     if (!existsSync(explicit)) throw new ControlOmbError(`AGENT_BROWSER_EXECUTABLE_PATH does not exist: ${explicit}`, "unset it to use the Chrome agent-browser installs");

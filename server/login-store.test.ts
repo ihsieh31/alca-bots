@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { loginPlace } from "../shared/logins.ts";
 import { addHeldSecretScrubber, redactSecretsInText } from "../shared/redact.ts";
-import { decryptBrowserState, encryptBrowserState } from "./browser-sites.ts";
+import { decryptSealedState, encryptSealedState } from "./sealed-state.ts";
 import { HeldSecrets, LOGINS_FILE, LOGINS_KEY_FILE, LoginStore, secretForms } from "./login-store.ts";
 import { parseTotpKey } from "./totp.ts";
 
@@ -73,7 +73,7 @@ describe("the saved logins store", () => {
 
   it("gives a login saved for one host its site, so it fills on www and other subdomains, and keeps the file readable by the previous release", () => {
     writeFileSync(join(dir, LOGINS_KEY_FILE), `${KEY}\n`, { mode: 0o600 });
-    writeFileSync(join(dir, LOGINS_FILE), encryptBrowserState(JSON.stringify({ version: 1, logins: [
+    writeFileSync(join(dir, LOGINS_FILE), encryptSealedState(JSON.stringify({ version: 1, logins: [
       { id: "old-1", host: "example.com", username: "alice", password: PASSWORD, source: "card", bots: ["pepper"], createdAt: 5, updatedAt: 5 },
       { id: "old-2", host: "alice.github.io", username: "alice", password: "fake-pages-pass", source: "settings", bots: "all", createdAt: 6, updatedAt: 6 },
       { id: "old-3", host: "login.example.org", username: "ops", password: "fake-org-pass", source: "settings", bots: "all", createdAt: 7, updatedAt: 7 },
@@ -90,7 +90,7 @@ describe("the saved logins store", () => {
     expect(store.usableFor("www.example.org", "pepper").map((login) => login.id)).toEqual(["old-3"]);
 
     store.markUsed("old-1");
-    const written = JSON.parse(decryptBrowserState(readFileSync(join(dir, LOGINS_FILE)), KEY));
+    const written = JSON.parse(decryptSealedState(readFileSync(join(dir, LOGINS_FILE)), KEY));
     expect(written.logins[0]).toMatchObject({ id: "old-1", host: "example.com", site: "example.com", hosts: ["example.com"], exactHost: false, lastUsedAt: 9 });
     expect(previousRelease.parse(written).logins.map((login) => login.host)).toEqual(["example.com", "alice.github.io", "login.example.org"]);
     expect(new LoginStore({ dataDir: dir }).onePasswordToken()).toBe("ops_fake-token");

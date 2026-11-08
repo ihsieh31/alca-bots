@@ -9,7 +9,7 @@ import { z } from "zod";
 import { HELD_SECRET_MASK } from "../shared/redact.ts";
 import { LOGIN_FIELD_MAX, LOGIN_HOSTS_MAX, loginMatchesHost, loginSite, loginUsableBy, type LoginBots, type LoginPlace, type LoginSummary } from "../shared/logins.ts";
 import { writeFileAtomic } from "./atomic.ts";
-import { decryptBrowserState, encryptBrowserState } from "./browser-sites.ts";
+import { decryptSealedState, encryptSealedState } from "./sealed-state.ts";
 import type { TotpKey } from "./totp.ts";
 
 export const LOGINS_FILE = "logins.json.enc";
@@ -132,7 +132,7 @@ export class LoginStore {
       const key = this.key(false);
       try {
         if (!key) throw new Error("missing key");
-        const disk = fileSchema.parse(JSON.parse(decryptBrowserState(readFileSync(this.file), key)));
+        const disk = fileSchema.parse(JSON.parse(decryptSealedState(readFileSync(this.file), key)));
         data = { ...disk, logins: disk.logins.map(fromDisk) };
       } catch {
         // Never log an unreadable file's contents.
@@ -150,7 +150,7 @@ export class LoginStore {
     const parsed = fileSchema.parse({ ...data, logins: data.logins.map(toDisk) });
     const key = this.key(true)!;
     mkdirSync(join(this.file, ".."), { recursive: true });
-    writeFileAtomic(this.file, encryptBrowserState(JSON.stringify(parsed), key), { mode: 0o600 });
+    writeFileAtomic(this.file, encryptSealedState(JSON.stringify(parsed), key), { mode: 0o600 });
     this.cache = { ...parsed, logins: parsed.logins.map(fromDisk) };
     this.version++;
   }

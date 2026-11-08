@@ -3,8 +3,7 @@
 // WebAssembly core it reads from beside itself, so it is never bundled: it is
 // required on first use, and only when a token exists.
 import type { LoginBots, LoginPlace, LoginSummary, OnePasswordStatus, OnePasswordVault } from "../shared/logins.ts";
-import { loginMatchesHost, loginSite, loginUsableBy, normalizeLoginHost } from "../shared/logins.ts";
-import type { FillCandidate } from "./login-fill.ts";
+import { loginSite, loginUsableBy, normalizeLoginHost } from "../shared/logins.ts";
 import { parseTotpKey } from "./totp.ts";
 
 export interface OnePasswordItemFields {
@@ -238,26 +237,6 @@ export class OnePasswordLogins {
 
   sitesFor(botId: string | readonly string[]): Array<LoginPlace & { username: string }> {
     return this.usable(botId).map((entry) => ({ site: entry.site, hosts: [...entry.hosts], exactHost: false, username: entry.username }));
-  }
-
-  candidates(pageHost: string, botId: string | readonly string[]): FillCandidate[] {
-    const token = this.token();
-    if (!token) return [];
-    return this.usable(botId).filter((entry) => loginMatchesHost(entry, pageHost)).map((entry) => ({
-      id: entry.id, site: entry.site, hosts: [...entry.hosts], exactHost: false, username: entry.username, source: "1password" as const,
-      secrets: async () => {
-        let found: OnePasswordItemFields | undefined;
-        try {
-          const client = await this.clientFor(token);
-          found = (await client.fields(entry.vaultId, [entry.itemId])).get(entry.itemId);
-        } catch (error) {
-          this.client = null;
-          throw new Error(onePasswordProblem(error));
-        }
-        if (!found?.password) throw new Error("This login is no longer in 1Password, or has no password there.");
-        return { password: found.password, totp: found.totp ? parseTotpKey(found.totp) : null };
-      },
-    }));
   }
 
   markUsed(id: string): void {

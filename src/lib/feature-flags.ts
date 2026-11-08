@@ -2,7 +2,7 @@ import { t } from "./i18n";
 
 export interface FeatureFlagConfig {
   features?: { skillAuthoring?: boolean; skillReview?: boolean; skillReviewSteps?: number; showToolCalls?: boolean; browser?: boolean; sharedComputers?: boolean; claudeUserMcp?: boolean; claudeUserSkills?: boolean; llmThreadTitles?: boolean; skillsLibrary?: boolean; shareLearnedSkills?: "off" | "ask" | "auto"; roomMemoryCapture?: boolean; savedSteps?: boolean; savedStepsHere?: boolean };
-  browserEngine?: { kind: "engine" | "unavailable"; reason?: string; installable?: boolean; installing?: boolean; installError?: string };
+  browserEngine?: { kind: "engine" | "unavailable"; reason?: string };
 }
 
 export function browserAvailable(config: FeatureFlagConfig | null | undefined): boolean {
@@ -11,7 +11,6 @@ export function browserAvailable(config: FeatureFlagConfig | null | undefined): 
 
 export function browserUnavailableReason(config: FeatureFlagConfig | null | undefined): string {
   const engine = config?.browserEngine;
-  if (engine?.kind === "unavailable" && engine.installable) return t("browser.notInstalled");
   if (engine?.kind === "unavailable" && engine.reason) return engine.reason;
   return t("browser.noEngine");
 }

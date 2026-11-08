@@ -504,27 +504,6 @@ function ResearchCard({ bot, patch }: { bot: Bot; patch: (patch: { xResearch: bo
   );
 }
 
-function RecordStepsRow({ on, browserOn, myChrome, onChange }: { on: boolean; browserOn: boolean; myChrome: boolean; onChange: (on: boolean) => void }) {
-  return (
-    <div className="mt-3 flex items-center justify-between gap-4 border-t border-hairline/40 pt-3">
-      <div>
-        <div className="text-[14px] font-medium text-ink">{t("botAccess.recordSteps.title")}</div>
-        <div className="mt-0.5 text-[13px] text-ink-secondary">
-          {!browserOn ? t("botAccess.recordSteps.needsBrowser") : on ? t("botAccess.recordSteps.on") : t("botAccess.recordSteps.off")}
-          {browserOn && on && myChrome ? ` ${t("botAccess.recordSteps.myChrome")}` : ""}
-        </div>
-      </div>
-      <Switch
-        checked={on && browserOn}
-        aria-label={t("botAccess.recordSteps.title")}
-        disabled={!browserOn}
-        onClick={() => onChange(!on)}
-        className="disabled:cursor-not-allowed"
-      />
-    </div>
-  );
-}
-
 export function cloudPreferenceShown(bot: Pick<Bot, "computer">, config: { cloudHome?: boolean } | null | undefined): boolean {
   return (!bot.computer || bot.computer === "cloud") && !config?.cloudHome;
 }
@@ -651,12 +630,10 @@ export function AccessSection({
     connectorGrantState,
     canUseBrowser,
     desktopBrowser,
-    browserBlockedOnWindows,
     browserFeature,
     browserAllowed,
     browserEnabled,
   } = derived;
-  const browserInstallable = state.config?.browserEngine?.installable === true;
   const { capabilities } = useDesktopCapabilities();
   const placeSeat = usePlaceSeat(state.config, capabilities);
   const worksOn = placeViewFor(placeFacts({
@@ -758,9 +735,7 @@ export function AccessSection({
             <div className="text-[15px] font-medium text-ink">{t("botAccess.browser.title")}</div>
             <div className="mt-0.5 text-[13px] text-ink-secondary">
               {!desktopBrowser
-                ? browserBlockedOnWindows && !browserInstallable
-                  ? t("botAccess.browser.windowsUnavailable")
-                  : browserUnavailableReason(state.config)
+                ? browserUnavailableReason(state.config)
                 : !browserFeature
                   ? t("botAccess.browser.disabledInSettings")
                   : !canUseBrowser
@@ -778,21 +753,13 @@ export function AccessSection({
             aria-label={t("botAccess.browser.allow")}
             disabled={
               bot.computer === "off" ||
-              (!browserEnabled && ((!desktopBrowser && !browserInstallable) || !browserFeature || !canUseBrowser))
+              (!browserEnabled && (!desktopBrowser || !browserFeature || !canUseBrowser))
             }
             onClick={() => patch({ browser: !browserAllowed })}
             title={bot.computer === "off" ? t("botAccess.browser.offShort") : undefined}
             className="disabled:cursor-not-allowed"
           />
         </div>
-        {!draft && (
-          <RecordStepsRow
-            on={bot.recordBrowserSteps === true}
-            browserOn={browserEnabled && bot.computer !== "off"}
-            myChrome={state.config?.browserEngine?.myChrome === true && (state.config?.browserProfiles ?? []).some((profile) => profile.id === bot.browserProfile && profile.browser === "chrome")}
-            onChange={(recordBrowserSteps) => patch({ recordBrowserSteps })}
-          />
-        )}
       </div>}
 
       {!draft && shows("xResearch") && <ResearchCard bot={bot} patch={patch} />}

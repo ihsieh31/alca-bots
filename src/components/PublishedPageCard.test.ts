@@ -14,7 +14,6 @@ vi.mock("@/state/store", async () => {
 const openExternalLink = vi.fn(async (_url: string) => {});
 vi.mock("@/lib/app-links", () => ({ openExternalLink: (url: string) => openExternalLink(url) }));
 import { StoreContext } from "@/state/store";
-import { usePanelPage, type PanelPage } from "@/lib/page-open";
 import { PublishedPageCard } from "./PublishedPageCard";
 
 const URL = "https://abcdefghijklmnopqrstuvwxyz.alcabot.page/";
@@ -28,11 +27,9 @@ const app = (over: Record<string, unknown> = {}) => ({
 
 function render(message: Message, state = app()) {
   const container = document.createElement("div"), root = createRoot(container);
-  const panel: PanelPage[] = [];
-  function Panel() { usePanelPage("pepper", (asked) => panel.push(asked)); return null; }
   flushSync(() => root.render(createElement(StoreContext.Provider, { value: { state, dispatch } as never },
-    createElement(PublishedPageCard, { message }), createElement(Panel))));
-  return { container, root, panel };
+    createElement(PublishedPageCard, { message }))));
+  return { container, root };
 }
 const desktop = (bridge: Record<string, unknown> = {}) => { (window as { abot?: unknown }).abot = { platform: "darwin", ...bridge }; };
 const buttons = (container: HTMLElement) => [...container.querySelectorAll("button")];
@@ -41,7 +38,7 @@ afterEach(() => { vi.clearAllMocks(); delete (window as { abot?: unknown }).abot
 
 describe("a published page's card", () => {
   it("shows the title, the link and the usage; on the web Open and the link open a new tab; and it unpublishes the page", async () => {
-    const { container, root, panel } = render(live);
+    const { container, root } = render(live);
     try {
       expect(container.textContent).toContain("Bake sale");
       expect(container.textContent).toContain(URL);
@@ -50,7 +47,6 @@ describe("a published page's card", () => {
       buttons(container)[1]!.click();
       container.querySelector("a")!.click();
       expect(openExternalLink.mock.calls).toEqual([[URL], [URL]]);
-      expect(panel).toEqual([]);
       expect(dispatch).not.toHaveBeenCalled();
       expect(api).not.toHaveBeenCalled();
       buttons(container)[2]!.click();
@@ -58,32 +54,17 @@ describe("a published page's card", () => {
     } finally { root.unmount(); }
   });
 
-  it("in the desktop app, Open and the link show the page in the bot's browser panel, and never send anything", () => {
-    desktop();
-    const { container, root, panel } = render(live);
-    try {
-      buttons(container)[1]!.click();
-      container.querySelector("a")!.click();
-      expect(panel.map(({ botId, url }) => [botId, url])).toEqual([["pepper", URL], ["pepper", URL]]);
-      expect(dispatch.mock.calls).toEqual([[{ type: "toggleComputer", open: true }], [{ type: "toggleComputer", open: true }]]);
-      expect(openExternalLink).not.toHaveBeenCalled();
-      expect(api).not.toHaveBeenCalled();
-    } finally { root.unmount(); }
-  });
-
-  it("in the desktop app without a browser panel to show it, opens the system browser", () => {
+  it("in the desktop app, opens the system browser and sends nothing", () => {
     for (const [state, bridge] of [
+      [app(), {}],
       [app({ selectedId: "room" }), {}],
-      [app({ bots: [{ id: "pepper", browser: false }] }), {}],
-      [app({ config: { features: { browser: true }, browserEngine: { kind: "unavailable", installable: true } } }), {}],
       [app(), { remoteClient: { active: true } }],
     ] as const) {
       desktop(bridge);
-      const { container, root, panel } = render(live, state);
+      const { container, root } = render(live, state);
       try {
         buttons(container)[1]!.click();
         expect(openExternalLink).toHaveBeenCalledWith(URL);
-        expect(panel).toEqual([]);
         expect(dispatch).not.toHaveBeenCalled();
       } finally { root.unmount(); vi.clearAllMocks(); }
     }

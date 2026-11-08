@@ -179,22 +179,8 @@ jobs:
             test -f "$app/Contents/Resources/licenses/cloudflared-README.md" \
               || { echo "::error::missing cloudflared provenance in $app"; exit 1; }
             codesign --verify --strict "$bin"
-            for browser_bin in "$app/Contents/Resources/browser-engine/agent-browser" "$app/Contents/Resources/browser-engine/chrome/"*/chrome-headless-shell; do
-              test -x "$browser_bin"
-              codesign --verify --strict "$browser_bin"
-            done
             echo "ok: $app"
           done
-
-      - name: "Gate: signed native browser works with an empty home"
-        run: |
-          case "$(node -p process.arch)" in
-            arm64) resources="$PWD/release/mac-arm64/AlcaBots.app/Contents/Resources" ;;
-            x64) resources="$PWD/release/mac/AlcaBots.app/Contents/Resources" ;;
-            *) exit 1 ;;
-          esac
-          node scripts/smoke-browser-bundle.mjs --resources "$resources"
-          ALCA_SMOKE_DIST="$resources/server" node scripts/smoke-packaged-server.mjs --browser-bundle "$resources/browser-engine"
 
       - name: "Gate: both packaged servers start and every helper path resolves"
         run: |
@@ -287,12 +273,10 @@ jobs:
         shell: bash
         run: rm -rf dist dist-server release
       - run: pnpm package:win
-      - name: "Gate: bundled browser works with an empty home"
-        run: node scripts/smoke-browser-bundle.mjs --resources "${{ github.workspace }}/release/win-unpacked/resources"
-      - name: "Gate: packaged Windows server discovers its browser"
+      - name: "Gate: packaged Windows server starts"
         env:
           ALCA_SMOKE_DIST: ${{ github.workspace }}/release/win-unpacked/resources/server
-        run: node scripts/smoke-packaged-server.mjs --browser-bundle "${{ github.workspace }}/release/win-unpacked/resources/browser-engine"
+        run: node scripts/smoke-packaged-server.mjs
       - name: Verify the packaged tree and start the packaged server
         shell: bash
         run: |
@@ -397,12 +381,10 @@ jobs:
           sudo chown root:root release/linux-unpacked/chrome-sandbox
           sudo chmod 4755 release/linux-unpacked/chrome-sandbox
           test "$(stat -c '%U:%G %a' release/linux-unpacked/chrome-sandbox)" = "root:root 4755"
-      - name: "Gate: installed browser works with Ubuntu sandbox restrictions"
-        run: node scripts/smoke-browser-bundle.mjs --resources /opt/AlcaBots/resources
-      - name: "Gate: packaged Linux server discovers its browser"
+      - name: "Gate: packaged Linux server starts"
         env:
           ALCA_SMOKE_DIST: /opt/AlcaBots/resources/server
-        run: node scripts/smoke-packaged-server.mjs --browser-bundle /opt/AlcaBots/resources/browser-engine
+        run: node scripts/smoke-packaged-server.mjs
       - name: "Gate: packaged server and phone helper load as ES modules"
         run: node scripts/check-module-scopes.mjs /opt/AlcaBots/resources
       - name: Smoke the packages

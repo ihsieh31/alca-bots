@@ -6,7 +6,7 @@ import { tmpdir, userInfo } from "node:os";
 import { join } from "node:path";
 import type { Readable, Writable } from "node:stream";
 
-import { credentialStoreFlags } from "../browser/egress/gate.ts";
+import { credentialStoreFlags } from "../egress/gate.ts";
 import { removeTempDir } from "./cleanup.ts";
 
 /** ALCA_TEST_CHROME, CHROME_BIN, then where Google Chrome or Chromium installs on this platform. */

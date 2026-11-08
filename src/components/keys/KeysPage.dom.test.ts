@@ -139,7 +139,7 @@ describe("the keys page", () => {
     type(search, "fish");
     expect(rowsShown()).toEqual(["fishAudio"]);
     type(search, "Computers and browser");
-    expect(rowsShown()).toEqual(["box", "vps", "onePassword"]);
+    expect(rowsShown()).toEqual(["box", "vps"]);
     type(search, "research");
     expect(rowsShown()).toEqual(["treg"]);
     type(search, "zzz");

@@ -12,7 +12,7 @@ import { intlLocale, t } from "@/lib/i18n";
 import { api, ApiError, useStore, type Bot } from "@/state/store";
 import { releaseComputerPanelFocus, useComputerPanelEntry } from "@/lib/computer-panel-focus";
 import { RoutineEditor } from "./RoutinesPage";
-import { BrowserPanel, type BrowserSignIn } from "./BrowserPanel";
+import { EgoBrowserNote } from "./EgoBrowserNote";
 import { SignInBanner } from "./SignInRequestCard";
 import { productName } from "@/lib/brand";
 
@@ -77,14 +77,12 @@ export function RemoteDesktopPanel({ bot }: { bot: Bot }) {
   useEffect(() => { previewBusy.current = bot.busy; }, [bot.busy]);
   const [creatingRoutine, setCreatingRoutine] = useState(false);
   const [view, setView] = useState<"desktop" | "browser">("desktop");
-  const [signIn, setSignIn] = useState<BrowserSignIn>();
   const help = state.computerControl[bot.id]?.help ?? null;
   const asker = help ? state.bots.find((candidate) => candidate.id === help.botId)?.name ?? bot.name : bot.name;
   const requestedSignIn = state.signInFocus?.botId === bot.id ? state.signInFocus : undefined;
   useEffect(() => {
     if (!requestedSignIn || requestedSignIn.consumed) return;
     setView(requestedSignIn.place === "browser" ? "browser" : "desktop");
-    if (requestedSignIn.place === "browser") setSignIn({ url: requestedSignIn.url, site: requestedSignIn.site, nonce: requestedSignIn.requestId });
     dispatch({ type: "signInFocusConsumed", requestId: requestedSignIn.requestId });
   }, [dispatch, requestedSignIn]);
   const botRoutines = state.routines
@@ -252,7 +250,7 @@ export function RemoteDesktopPanel({ bot }: { bot: Bot }) {
       {view === "browser" ? (
         <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-1">
           {help?.place === "browser" && <div className="-mt-2 mb-3"><SignInBanner help={help} askerName={asker} onError={setError} /></div>}
-          <BrowserPanel bot={bot} signIn={signIn} />
+          <EgoBrowserNote name={bot.name} />
           {error && <div role="alert" className="mt-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-[12px] text-danger">{error}</div>}
           <p className="mt-2 text-[11px] leading-relaxed text-ink-secondary">
             {t("remoteDesktop.browserHint")}

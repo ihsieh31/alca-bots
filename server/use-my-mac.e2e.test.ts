@@ -14,7 +14,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { createCloudPowerGate } from "../electron/cloud-power.mjs";
 import { createComputerSharing } from "../electron/computer-sharing.mjs";
-import { gateChromeFlags } from "./browser/egress/gate.ts";
+import { gateChromeFlags } from "./egress/gate.ts";
 import { cloudPairingSignature } from "./cloud-home.ts";
 import { findChrome, launchPipeChrome } from "./testing/chrome-pipe.ts";
 import { removeTempDir, waitForExit } from "./testing/cleanup.ts";

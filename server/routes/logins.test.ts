@@ -133,23 +133,6 @@ describe("Settings → Logins routes", () => {
     for (const answer of answers) for (const secret of [TOKEN, VAULT_PASSWORD]) expect(answer).not.toContain(secret);
   });
 
-  it("keeps a vault's logins to the bots chosen for it, and only for a vault the token reads", async () => {
-    const { store, logins, call } = await serve();
-    await call("POST", "/api/logins/1password", { token: TOKEN });
-    expect(await call("PATCH", "/api/logins/1password/vaults/v1", { bots: ["quill"] }))
-      .toMatchObject({ status: 200, body: { onePassword: { vaults: [{ id: "v1", bots: ["quill"] }] } } });
-    expect(store.onePasswordGrants()).toEqual({ v1: ["quill"] });
-    expect(await logins.candidates("pepper", "vault.example.com")).toEqual([]);
-    expect(logins.sitesFor("pepper")).toEqual([]);
-    expect((await logins.candidates("quill", "vault.example.com")).map((login) => login.username)).toEqual(["vault-user"]);
-    expect((await call("GET", "/api/logins")).body.logins[0].bots).toEqual(["quill"]);
-    expect((await call("PATCH", "/api/logins/1password/vaults/v1", { bots: ["nobody"] })).body).toEqual({ error: LOGIN_ERRORS.bots });
-    expect((await call("PATCH", "/api/logins/1password/vaults/v1", {})).status).toBe(400);
-    expect((await call("PATCH", "/api/logins/1password/vaults/v9", { bots: "all" })).status).toBe(404);
-    expect((await call("PATCH", "/api/logins/1password/vaults/v1", { bots: "all" })).body.onePassword.vaults[0].bots).toBe("all");
-    expect(store.onePasswordGrants()).toEqual({});
-    expect((await logins.candidates("pepper", "vault.example.com")).map((login) => login.username)).toEqual(["vault-user"]);
-  });
 
   it("takes changes as JSON only, so another page's form cannot post one", async () => {
     const { call } = await serve();

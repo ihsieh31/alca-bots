@@ -544,7 +544,7 @@ describe("pressing", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("opens a published page's open_url in the bot's browser panel in the desktop app, and posts nothing", async () => {
+  it("opens a published page's open_url in the person's own browser in the desktop app, and posts nothing", async () => {
     const PAGE = "https://abcdefghijklmnopqrstuvwxyz.alcabot.page/";
     const dispatch = vi.fn();
     const withBrowser = { ...store, dispatch, state: { selectedId: "scout", bots: [{ id: "scout" }], groups: [], config: { features: { browser: true }, browserEngine: { kind: "engine" } } } } as unknown as ReturnType<typeof useStore>;
@@ -552,8 +552,8 @@ describe("pressing", () => {
     if (!parsed.ok) throw new Error(parsed.error);
     act(() => root.render(createElement(BotEditorStore, { value: withBrowser, children: createElement(WidgetMessage, { botId: "scout", threadId: "t1", message: row(parsed.value) }) })));
     await press(button("Open page")!);
-    expect(dispatch.mock.calls).toEqual([[{ type: "toggleComputer", open: true }]]);
-    expect(openExternal).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(openExternal).toHaveBeenCalledWith(PAGE);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

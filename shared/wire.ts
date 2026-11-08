@@ -777,9 +777,7 @@ export interface SignInRequestCardData {
   /** A newer request for the same site in this conversation replaced this
    * card; it no longer offers Done or Cancel. */
   superseded?: boolean;
-  /** Answered by saving a login: the site it was saved for (and a sign-in
-   * host on another site the person confirmed), which the bot then fills
-   * with fill_login. */
+  /** Answered by saving a login, in an earlier version: the site it was saved for. */
   savedLogin?: string;
   resumed?: boolean;
   error?: string;

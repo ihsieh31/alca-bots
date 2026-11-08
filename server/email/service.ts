@@ -3,7 +3,7 @@
 // move from the person's computer.
 import { EMAIL_SLUG, type EmailAccountView, type EmailConnectAnswer, type EmailConnectRequest, type EmailOutgoingAnswer, type EmailOutgoingFields, type EmailSignInHint, type EmailStatus, type EmailTestAnswer } from "../../shared/email.ts";
 import { boxRefusal } from "../bot-box/egress-gate.ts";
-import { resolveTarget } from "../browser/egress/gate.ts";
+import { resolveTarget } from "../egress/gate.ts";
 import { secretForms } from "../login-store.ts";
 import { HELD_SECRET_MASK } from "../redact.ts";
 import { EmailError, LASTING_SENDING_FAULTS, openGuard, pinned, sendingError, sendMessage, SendingError, testMailbox, testSending, type EmailGuard, type SendingFault } from "./client.ts";

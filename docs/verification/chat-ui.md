@@ -2,9 +2,9 @@
 
 The `ui` group of `control-alca` drives the real React renderer — the same
 `<App/>` the desktop shell loads, mounted by `scripts/testing/threads-preview.tsx`
-— in a headless Chrome through the agent-browser binary the harness pins
-(`server/browser-engine-release.ts`, implementation in
-`scripts/testing/control-alca-ui.ts`). Everything it touches is disposable: the
+— in a headless Chrome through a globally installed agent-browser
+(`npm i -g agent-browser`, or `ALCA_AGENT_BROWSER_PATH`; implementation in
+`scripts/testing/control-alca-ui.ts` and `scripts/testing/agent-browser-cli.ts`). Everything it touches is disposable: the
 fake-engine fixture from `launch`, a Vite preview of the app, and one browser
 session whose `HOME` is the fixture's data directory. The user's app on port
 8799 and `~/.alcabots` are never involved.

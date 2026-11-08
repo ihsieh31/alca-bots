@@ -100,9 +100,9 @@ the dialog after a close action although a disposable diagnostic fixture's
 reducer/render saw `settingsOpen: false`. Foreground/committed-render confirmation
 was unavailable. No speculative production close-state change was made.
 
-Desktop bundling was outside this VPS run. The subsequent
-[desktop browser packaging change](../browser-packaging.md) includes Chromium
-Headless Shell and separate native package checks; do not read this VPS report
+Desktop bundling was outside this VPS run. A later desktop browser packaging
+change bundled Chromium Headless Shell with separate native package checks (since
+removed, when ego lite replaced the built-in browser); do not read this VPS report
 as verification of those installers. This run used the self-hosted browser
 installation flow, not the new desktop bundle.
 

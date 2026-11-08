@@ -10,7 +10,6 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { cloudPairingSignature, cloudRequestSignature } from "./cloud-home.ts";
 import { CONTROL_BUSY } from "./control-client.ts";
-import { BROWSER_HANDED_OVER, browserBusyText } from "./host/browser-seats.ts";
 import { removeTempDir, waitForExit } from "./testing/cleanup.ts";
 import { freePortBlock } from "./testing/ports.ts";
 
@@ -229,72 +228,8 @@ describe.each(roles)("one bot's threads on a %s server", (role) => {
   }, 90_000);
 });
 
-/** An agent-browser stand-in answering MCP: no Chrome, no page. */
-function inertBrowser(dir: string) {
-  const browser = join(dir, "agent-browser");
-  writeFileSync(browser, [
-    "#!/usr/bin/env node",
-    'import { createInterface } from "node:readline";',
-    'if (process.argv[2] === "mcp") {',
-    '  createInterface({ input: process.stdin }).on("line", (line) => {',
-    '    const message = JSON.parse(line); if (message.id === undefined) return;',
-    '    const result = message.method === "initialize" ? { protocolVersion: "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "inert-browser", version: "1" } }',
-    '      : message.method === "tools/list" ? { tools: [{ name: "agent_browser_snapshot", inputSchema: { type: "object" } }] }',
-    '      : { content: [{ type: "text", text: "inert browser action" }] };',
-    '    process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: message.id, result }) + "\\n");',
-    '  });',
-    '} else { if (process.argv[2] === "session") console.log(JSON.stringify({ success: true, data: { sessions: [] } })); process.exit(0); }',
-  ].join("\n"), { mode: 0o755 });
-  return browser;
-}
-const browse = (f: Fixture, threadId: string) => internal(f, "/api/internal/browser/mcp", f.servers(threadId).browser.env.ALCA_MCP_TOKEN_BROWSER, {
-  method: "tools/call", params: { name: "agent_browser_snapshot", arguments: {} },
-});
-
-// The stand-in is a script with a shebang, which Windows cannot run as a program.
-describe.skipIf(process.platform === "win32").each(["desktop", "home"] as const)("two threads wanting one bot's browser on a %s server", (role) => {
-  let f: Fixture;
-  afterEach(async () => { await f?.stop(); });
-  const running = async (env: Record<string, string>) => {
-    f = new Fixture(role);
-    f.extraEnv = { ALCA_AGENT_BROWSER_PATH: inertBrowser(f.home), ALCA_COMPUTER_CALL_WAIT_MS: "500", ...env };
-    await f.start();
-    const { botId, threads } = await botWithThreads(f, CLAUDE, 2);
-    await send(f, botId, threads[0]!, "First job");
-    await send(f, botId, threads[1]!, "Second job");
-    await expect.poll(() => f.claudeTurnsStarted(), { timeout: 20_000, interval: 50 }).toBe(2);
-    return { botId, threads };
-  };
-
-  it("wait in plain sight while both keep working, and the second gets it when the first finishes", async () => {
-    const { botId, threads } = await running({});
-    expect((await browse(f, threads[0]!)).body.result.isError).toBeFalsy();
-    const waiting = await browse(f, threads[1]!);
-    expect(waiting.status, "the second thread's call is answered, not refused").toBe(200);
-    expect(waiting.body.result).toEqual({ isError: true, content: [{ type: "text", text: browserBusyText(500) }] });
-    expect((await rows(f, threads[1]!)).find((name) => name.startsWith("Waiting for the browser")), "the person sees why").toContain("Scout is using it");
-    expect((await busyThreads(f, botId)).sort(), "both threads run at once").toEqual([...threads].sort());
-    f.finish(threads[0]!);
-    await expect.poll(async () => (await browse(f, threads[1]!)).body.result.isError, { timeout: 20_000, interval: 100 }).toBeFalsy();
-    await expect.poll(() => rows(f, threads[1]!), { timeout: 10_000, interval: 50 }).toContain("The browser is free. Continuing.");
-    f.release();
-    await expect.poll(async () => (await botRow(f, botId)).busy, { timeout: 20_000, interval: 100 }).toBe(false);
-  }, 90_000);
-
-  it("hand the browser over once its holder has stopped using it, and the holder does not act on a page it did not open", async () => {
-    const { botId, threads } = await running({ ALCA_BROWSER_IDLE_HANDOVER_MS: "200", ALCA_COMPUTER_CALL_WAIT_MS: "5000" });
-    expect((await browse(f, threads[0]!)).body.result.isError).toBeFalsy();
-    expect((await browse(f, threads[1]!)).body.result.isError, "taken from a holder that went quiet, with both turns still running").toBeFalsy();
-    expect((await busyThreads(f, botId)).sort()).toEqual([...threads].sort());
-    expect((await browse(f, threads[0]!)).body.result.content[0].text).toBe(BROWSER_HANDED_OVER);
-    expect((await browse(f, threads[0]!)).body.result.isError).toBeFalsy();
-    f.release();
-    await expect.poll(async () => (await botRow(f, botId)).busy, { timeout: 20_000, interval: 100 }).toBe(false);
-  }, 90_000);
-});
-
-// One relay stands in for the Admin's Boat proxy; a picture stands in for the desktop.
 const FRAME = Buffer.from("/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==", "base64");
+
 describe.each(["desktop", "team"] as const)("two threads of a bot on the team's shared computer on a %s server", (role) => {
   let f: Fixture;
   const servers: Server[] = [];

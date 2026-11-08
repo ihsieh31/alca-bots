@@ -1,13 +1,13 @@
 // The box's way to the internet: an HTTP proxy (CONNECT for TLS, absolute-URI for plain HTTP) on a unix socket that a
-// loopback port inside the box is bridged to. Like the browser's SOCKS gate (server/browser/egress/gate.ts) it resolves
+// loopback port inside the box is bridged to. Like the browser's SOCKS gate (server/egress/gate.ts) it resolves
 // names itself and connects only to public addresses, so a bot's shell reaches neither this server's loopback routes,
 // the local network, the cloud metadata service nor Fly's private network, whatever name it uses.
 import { createServer, request as httpRequest, type ClientRequest, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { connect, type Socket } from "node:net";
 import type { Duplex } from "node:stream";
 
-import { resolveTarget, type ResolvedAddress } from "../browser/egress/gate.ts";
-import { refusalFor, type EgressRules } from "../browser/egress/policy.ts";
+import { resolveTarget, type ResolvedAddress } from "../egress/gate.ts";
+import { refusalFor, type EgressRules } from "../egress/policy.ts";
 
 export interface EgressGateOptions {
   socketPath: string;

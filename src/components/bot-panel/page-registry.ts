@@ -14,12 +14,12 @@ export type PageId =
   | "settings" | "where"
   | "setup" | "model" | "instructions" | "approvals" | "always" | "routines" | "apps"
   | "memory" | "skills"
-  | "browser" | "folder" | "android"
+  | "folder" | "android"
   | "voice" | "blurb" | "team" | "chiefteams" | "mcp" | "tools" | "webhooks" | "visibility" | "slack"
   | "overview" | "prompt" | "history";
 
 /** The pages Simple mode draws; a link to any other page lands where its section does. */
-export const SIMPLE_PAGES = ["settings", "apps", "routines", "memory", "skills", "folder", "browser", "where"] as const satisfies readonly PageId[];
+export const SIMPLE_PAGES = ["settings", "apps", "routines", "memory", "skills", "folder", "where"] as const satisfies readonly PageId[];
 export type SimplePageId = (typeof SIMPLE_PAGES)[number];
 
 export function isSimplePage(page: PageId): page is SimplePageId {
@@ -43,7 +43,6 @@ export const PAGES: Record<PageId, PageMeta> = {
   apps: { title: "botPanel.appsRow", home: "details", intro: "botPanel.apps.intro" },
   memory: { title: "botPanel.memoryRow", home: "library", intro: "botPanel.memory.intro" },
   skills: { title: "botSettings.simple.skills", home: "library", intro: "botSettings.simple.skillsHint" },
-  browser: { title: "settings.sites.title", home: "computer" },
   folder: { title: "computer.files.folder", home: "library", intro: "botPanel.folder.intro" },
   android: { title: "botPanel.page.android", home: "computer" },
   voice: { title: "botPanel.page.voice", home: "details" },

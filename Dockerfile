@@ -21,9 +21,8 @@
 # restarts.
 #
 # A plain `docker run` of either image wants `--init --shm-size=512m`, as the
-# compose files set: the bots' browsers leave exited processes for an init to
-# collect, and Chrome needs shared memory (docs/browser-packaging.md, "Process
-# hygiene"). On Fly Machines (the Cloud home) Fly's own init is PID 1.
+# compose files set: exited child processes need an init to collect them, and
+# Chrome needs shared memory. On Fly Machines (the Cloud home) Fly's own init is PID 1.
 
 FROM caddy:2.10.2 AS edge
 # Official Caddy carries a privileged-port file capability. The Cloud home's
@@ -84,9 +83,9 @@ RUN apt-get update \
     libxshmfence1 libgbm1 fonts-noto-color-emoji fonts-noto-cjk fonts-freefont-ttf \
   && rm -rf /var/lib/apt/lists/* \
   && useradd --create-home --home-dir /data --shell /bin/bash alca
-# The bots' browser (docs/plans/browser-engine.md): the pinned agent-browser
-# and a Chrome for Testing with its libraries, so a server bot can browse.
-# Pin here and in server/browser-engine-release.ts together.
+# The pinned agent-browser and a Chrome for Testing with its libraries, left
+# from the built-in browser that ego lite replaced (docs/plans/browser-engine.md);
+# nothing in the server uses them any more.
 ARG AGENT_BROWSER_VERSION=0.37.0
 # `agent-browser install` fetches Chrome for Testing's last-known-good Stable;
 # the publish job passes that version so a Chrome release rebuilds this layer.

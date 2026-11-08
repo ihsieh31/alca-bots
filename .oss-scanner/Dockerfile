@@ -51,8 +51,8 @@ ENV COREPACK_ENABLE_NETWORK=0
 # build log. A failing test does not fail the build.
 RUN timeout 600 pnpm exec vitest run \
       server/request-auth.test.ts \
-      server/browser/egress/gate.test.ts \
-      server/browser/egress/policy.test.ts \
+      server/egress/gate.test.ts \
+      server/egress/policy.test.ts \
   || echo "WARNING: smoke tests reported failures"
 
 CMD ["bash"]

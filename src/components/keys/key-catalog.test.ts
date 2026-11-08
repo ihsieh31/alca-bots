@@ -53,20 +53,17 @@ describe("every credential has one home on the keys page", () => {
 
   // A key saved from a bot's card lands exactly where its Settings row puts it: the same desktop slot, or the same config.
   it("covers every credential a bot can ask for in a chat, saved where Settings saves it", () => {
-    const homes: Record<keyof typeof CREDENTIAL_TARGETS, KeyId> = {
+    // The 1Password token goes to the saved-logins store, which has no Settings page.
+    const homes: Record<Exclude<keyof typeof CREDENTIAL_TARGETS, "onePasswordToken">, KeyId> = {
       xaiApiKey: "xai", boxToken: "box", opencodeGoApiKey: "opencodeGo", ttsKey: "elevenlabs", fishAudioKey: "fishAudio", geminiTtsKey: "geminiTts",
-      openaiImageApiKey: "imageOpenai", onePasswordToken: "onePassword", composioApiKey: "composio", openaiApiKey: "openai",
+      openaiImageApiKey: "imageOpenai", composioApiKey: "composio", openaiApiKey: "openai",
       anthropicApiKey: "anthropic", openrouterApiKey: "openrouter", mistralApiKey: "mistral", cerebrasApiKey: "cerebras", groqApiKey: "groq",
       greenferenceApiKey: "greenference", metaApiKey: "meta", deepseekApiKey: "deepseek",
     };
-    expect(Object.keys(homes).sort()).toEqual(Object.keys(CREDENTIAL_TARGETS).sort());
-    for (const [name, id] of Object.entries(homes) as Array<[keyof typeof CREDENTIAL_TARGETS, KeyId]>) {
+    expect(Object.keys(homes).sort()).toEqual(Object.keys(CREDENTIAL_TARGETS).filter((name) => name !== "onePasswordToken").sort());
+    for (const [name, id] of Object.entries(homes) as Array<[keyof typeof homes, KeyId]>) {
       const entry = keyEntry(id);
-      if (!entry.target) {
-        expect(entry.opens, name).toBe("logins");
-        expect(desktopCredentialSlot(name), name).toBeNull();
-        continue;
-      }
+      if (!entry.target) throw new Error(`${name} has no Settings home`);
       expect(desktopCredentialSlot(name), name).toBe(entry.target.slot ?? null);
       if (isConfigCredentialTarget(name)) expect(credentialConfigPatch(name, "k"), name).toEqual(entry.target.patch("k", true));
     }
@@ -103,7 +100,7 @@ describe("searching the keys", () => {
   it("matches a provider's name, what the key is for, and its section's title", () => {
     expect(found("fish")).toEqual(["fishAudio"]);
     expect(found("ElevenLabs")).toEqual(["elevenlabs"]);
-    expect(found("Computers and browser")).toEqual(["box", "vps", "onePassword"]);
+    expect(found("Computers and browser")).toEqual(["box", "vps"]);
     expect(found("voice")).toEqual(expect.arrayContaining(["liveCalls", "liveKey", "elevenlabs", "fishAudio"]));
     expect(found("openai")).toEqual(expect.arrayContaining(["openai", "liveCalls", "liveKey", "imageOpenai"]));
     expect(found("gmail")).toEqual(["composio"]);

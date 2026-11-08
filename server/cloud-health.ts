@@ -246,7 +246,7 @@ export interface CloudHealthDeps {
   image: string | undefined;
   /** Null when connected apps are not set up here. */
   connectors: () => Promise<Record<string, { connected: boolean; pending?: boolean }>> | null;
-  browser: () => { available: boolean; installing: boolean; interrupted: number };
+  browser: () => { available: boolean };
   /** The bot box (server/bot-box): whether turns run boxed here, and the last self-check's count. */
   box?: () => BoxReport;
   /** A personal Cloud's milestones since its first boot, and the work its Chief did: times and counts only. */
@@ -297,7 +297,7 @@ export function createCloudHealth(deps: CloudHealthDeps) {
       const base = {
         v: 1 as const, version, image, bootedAt: ledger.bootedAt, at: now(),
         turns: read.turns, routines: read.routines, engines: engines(), connectors: connectorState(),
-        browser: { available: browser.available, installing: browser.installing, interrupted: browser.interrupted },
+        browser: { available: browser.available },
         box: boxSummary(deps.box?.()),
         firstHour: first?.firstHour ?? null, value: first?.value ?? null, room: deps.room?.() ?? null,
         system: { ...memory, rssBytes: process.memoryUsage.rss(), load1: loadavg()[0] ?? 0, cpus: availableParallelism(), disk: diskBytes(deps.dataDir), eventLogWritable: writable(deps.eventsDir) },

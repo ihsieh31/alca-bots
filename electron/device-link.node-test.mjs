@@ -322,32 +322,22 @@ test("a Chrome stream reaches the computer as { chrome: true } and never carries
   assert.deepEqual(targets[1], { host: "example.test", port: 443 });
 });
 
-test("the computer opens a Chrome stream only while it lends Chrome, and a web stream only while it lends its internet connection", async (t) => {
+test("the computer never opens a Chrome stream, and a web stream only while it lends its internet connection", async (t) => {
   const end = await cloudEnd(t);
   const stop = new AbortController();
   t.after(() => stop.abort());
   const echo = await echoServer(t);
-  let grant = { internet: false, chrome: false };
+  let grant = { internet: false };
   const streams = [];
   const running = runDeviceLink({ url: end.url, signal: stop.signal, lends: () => grant, onStream: (target, result) => streams.push({ target, result }),
-    egress: { interfaces: () => ({}), resolve: async () => [{ address: "93.184.215.14", family: 4 }], connect: () => tcpConnect(echo, "127.0.0.1") },
-    chrome: { open: async () => ({ socket: tcpConnect(echo, "127.0.0.1") }) } });
+    egress: { interfaces: () => ({}), resolve: async () => [{ address: "93.184.215.14", family: 4 }], connect: () => tcpConnect(echo, "127.0.0.1") } });
   await until(() => end.sessions.length === 1, "the link to open");
   const { mux } = end.sessions[0];
   assert.deepEqual(await mux.open({ chrome: true }), { refused: "not-lent" });
   assert.deepEqual(await mux.open({ host: "example.com", port: 443 }), { refused: "not-lent" });
   assert.equal(streams.length, 2, "onStream hears refusals too");
-  grant = { internet: false, chrome: true };
-  assert.deepEqual(await mux.open({ host: "example.com", port: 443 }), { refused: "not-lent" }, "lending Chrome does not lend the internet connection");
-  const opened = await mux.open({ chrome: true });
-  assert.ok(opened.join, JSON.stringify(opened));
-  const { near, far } = await socketPair(t);
-  opened.join(far);
-  let echoed = "";
-  near.on("data", (chunk) => { echoed += chunk; });
-  near.write("hello chrome");
-  await until(() => echoed === "hello chrome", "the echo");
-  near.destroy();
+  grant = { internet: true };
+  assert.deepEqual(await mux.open({ chrome: true }), { refused: "not-lent" }, "lending the internet connection does not lend Chrome");
   stop.abort();
   await running;
 });

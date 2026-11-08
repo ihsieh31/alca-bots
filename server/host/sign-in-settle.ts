@@ -1,5 +1,4 @@
 import { userError } from "../user-errors.ts";
-import { savedLoginResumePrompt } from "../../shared/logins.ts";
 import { signInOutcome, signInResumePrompt, signInWaits } from "../../shared/sign-in-request.ts";
 import type { HandoffView } from "../coordinator.ts";
 import type { BotRecord, Message, Store } from "../store.ts";
@@ -15,7 +14,6 @@ export interface SignInSettleDeps {
   parkedDirect(threadId: string): HandoffView | undefined;
   /** Ends the card's plea for help and returns the computers it held. */
   settleHelp(messageId: string): string[];
-  handBackBrowser(bot: BotRecord, threadId: string): void;
   releaseComputer(key: string): void;
   computerKey(bot: BotRecord): string;
 }
@@ -31,13 +29,12 @@ export function createSignInSettle(deps: SignInSettleDeps) {
   const { store } = deps;
 
   /** The person is through with the place the card lent them: its plea goes, and the browser or computer goes back to the bot. */
-  const handPlaceBack = (bot: BotRecord, threadId: string, messageId: string, place: Surface): void => {
+  const handPlaceBack = (bot: BotRecord, messageId: string, place: Surface): void => {
     const pleaded = deps.settleHelp(messageId);
-    if (place === "browser") deps.handBackBrowser(bot, threadId);
-    else for (const key of pleaded.length ? pleaded : [deps.computerKey(bot)]) deps.releaseComputer(key);
+    if (place !== "browser") for (const key of pleaded.length ? pleaded : [deps.computerKey(bot)]) deps.releaseComputer(key);
   };
 
-  const settle = (botId: string, threadId: string, messageId: string, outcome: "done" | "cancelled", saved?: { site: string }): SignInSettled => {
+  const settle = (botId: string, threadId: string, messageId: string, outcome: "done" | "cancelled"): SignInSettled => {
     const bot = store.bot(botId);
     const message = deps.signInMessage(botId, threadId, messageId);
     if (!bot || !message?.signIn) return { status: 404, body: { ...userError("serverError.signIn.requestMissing") } };
@@ -49,13 +46,12 @@ export function createSignInSettle(deps: SignInSettleDeps) {
       return { status: 409, body: { ...userError(settled === "done" ? "serverError.signIn.alreadyDone" : "serverError.signIn.alreadyCancelled") } };
     }
     if (settled && card.resumed) return { status: 200, body: { [outcome]: true, resumed: true } };
-    if (!settled) handPlaceBack(bot, threadId, message.id, card.place);
-    const savedLogin = saved?.site ?? card.savedLogin;
-    const resumed = deps.answerCardNode(threadId, message.id, savedLogin ? savedLoginResumePrompt(savedLogin) : signInResumePrompt(card.site, outcome));
+    if (!settled) handPlaceBack(bot, message.id, card.place);
+    const resumed = deps.answerCardNode(threadId, message.id, signInResumePrompt(card.site, outcome));
     store.patchMessage(threadId, message.id, {
-      signIn: { ...card, ...(outcome === "done" ? { done: true } : { cancelled: true }), ...(savedLogin ? { savedLogin } : {}), ...(resumed ? { resumed: true, error: undefined } : {}) },
+      signIn: { ...card, ...(outcome === "done" ? { done: true } : { cancelled: true }), ...(resumed ? { resumed: true, error: undefined } : {}) },
     });
-    return { status: 200, body: { [outcome]: true, resumed, ...(savedLogin ? { saved: true, site: savedLogin } : {}) } };
+    return { status: 200, body: { [outcome]: true, resumed } };
   };
 
   /** Settles these sign-in cards as answered in the chat, and returns the ids it settled. */
@@ -64,7 +60,7 @@ export function createSignInSettle(deps: SignInSettleDeps) {
     for (const message of store.activePath(threadId)) {
       const card = message.signIn;
       if (message.kind !== "signin" || !card || card.stopped || !signInWaits(card) || (only && !only.includes(message.id))) continue;
-      handPlaceBack(bot, threadId, message.id, card.place);
+      handPlaceBack(bot, message.id, card.place);
       store.patchMessage(threadId, message.id, { signIn: { ...card, answeredInChat: true, error: undefined } });
       settled.push({ id: message.id, site: card.site });
     }
@@ -103,7 +99,7 @@ export function createSignInSettle(deps: SignInSettleDeps) {
       const site = card.site.toLowerCase();
       const used = path.slice(index + 1).some((row) => row.kind === "activity" && row.tool?.ok === true && (row.tool.input ?? "").toLowerCase().includes(site));
       if (!used) return;
-      handPlaceBack(bot, threadId, message.id, card.place);
+      handPlaceBack(bot, message.id, card.place);
       store.patchMessage(threadId, message.id, { signIn: { ...card, done: true, resumed: true, error: undefined } });
     });
   };

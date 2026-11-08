@@ -12,7 +12,6 @@ connector/**/*.sh text eol=lf
 connector/profiles/* text eol=lf
 # Vendor patch hashes and original notices must survive Windows checkout
 # byte-for-byte. Do not let core.autocrlf rewrite these reviewed inputs.
-third_party/browser/** text eol=lf
 # The live-eval judge prompts are checksummed in their manifest, and the golden
 # scenarios are compared byte for byte with what the redactor writes (LF), in
 # evals/live/live-suite.test.ts and evals/golden/golden.test.ts. A CRLF checkout

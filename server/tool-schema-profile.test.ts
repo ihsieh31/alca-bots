@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { TOOL_LIST as BROWSER_TOOLS } from "./browser/tools.ts";
 import { CLOUD_COMPUTER_TOOLS } from "./cloud-computer-tools.ts";
 import { DATA_TOOLS } from "./data/tools.ts";
 import bridgedAgents from "./drivers/agents-catalog-goldens/bridged.tools-list.json" with { type: "json" };
@@ -164,7 +163,7 @@ describe("which turns carry a schema profile", () => {
 
 describe("AlcaBots's own tools", () => {
   const catalogs: Array<[string, ReadonlyArray<{ name: string; inputSchema: unknown }>]> = [
-    ["agents (full)", fullAgents.tools], ["agents (bridged)", bridgedAgents.tools], ["browser", BROWSER_TOOLS],
+    ["agents (full)", fullAgents.tools], ["agents (bridged)", bridgedAgents.tools],
     ["data", DATA_TOOLS], ["cloud computer", CLOUD_COMPUTER_TOOLS],
   ];
 

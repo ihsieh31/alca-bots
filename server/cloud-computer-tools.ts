@@ -1,7 +1,7 @@
 // Served at POST /api/internal/computer/mcp behind a turn-scoped capability, so the Boat credential never leaves this server.
 import type { ValidateFunction } from "ajv";
 import { isolatedRemoteCommand, runCommand, screenshotBoat } from "./boat.ts";
-import { isRedditAddress, REDDIT_REFUSAL } from "./browser/egress/reddit.ts";
+import { isRedditAddress, REDDIT_REFUSAL } from "./egress/reddit.ts";
 import {
   backgroundStatus, commandLateText, EXEC_LATE, PROCESS_ID_PATTERN, startInBackground, STATUS_WAIT_MAX_SECONDS, STDERR_TAIL_CHARS, STDOUT_TAIL_CHARS,
 } from "./cloud-computer-background.ts";

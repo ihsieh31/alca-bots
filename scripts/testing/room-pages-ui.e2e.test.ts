@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, expect, it } from "vitest";
 
 import { ROOM_VIEW_ONLY } from "../../shared/app.ts";
-import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
+import { resolveAgentBrowserBinary } from "./agent-browser-cli.ts";
 import { removeTempDir, waitForExit } from "../../server/testing/cleanup.ts";
 import { runControlOmb } from "../control-alca.ts";
 import { agentBrowser, sessionEnv, UI_TOOLS_DIR, type UiHandle } from "./control-alca-ui.ts";

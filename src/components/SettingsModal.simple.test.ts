@@ -260,7 +260,7 @@ describe("Settings in Simple mode", () => {
     fixture.section = "companion";
     const html = render();
     expect(currentPage(html)).toBe("computer");
-    expect(blocks(html)).toEqual(["computer", "companion", "browser", "logins", "elsewhere", "remote", "desktopWorkspaces"]);
+    expect(blocks(html)).toEqual(["computer", "companion", "browser", "elsewhere", "remote", "desktopWorkspaces"]);
     expect(groupLabels(html)).toEqual(["Your bots’ computers", "Your devices", "Built-in browser"].map((label) => label.replace("’", "&#x27;")));
     expect(html).toContain('aria-label="Enable the built-in browser"');
   });
@@ -314,7 +314,6 @@ describe("Settings in Simple mode", () => {
     ["remote", "computer"],
     ["desktopWorkspaces", "computer"],
     ["computer", "computer"],
-    ["logins", "computer"],
     ["usage", "billing"],
     ["cloudAccount", "billing"],
     ["updates", "updates"],

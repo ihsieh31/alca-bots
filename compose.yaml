@@ -1,8 +1,8 @@
 name: ${COMPOSE_PROJECT_NAME:-alcabots}
 services:
   alca:
-    # Collects exited browser processes; Chrome's shared memory as on the
-    # desktop containers (docs/browser-packaging.md, "Process hygiene").
+    # Collects exited child processes; Chrome's shared memory as on the
+    # desktop containers.
     init: true
     shm_size: 512m
     build:

@@ -7,7 +7,6 @@ import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { skipped } from "../electron/cloud-sync-rules.mjs";
-import { uploadableFiles } from "./browser-upload.ts";
 import { listBotFiles } from "./cloud-send-files.ts";
 import { listMessageFolder, openMessageFile } from "./message-file.ts";
 import { botFileSource, readPageBundle } from "./pages/bundle.ts";
@@ -52,14 +51,12 @@ describe("a bot's private secret files", () => {
     await opened.handle.close();
   });
 
-  it("are never published, read by the extract helper, or uploaded to a page", async () => {
+  it("are never published or read by the extract helper", async () => {
     await expect(readPageBundle(secret, [workspace])).rejects.toMatchObject({ status: 403, message: SECRET_FILE_REFUSAL });
     writeFileSync(join(workspace, ".env"), "x");
     const whole = await readPageBundle(workspace, [workspace]);
     expect(whole.files.map((file) => file.path).sort()).toEqual(["index.html", "notes.txt"]);
     expect(whole.skipped).toEqual([{ path: ".env", why: "hidden" }]);
     await expect(botFileSource(secret, async () => ({ roots: [workspace], vmWorkspace: null }))).rejects.toMatchObject({ status: 403 });
-    expect(uploadableFiles([secret], [workspace])).toEqual({ error: SECRET_FILE_REFUSAL });
-    expect(uploadableFiles([join(workspace, "notes.txt")], [workspace])).toMatchObject({ files: [expect.stringContaining("notes.txt")] });
   });
 });

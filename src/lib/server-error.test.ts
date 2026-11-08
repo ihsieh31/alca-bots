@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { setLocale } from "@/lib/i18n";
 import ptBr from "@/locales/pt-br.json";
 import { api, ApiError } from "@/state/api";
-import { saveLoginFromCard } from "./logins";
 import { pairWithCode, startEmailSignIn } from "./session";
 import { serverErrorText } from "./server-error";
 
@@ -24,17 +23,6 @@ describe("a refusal the server names by key", () => {
     expect(refused).toBeInstanceOf(ApiError);
     expect((refused as ApiError).message).toBe(ptBr["serverError.chat.busyInRoom"].replace("{room}", "Launch"));
     expect((refused as ApiError).body?.error).toBe("this bot is working in channel Launch");
-  });
-
-  it("reaches a member saving a login on a team, where only an admin may", async () => {
-    setLocale("pt-br");
-    vi.stubGlobal("fetch", respond(403, {
-      error: "On Acme only an admin can save a login, and it is then used by every bot in Acme.",
-      errorKey: "serverError.team.memberLogin", errorParams: { team: "Acme" },
-    }));
-    const fields = { username: "me", password: "pw", totp: "" };
-    await expect(saveLoginFromCard({ botId: "b", threadId: "t", messageId: "m" }, fields))
-      .rejects.toMatchObject({ message: ptBr["serverError.team.memberLogin"].replaceAll("{team}", "Acme") });
   });
 
   it("says the department and page refusals in pt-BR, and their English exactly where there are no own words", () => {

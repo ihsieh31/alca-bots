@@ -3434,7 +3434,7 @@
   "signIn.open": "Abrir",
   "signIn.done": "Concluir",
   "signIn.cancel": "Cancelar",
-  "signIn.where.browser": "Faça login no navegador integrado de {name}. Clique em “Abrir” para ir à aba Navegador, já sob seu controle.",
+  "signIn.where.browser": "Faça login no ego lite, o navegador que {name} usa no seu computador.",
   "signIn.where.vm": "Faça login no desktop privado em que {name} trabalha. Clique em “Abrir” para ver o desktop com a opção “Assumir o controle”.",
   "signIn.where.cloud": "Faça login no desktop na nuvem em que {name} trabalha. Clique em “Abrir” para ver o desktop com a opção “Assumir o controle”.",
   "signIn.where.local": "Faça login neste computador, no navegador que {name} está usando.",
@@ -7621,10 +7621,6 @@
   "botAccess.overview.noBotsForPerson": "{name} ainda não tem bots.",
   "botAccess.overview.allPeople": "Ver todas as pessoas",
   "botAccess.overview.toastRemoved": "{bot}: você removeu {name}",
-  "server.browser.waiting": "Esperando pelo navegador, que {name} está usando. O trabalho continua automaticamente quando o navegador estiver livre.",
-  "server.browser.waitingTask": "Esperando pelo navegador, que {name} está usando na tarefa {task}. O trabalho continua automaticamente quando o navegador estiver livre.",
-  "server.browser.free": "O navegador está livre. Continuando.",
-  "server.browser.stoppedWaiting": "Parou de esperar pelo navegador.",
   "composer.queued.capacityStarter": "Na fila. No plano Starter, cada bot trabalha em uma conversa por vez. Esta começa quando a que está em andamento terminar. Um plano maior permite mais conversas ao mesmo tempo.",
   "composer.queued.seePlans": "Ver planos",
   "settings.threads.starter": "O Starter permite uma conversa por vez em cada bot; planos maiores permitem mais. Cada bot tem sua própria vaga. O trabalho que o bot inicia por conta própria continua rodando.",
@@ -9694,5 +9690,7 @@
   "server.meetings.end.meet_refused": "O Google Meet não me deixou entrar como convidado. O anfitrião pode permitir convidados nos controles do organizador, ou a reunião pode não aceitar pessoas de fora da organização.",
   "server.meetings.end.speech_unavailable": "Não consegui a transcrição de voz para esta reunião, então não entrei.",
   "server.meetings.card.settingUp": "Preparando a transcrição (só uma vez, cerca de um minuto)…",
-  "server.meetings.card.speechStopped": "A transcrição parou: {problem}"
+  "server.meetings.card.speechStopped": "A transcrição parou: {problem}",
+  "computer.egoBrowser.title": "Navegando no ego lite",
+  "computer.egoBrowser.body": "{name} abre páginas no ego lite neste computador. Acompanhe e assuma o controle na janela do ego lite."
 }

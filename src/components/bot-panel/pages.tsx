@@ -21,8 +21,7 @@ import { SkillReviewDialog, useManagedSkills, type ManagedSkill } from "../bot-s
 import { useBotApps, type BotApp } from "../bot-settings/useBotApps";
 import type { useBotSettingsDerived } from "../bot-settings/useBotSettingsDerived";
 import { RoutineList } from "../routines/RoutineList";
-import { BrowserLogins } from "./browser-logins";
-import { useOpenComputer, WherePage } from "./ComputerTab";
+import { WherePage } from "./ComputerTab";
 import { SettingsPage } from "./SettingsPage";
 import { panelMemoryNotes, withMemoryNote, withoutMemoryNote, type PanelMemoryNote } from "./memory-notes";
 import type { SimplePageId } from "./page-registry";
@@ -424,11 +423,6 @@ export function FolderPage({ bot }: PageContext) {
   );
 }
 
-export function BrowserPage({ bot, derived }: PageContext) {
-  const openComputer = useOpenComputer(bot);
-  return <BrowserLogins bot={bot} browserEnabled={derived.browserEnabled} onOpenBrowser={() => openComputer("browser")} />;
-}
-
 export function PageBody({ page, onOpen, editingInstructions, onEditInstructions, ...context }: PageContext & {
   page: SimplePageId;
   onOpen?: (page: SimplePageId) => void;
@@ -450,7 +444,5 @@ export function PageBody({ page, onOpen, editingInstructions, onEditInstructions
       return <SkillsPage {...context} />;
     case "folder":
       return <FolderPage {...context} />;
-    case "browser":
-      return <BrowserPage {...context} />;
   }
 }

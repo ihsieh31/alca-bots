@@ -46,7 +46,6 @@ function fixture() {
     },
     threadsReferencing: (fragment) => [...messages].filter(([, list]) => JSON.stringify(list).includes(fragment)).map(([threadId]) => threadId),
     deleteAttachment: (file) => deleted.push(file),
-    eraseBrowsers: async () => true,
     forgetConnections: () => {},
   };
   const file = (n: number) => { writeFileSync(join(attachments, name(n)), "x"); return name(n); };

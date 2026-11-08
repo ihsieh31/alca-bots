@@ -10,7 +10,6 @@ function world(parked?: Partial<HandoffView>) {
   const add = (message: Partial<Message>) => { const full = { id: `m${++ids}`, at: 1_000 + ids, role: "bot", ...message } as Message; rows.push(full); return full; };
   const answered: Array<{ messageId: string; text: string }> = [];
   const released: string[] = [];
-  const handedBack: string[] = [];
   const node = parked ? { id: "as_1", threadId: "work", botId: "dachs", status: "waiting", createdAt: 1_000, ...parked } as HandoffView : undefined;
   const deps: SignInSettleDeps = {
     store: {
@@ -24,11 +23,10 @@ function world(parked?: Partial<HandoffView>) {
     resumableCards: () => [],
     parkedDirect: () => node,
     settleHelp: () => [],
-    handBackBrowser: (_bot, threadId) => { handedBack.push(threadId); },
     releaseComputer: () => {},
     computerKey: () => "computer",
   };
-  return { settle: createSignInSettle(deps), add, rows: () => rows, answered, released, handedBack };
+  return { settle: createSignInSettle(deps), add, rows: () => rows, answered, released };
 }
 
 const card = (site = "notion.so") => ({ kind: "signin" as const, text: `Sign in to ${site}`, signIn: { url: `https://${site}`, site, place: "browser" as const } });
@@ -41,7 +39,6 @@ describe("a sign-in the person answers in the chat", () => {
     expect(w.answered).toEqual([{ messageId: "m1", text: signInChatPrompt("notion.so", "Bin angemeldet") }]);
     expect(w.released).toEqual([]);
     expect(w.rows()[0]!.signIn).toMatchObject({ answeredInChat: true });
-    expect(w.handedBack).toEqual(["work"]);
   });
 
   it("ends a person's own parked conversation, which goes on with the turn their line starts", () => {

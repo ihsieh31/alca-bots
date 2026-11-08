@@ -109,7 +109,7 @@ describe("cloud computer tools", () => {
   });
 
   it("never opens Reddit in the cloud computer's browser, and says why, before the control gate or the Boat", async () => {
-    const { REDDIT_REFUSAL } = await import("./browser/egress/reddit.ts");
+    const { REDDIT_REFUSAL } = await import("./egress/reddit.ts");
     for (const url of ["https://www.reddit.com/r/test/", "http://old.reddit.com/", "https://i.redd.it/a.png", "https://reddit.app.link/x", "https://WWW.REDDIT.COM./"]) {
       const call = rpc({ method: "tools/call", params: { name: "open_url", arguments: { url } } });
       expect(await call.done, url).toEqual({ isError: true, content: [{ type: "text", text: REDDIT_REFUSAL }] });

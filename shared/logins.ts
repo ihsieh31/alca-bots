@@ -1,7 +1,6 @@
 /**
  * Saved logins: a website username and password (and optionally its 2FA key)
- * a bot signs in with but never receives: it calls fill_login and the server
- * fills the fields itself. Clients see a saved login as a list row, never its
+ * kept encrypted on the server. Clients see a saved login as a list row, never its
  * secrets.
  */
 import { getDomain } from "tldts";
@@ -159,9 +158,4 @@ export function loginUsableBy(login: { bots: LoginBots }, botIds: string | reado
 export function loginLabel(login: LoginPlace & { username: string }): string {
   const where = login.exactHost ? login.hosts.join(" or ") : login.site;
   return login.username ? `${where} (${login.username})` : where;
-}
-
-/** The resume line after the person saved a login from a sign-in card. */
-export function savedLoginResumePrompt(site: string): string {
-  return `AlcaBots sign-in update: the person saved a login for ${site}. Open its login page in your browser and call fill_login there: it fills the form and submits it. Then check you are signed in. You never see the password. Never ask for a password or a one-time code in chat.`;
 }

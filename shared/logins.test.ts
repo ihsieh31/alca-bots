@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { loginLabel, loginMatchesHost, loginOriginCheck, loginPageCheck, loginPlace, loginSite, loginUsableBy, normalizeLoginHost, savedLoginResumePrompt } from "./logins.ts";
+import { loginLabel, loginMatchesHost, loginOriginCheck, loginPageCheck, loginPlace, loginSite, loginUsableBy, normalizeLoginHost } from "./logins.ts";
 
 describe("a login's host", () => {
   it.each([
@@ -95,11 +95,4 @@ describe("who may use a login", () => {
     expect(loginUsableBy({ bots: ["pepper"] }, "pepper")).toBe(true);
     expect(loginUsableBy({ bots: ["pepper"] }, "quill")).toBe(false);
   });
-});
-
-it("tells a resumed bot fill_login submits for it, never to ask for the password", () => {
-  const prompt = savedLoginResumePrompt("example.com");
-  expect(prompt).toContain("saved a login for example.com");
-  expect(prompt).toContain("call fill_login there: it fills the form and submits it.");
-  expect(prompt).toContain("Never ask for a password or a one-time code in chat.");
 });

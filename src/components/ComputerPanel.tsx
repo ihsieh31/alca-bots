@@ -23,8 +23,7 @@ import { useDesktopCapabilities } from "./DesktopCapabilities";
 import { RoutinesSection } from "./bot-settings/RoutinesSection";
 import { routineRunLabel, routineRunTone } from "@/lib/routine-display";
 import { AndroidDevicePanel, useAndroidUsbDevices } from "./AndroidDevicePanel";
-import { BrowserPanel } from "./BrowserPanel";
-import { usePanelPage, type PanelPage } from "@/lib/page-open";
+import { EgoBrowserNote } from "./EgoBrowserNote";
 const DataPanel = lazy(() => import("./data/DataPanel").then((module) => ({ default: module.DataPanel })));
 const loadLiveDesktop = () => import("./LiveDesktop").then((module) => ({ default: module.LiveDesktop }));
 const LiveDesktop = lazy(loadLiveDesktop);
@@ -255,8 +254,7 @@ export function ComputerPanel({
   const panelView = resolveComputerPanelView(storedPanelView, { advanced, androidConnected });
   const panelRef = useComputerPanelEntry(profileBot.id, panelView);
   const browserAvailableHere = browserAvailable(state.config);
-  const browserEnabled = builtInBrowserEnabled(state.config) && bot.browser !== false
-    && (browserAvailableHere || state.config?.browserEngine?.installable === true);
+  const browserEnabled = builtInBrowserEnabled(state.config) && bot.browser !== false && browserAvailableHere;
   const [retry, setRetry] = useState(0);
   const [boatKeyShown, setBoatKeyShown] = useState(false);
   // Auto is the server's decision: never guess host-vs-cloud from desktop capabilities.
@@ -319,17 +317,12 @@ export function ComputerPanel({
   }, [bot.id, dispatch, requestedDataResult]);
 
   const requestedSignIn = state.signInFocus?.botId === bot.id ? state.signInFocus : undefined;
-  const [signInRequest, setSignInRequest] = useState<{ url: string; site: string; nonce: number }>();
-  // A published page's Open (usePageOpener): this bot's browser shows, with the page in a new tab.
-  const [pageRequest, setPageRequest] = useState<PanelPage>();
-  usePanelPage(bot.id, (page) => { selectPanelView("browser"); setPageRequest(page); });
   useEffect(() => {
     if (!requestedSignIn || requestedSignIn.consumed) return;
     const view = requestedSignIn.place === "browser" ? "browser" : "computer";
     explicitPanelView.current = true;
     setPanelView(view);
     writeComputerPanelView(bot.id, view);
-    if (view === "browser") setSignInRequest({ url: requestedSignIn.url, site: requestedSignIn.site, nonce: requestedSignIn.requestId });
     dispatch({ type: "signInFocusConsumed", requestId: requestedSignIn.requestId });
   }, [bot.id, dispatch, requestedSignIn]);
 
@@ -1040,7 +1033,7 @@ export function ComputerPanel({
 
   const openConnectionSettings = () => dispatch(openKeySettings("vps"));
 
-  const browserCanTurnOn = browserAvailableHere || state.config?.browserEngine?.installable === true;
+  const browserCanTurnOn = browserAvailableHere;
   const [browserTurningOn, setBrowserTurningOn] = useState(false);
   const turnOnBrowser = async () => {
     if (browserTurningOn) return;
@@ -1263,7 +1256,7 @@ export function ComputerPanel({
         <div {...tabPanelProps("browser")} className={cn("flex min-h-0 flex-1 flex-col px-4 pb-4", TAB_PANEL_FOCUS)}>
           {browserSwitchRow}
           {signInHelp?.place === "browser" && <div className="-mt-1 mb-3">{signInBanner()}</div>}
-          <BrowserPanel bot={bot} signIn={signInRequest} page={pageRequest} />
+          <EgoBrowserNote name={bot.name} />
           {errorText && (
             <div role="alert" className="mt-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-[12px] text-danger">
               {errorText}
