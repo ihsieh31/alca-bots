@@ -41,6 +41,7 @@ const include = [
   "companion/**/*.test.ts",
   "enterprise/**/*.test.ts",
   "connector/**/*.test.ts",
+  "link/**/*.test.ts",
   "scripts/**/*.test.mjs",
   "scripts/**/*.test.ts",
 ];

@@ -99,6 +99,8 @@
     "@hpke/core": "1.9.0",
     "@lezer/highlight": "1.2.5",
     "@muse-code/sdk": "1.4.6",
+    "@noble/curves": "2.3.0",
+    "@noble/hashes": "2.3.0",
     "@novnc/novnc": "1.7.0",
     "@resvg/resvg-js": "2.6.2",
     "@tanstack/react-virtual": "^3.14.13",
@@ -168,5 +170,8 @@
     "vite": "^7.1.0",
     "vitest": "^4.1.11",
     "wrangler": "4.123.0"
+  },
+  "optionalDependencies": {
+    "werift": "0.26.0"
   }
 }

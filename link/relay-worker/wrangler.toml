@@ -1,0 +1,27 @@
+# The AlcaBots relay on Cloudflare Workers. Nothing secret or deployment-specific lives here.
+#
+# Variables (plain text; set in the dashboard, or with `wrangler deploy --var NAME:value`):
+#   ALLOWED_ORIGINS    comma list of browser origins allowed to open a relay socket: the phone site, for example
+#                      https://bots-app.alca-corp.me. Empty means any website can open sockets (/healthz warns).
+#   RELAY_MODE         "production" for a public deployment: an empty ALLOWED_ORIGINS then refuses browser sockets
+#                      and /healthz answers ok:false.
+#   MAX_SOCKETS        sockets the one relay object accepts (default 5000)
+#
+# keep_vars: a deploy keeps the variables already set in the dashboard. There is no [vars] table on purpose: its values
+# would replace the dashboard's on every `wrangler deploy`.
+name = "alcabots-relay"
+main = "worker.ts"
+compatibility_date = "2026-10-01"
+keep_vars = true
+# A self-hoster without a custom domain sets workers_dev = true and removes the route.
+workers_dev = false
+preview_urls = false
+routes = [{ pattern = "bots-relay.alca-corp.me", custom_domain = true }]
+
+[[durable_objects.bindings]]
+name = "RELAY"
+class_name = "RelayObject"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RelayObject"]

@@ -1,6 +1,9 @@
 alca-bots
 Copyright 2026 ihsieh31 and alca-bots contributors
 
+The link/ directory is adapted from alca-agent, Copyright 2026 ihsieh31, used under
+the Apache License, Version 2.0.
+
 alca-bots is a modified version (a derivative work) of OpenMausBot,
 https://github.com/milind-soni/OpenMausBot, Copyright 2026 Milind Soni and
 OpenMausBot contributors, used under the Apache License, Version 2.0. The
