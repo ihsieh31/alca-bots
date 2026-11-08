@@ -96,7 +96,7 @@ const lead: DesiredBot = {
   skills: [{ name: "launch-report", description: "Write it.", text: "---\nname: launch-report\ndescription: Write it.\n---\nBody\n", enabled: true, file: "skills/launch-report/SKILL.md" }],
 };
 const priya: DesiredBot = { name: "Priya", team: "Launch Room", manages: [], title: "Skeptical buyer", approval: "full", computer: "browser",
-  browser: { enabled: true, profile: "guest" }, tools: { deny: ["mcp:mail:*"] }, skills: [] };
+  browser: { enabled: true }, tools: { deny: ["mcp:mail:*"] }, skills: [] };
 const file = (patch: Partial<TeamFile> = {}): TeamFile => ({
   path: "/files/launch-room.yaml", engines: [], warnings: [],
   teams: [{ name: "Launch Room", brief: "We rehearse a launch.", prune: true }],
@@ -126,7 +126,7 @@ describe("team apply", () => {
       "POST /api/bots/bot-1/skill-template", "PATCH /api/bots/bot-1", "tool create_channel",
     ]);
     expect(state.bots.find((bot) => bot.name === "Priya")).toMatchObject({ section: "Launch Room", computer: "browser",
-      browserProfile: "guest", toolScope: { deny: ["mcp:mail:*"] } });
+      toolScope: { deny: ["mcp:mail:*"] } });
     expect(approvalModeFor(state.bots.find((bot) => bot.name === "Priya")!)).toBe("full");
     expect(state.bots.find((bot) => bot.name === "Room Lead")).toMatchObject({ chiefOfStaff: true, managedSections: [], soul: "Lead the rehearsal.", cwd: "/work/room" });
 
@@ -213,7 +213,7 @@ describe("team apply", () => {
       { id: "sales-priya", name: "Priya", section: "Sales", title: "Account manager", soul: "Sell." },
       { id: "room-priya", name: "Priya", section: "Launch Room", title: "Buyer", approvalMode: "ask" }] });
     const applied = await reconcile(client, file(), options());
-    expect(applied.lines).toContain('bot "Priya": update title "Buyer" → "Skeptical buyer"; approval Ask → Full access; computer auto → browser; browser profile its own → guest; tools changed');
+    expect(applied.lines).toContain('bot "Priya": update title "Buyer" → "Skeptical buyer"; approval Ask → Full access; computer auto → browser; tools changed');
     expect(state.bots.find((bot) => bot.id === "sales-priya")).toEqual({ id: "sales-priya", name: "Priya", section: "Sales", title: "Account manager", soul: "Sell.",
       busy: false, description: "", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } });
     expect(state.bots.find((bot) => bot.id === "room-priya")).toMatchObject({ title: "Skeptical buyer", approvalMode: "full" });
@@ -266,7 +266,7 @@ describe("team apply", () => {
 
 describe("botPatch", () => {
   const echo = { id: "b1", name: "Priya", section: "Launch Room", title: "Skeptical buyer", description: "", approvalMode: "full",
-    computer: "browser", browserProfile: "guest", toolScope: { deny: ["native:Bash", "native:Write"] }, modelSelection: { instanceId: "claude", model: "claude-sonnet-5", effort: "high" } };
+    computer: "browser", toolScope: { deny: ["native:Bash", "native:Write"] }, modelSelection: { instanceId: "claude", model: "claude-sonnet-5", effort: "high" } };
 
   const same: DesiredBot = { ...priya, tools: { deny: ["native:Write", "native:Bash"] } };
 

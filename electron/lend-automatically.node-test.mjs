@@ -34,7 +34,7 @@ async function scratch(t) {
 }
 
 /** A Cloud home as the poll sees it: what this computer registered, each job's result, and its disconnects. */
-function cloudHome({ link = true, chrome = true } = {}) {
+function cloudHome() {
   const json = (value, status = 200) => ({ ok: status < 400, status, headers: { get: () => null }, body: (async function* () { yield Buffer.from(JSON.stringify(value)); })() });
   const state = { environmentId: randomUUID(), sessionId: randomUUID(), connects: [], results: [], queue: [], disconnects: [], calls: 0 };
   state.push = operation => state.queue.push({ id: randomUUID(), operation: { computer_id: state.connects.at(-1).id, ...operation } });
@@ -42,7 +42,7 @@ function cloudHome({ link = true, chrome = true } = {}) {
     state.calls++;
     const route = new URL(url).pathname;
     if (route === "/api/auth/session") return json({ kind: "session", id: state.sessionId, scopes: ["admin", "client"], cloudHome: true });
-    if (route === "/.well-known/alcabots/environment") return json({ environmentId: state.environmentId, capabilities: { sharedComputers: true, lendingDetails: true, ...(link ? { deviceLink: true } : {}), ...(chrome ? { myChromeLink: true } : {}) } });
+    if (route === "/.well-known/alcabots/environment") return json({ environmentId: state.environmentId, capabilities: { sharedComputers: true, lendingDetails: true } });
     const body = init?.body ? JSON.parse(init.body) : {};
     if (route === "/api/shared-computers/connect") { state.connects.push(body); return json({ ok: true }); }
     if (route.endsWith("/poll")) {
@@ -99,7 +99,7 @@ async function computer(t, { places = [myCloud, clientA, acme], screen = () => f
   return { dir, file, target, summaries, dials, signedIn, get sharing() { return sharing; }, restart: () => { sharing.close(); sharing = make(); return sharing; } };
 }
 
-test("each Cloud of the person's own is lent this computer by itself: the internet connection, their Chrome and the home folder with editing; not the terminal unless turned on", async t => {
+test("each Cloud of the person's own is lent this computer by itself: the home folder with editing, not the terminal unless turned on", async t => {
   const homes = { [HOME]: cloudHome(), [OTHER]: cloudHome() };
   const dir = await scratch(t);
   const home = path.join(dir, "me");
@@ -109,8 +109,8 @@ test("each Cloud of the person's own is lent this computer by itself: the intern
   mac.sharing.start();
   await until(() => homes[HOME].connects.length === 1, "My Cloud to be lent this computer, with no click");
   const [lent] = homes[HOME].connects;
-  assert.deepEqual({ folders: lent.folders.map(folder => [folder.name, folder.write]), internet: lent.internet, chrome: lent.chrome, terminal: lent.terminal, computer: lent.computer },
-    { folders: [["me", true]], internet: true, chrome: true, terminal: false, computer: false });
+  assert.deepEqual({ folders: lent.folders.map(folder => [folder.name, folder.write]), terminal: lent.terminal, computer: lent.computer },
+    { folders: [["me", true]], terminal: false, computer: false });
   const kept = JSON.parse(await readFile(mac.file, "utf8")).records[myCloud.id];
   assert.deepEqual({ home: kept.folders[0].home, path: kept.folders[0].path, write: kept.folders[0].write }, { home: true, path: home, write: true });
   assert.deepEqual(mac.summaries.at(-1).clouds, ["My Cloud"]);
@@ -118,7 +118,7 @@ test("each Cloud of the person's own is lent this computer by itself: the intern
 
 test("a server of the person's own their bots moved to is lent as their Clouds are, only while it is home, says it is theirs alone and is the server the move chose", async t => {
   const GARAGE = "https://garage.example.test", garage = { id: "garage", kind: "remote", name: "Garage server", origin: GARAGE };
-  const server = cloudHome({ link: false, chrome: false });
+  const server = cloudHome();
   const answer = server.fetch;
   let own = true;
   server.fetch = async (url, init) => (new URL(url).pathname === "/api/auth/session"
@@ -213,7 +213,7 @@ test("Pause stops every Cloud at once and lasts across restarts; Resume lends ag
   assert.equal(mac.sharing.lentToCloud(myCloud).paused, true, "Files keeps My Cloud's copies, and holds bots' changes there");
   const plans = path.join(mac.dir, "Plans");
   await mkdir(plans);
-  await mac.sharing.saveCloud(myCloud, { folders: [{ id: randomUUID(), path: plans, write: false }], internet: true, chrome: true });
+  await mac.sharing.saveCloud(myCloud, { folders: [{ id: randomUUID(), path: plans, write: false }] });
   await delay(200);
   assert.equal(homes[HOME].connects.length, 1, "a folder the Files page adds while paused is kept for Resume, never lent now");
   homes[HOME].push({ action: "list_files", folder_id: randomUUID() });
@@ -254,7 +254,7 @@ test("someone who had switched lending off, or unticked the internet connection,
       assert.equal(homes[HOME].connects.length, 0, `${what}: nothing lent`);
       assert.deepEqual({ paused: mac.summaries.at(-1)?.paused, clouds: mac.summaries.at(-1)?.clouds }, { paused: true, clouds: ["My Cloud"] }, `${what}: the menu bar says Paused, with Resume`);
     } else {
-      await until(() => homes[HOME].connects.at(-1)?.internet === true, `${what}: lent by itself`);
+      await until(() => homes[HOME].connects.length > 0, `${what}: lent by itself`);
       assert.equal(sharing.paused(), false, what);
     }
   }
@@ -380,15 +380,15 @@ test("the automatic grant, piece by piece: the home folder first with editing, f
   assert.equal(wanted.folders.length, 20);
   assert.deepEqual(wanted.folders[0], home);
   assert.equal(wanted.folders[1].write, true, "a kept folder the move lends with editing keeps it");
-  assert.deepEqual({ screen: wanted.screen, internet: wanted.internet, chrome: wanted.chrome, terminal: wanted.terminal }, { screen: true, internet: true, chrome: true, terminal: false });
+  assert.deepEqual({ screen: wanted.screen, terminal: wanted.terminal }, { screen: true, terminal: false });
   const keptHome = { ...home, id: "kept-home-id", write: false };
   assert.deepEqual(automaticGrant({ kept: [keptHome], home }).folders, [{ ...keptHome, write: true }], "the home folder kept before keeps its id and gains editing");
   assert.deepEqual(automaticGrant({}).folders, [], "no home folder where it can't be lent");
-  const record = { enabled: true, cloud: { accountId: "a", origin: HOME }, folders: wanted.folders, internet: true, chrome: true, computer: true, terminal: false };
+  const record = { enabled: true, cloud: { accountId: "a", origin: HOME }, folders: wanted.folders, computer: true, terminal: false };
   assert.equal(lendsAsWanted(record, wanted), true);
   assert.equal(automaticGrant({ terminal: true }).terminal, true, "the terminal only when the person turned it on");
   assert.equal(lendsAsWanted({ ...record, terminal: true }, { ...wanted, terminal: true }), true);
-  for (const changed of [{ terminal: true }, { chrome: false }, { internet: false }, { computer: false }, { enabled: false }, { cloud: undefined }, { folders: wanted.folders.slice(1) }]) {
+  for (const changed of [{ terminal: true }, { computer: false }, { enabled: false }, { cloud: undefined }, { folders: wanted.folders.slice(1) }]) {
     assert.equal(lendsAsWanted({ ...record, ...changed }, wanted), false, JSON.stringify(Object.keys(changed)));
   }
 });
@@ -558,7 +558,7 @@ test("the activity window says what every language pack says, word for word", as
 
 test("a home server that refuses this computer is shown as waiting, never as able to use it, until it accepts (#4078)", async t => {
   const GARAGE = "https://garage.example.test", garage = { id: "garage", kind: "remote", name: "Garage server", origin: GARAGE };
-  const server = cloudHome({ link: false, chrome: false });
+  const server = cloudHome();
   const answer = server.fetch;
   let refuse = true;
   const reply = (value, status) => ({ ok: status < 400, status, headers: { get: () => null }, body: (async function* () { yield Buffer.from(JSON.stringify(value)); })() });

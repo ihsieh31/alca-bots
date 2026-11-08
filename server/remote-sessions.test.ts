@@ -510,7 +510,7 @@ describe("pairing", () => {
       expect(config.opencodeGo).toEqual({ configured: false, providerKeys: [] });
       expect(config.profile).toEqual({ name: "Updated fixture", email: "" });
       expect(config.vps).toEqual({ configured: true, sshAlias: "" });
-      expect(config.browserProfiles).toEqual([{ id: "fixture", name: "Fixture browser" }]);
+      expect(config).not.toHaveProperty("browserProfiles");
     }
     function expectAdminConfig(config: any) {
       expect(config.openai).toEqual({ configured: true, last4: "a1b2" });
@@ -518,7 +518,7 @@ describe("pairing", () => {
       expect(config.opencodeGo).toEqual({ configured: false, providerKeys: ["VENICE_API_KEY"] });
       expect(config.profile).toEqual({ name: "Updated fixture", email: "updated-private@example.invalid", aboutMe: "" });
       expect(config.vps).toEqual({ configured: true, sshAlias: "fixture-private-host" });
-      expect(config.browserProfiles).toEqual([{ id: "fixture", name: "Fixture browser", partitionId: "fixture-private-partition" }]);
+      expect(config).not.toHaveProperty("browserProfiles");
     }
     try {
       // Connect the client first, so a mutation of the shared payload would also corrupt the live event and replay buffer.

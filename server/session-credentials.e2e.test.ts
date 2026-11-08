@@ -35,11 +35,8 @@ async function fixture(test: (f: any) => Promise<void>, { thisComputer = false }
       `if (after("--resume") || after("--session-id")) appendFileSync(${JSON.stringify(launchesPath)}, JSON.stringify({ resume: after("--resume"), servers: Object.keys(servers), token: servers.agents?.env?.ALCA_COMMS_TOKEN ?? null, control: servers.computer?.env?.ALCA_CONTROL_TOKEN ?? null }) + "\\n");`,
       `await import(${JSON.stringify(pathToFileURL(fileURLToPath(new URL("./testing/fake-claude-cli.ts", import.meta.url))).href)});`,
     ].join("\n"), { mode: 0o700 });
-    const browser = join(dataDir, "agent-browser.mjs");
-    writeFileSync(browser, [
-      "#!/usr/bin/env node",
-      'if (process.argv[2] === "session" && process.argv[3] === "list") process.stdout.write(JSON.stringify({ success: true, data: { sessions: [] } }));',
-    ].join("\n"), { mode: 0o700 });
+    const browser = join(dataDir, "ego-browser");
+    writeFileSync(browser, "#!/bin/sh\nexit 0\n", { mode: 0o700 });
     // Add the ACP engine and the browser while the server is stopped.
     await waitForExit(session.child, { signal: "SIGTERM" });
     const configPath = join(dataDir, "config.json");
@@ -67,7 +64,7 @@ async function fixture(test: (f: any) => Promise<void>, { thisComputer = false }
       cwd: fileURLToPath(new URL("..", import.meta.url)),
       env: {
         ...verificationServerEnvironment({ FAKE_CLAUDE_MODE: "hang", FAKE_CLAUDE_RELEASE: release }, dataDir, Number(new URL(url).port)),
-        ...(withBrowser ? { ALCA_AGENT_BROWSER_PATH: browser } : {}),
+        ...(withBrowser ? { ALCA_EGO_BROWSER_PATH: browser } : {}),
         ...(thisComputer ? { ALCA_TEST_DESKTOP_CUA_CONNECTION: join(userData, "cua-connection.json") } : {}),
       },
       stdio: ["ignore", log, log],

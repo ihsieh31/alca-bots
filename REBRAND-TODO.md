@@ -65,13 +65,13 @@ pnpm exec vitest run <檔案>   # 完整套件很慢（本機一小時以上）�
    - Docker 映像檔、CI 與 compose：`Dockerfile` 不再裝 Chrome 系統庫、agent-browser 或 Chrome for Testing；`docker.yml` 移除瀏覽器 smoke、Chrome/Chromium 版本快取鍵與 build-args；三個 compose 檔移除只為 Chrome 設的 `shm_size`；環境白名單不再帶 `AGENT_BROWSER_EXECUTABLE_PATH`。`scripts/docker-image.test.ts` 同步改斷言，並加了一條「映像裡不得出現瀏覽器二進位」的檢查。
    - 其他語系的舊瀏覽器字串：刪掉 114 個英文 key、共 1015 條翻譯與 901 筆 source hash。保留仍被 `feature-flags.ts`、`ComputerPanel.tsx` 使用的 `browser.noEngine`、`computer.browserSwitch.title`。
    - `browserMatesOf`／`loginHeldBackFor`，以及 `BotLogins` 裡只服務它們的 `bots`、`cardBots`、`sitesFor`、`markUsed`。
+   - 設定裡的 `browserProfiles`、bot 的 `browserProfile`／`recordBrowserSteps`：已刪。舊的 `config.json`、`bots.json`、team 檔和套件檔留著這些欄位仍可載入，下次存檔時丟掉。
+   - 借電腦的網路連線與 Chrome，以及整條 device link 通道（`server/device-links.ts`、`electron/device-link*.mjs`、`electron/device-egress.mjs`）：它們只服務雲端的內置瀏覽器，已一起下線。舊授權裡的 `internet`／`chrome` 欄位會被忽略；曾取消勾選網路連線的人仍視為「說過不要」，啟動時保持暫停。
 
    **保留（不是殘留）**
    - UI 驗證 harness `scripts/testing/control-alca-ui.ts` 仍用開發者自己裝的 agent-browser（`scripts/testing/agent-browser-cli.ts` 是上個 commit 刻意留下的）；它驅動的是被測的 renderer，跟 bot 用哪個瀏覽器無關。砍掉會連帶毀掉 CI 的 `ui-smoke` job、約 30 個 e2e 與 `docs/verification/chat-ui.md` 等 recipe；要換 driver 得先重寫 snapshot／ref／session 語意，屬獨立工程。
 
    **還留著、之後可再清**
    - 已存的登入資料後端（`server/login-store.ts`、`server/onepassword.ts`、`/api/logins`、雲端搬移時的登入資料）：沒有 UI 在用，但 `secretForms`／`HeldSecrets` 被 email 與 secret vault 用、`BotLogins.credentialConfig` 被 credential card 用、`login-handoff.ts` 的通道被連線搬移用；要先解耦才能刪，不能整檔砍。
-   - 設定裡的 `browserProfiles`、bot 的 `browserProfile`／`recordBrowserSteps`：跨 shared/server/src/electron/companion 約 260 處引用。`new-bot-defaults.ts` 與 `team-file.ts` 的 schema 是 `.strict()`，舊 `config.json`／team 檔留著這些欄位會直接 parse 失敗，得照 repo 既有的 legacy 遷移慣例加「讀舊值再丟掉」的相容層。
-   - Electron 借電腦的 Chrome 授權欄位，以及 `server/device-links.ts` 的網路借用路線：`chrome` 還在 registration schema、`device-link-protocol.mjs` 的幀與借電腦顯示字串；`DeviceLinks.route()` 沒有生產呼叫者，但 `accept()`／`drop()`／`close()` 仍服務 WS 握手，且 `device-links.test.ts` 的 8 個測試都靠 `route()` 觀察連線。要先決定只刪 route 還是整條 device link 通道一起下線，再連 electron 端一併清。
 6. **macOS 使用者**：App 第一次打開要「右鍵 → 打開」；自動更新在 macOS 上不會運作，要手動下載新版。
 7. **發佈**：改 `package.json` 的 version 並推上 main 會觸發 Release workflow。npm 發佈（`alca-bots`）和 Docker（`ghcr.io/ihsieh31/...`）的 workflow 可能還需要調整 secrets。

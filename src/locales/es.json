@@ -1056,7 +1056,6 @@
   "lending.action.runCommand": "Ejecutó un comando",
   "lending.action.screenTools": "Revisó los controles de apps y pantalla",
   "lending.action.screen": "Usó apps y la pantalla",
-  "lending.action.website": "Abrió un sitio web",
   "lending.action.invalid": "Solicitud con formato incorrecto",
   "lending.action.other": "Otra solicitud",
   "memory.lendingReview": "La memoria de este bot cambió en una conversación que no escribiste tú, así que no puede usar tu equipo. Revisa las notas de abajo y márcalas como revisadas.",

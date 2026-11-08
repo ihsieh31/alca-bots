@@ -12,9 +12,7 @@ import { createLendingActivity, describeSharedOperation } from "./lending-activi
 import { cuaUnavailable, SCREEN_LOCKED } from "./lent-screen-failures.mjs";
 import { createLentScreenPresence } from "./lent-screen-presence.mjs";
 import { BACKGROUND_HEADERS, CloudAsleepError, asleepAnswer, createCloudPowerGate } from "./cloud-power.mjs";
-import { linkUrl, runDeviceLink } from "./device-link.mjs";
 import { createComputerAsks } from "./computer-asks.mjs";
-import { LINK_ASLEEP, linkPath } from "./device-link-protocol.mjs";
 import { shareableDrive } from "./shared-drives.mjs";
 import nativeText from "./native-text.cjs";
 
@@ -143,11 +141,9 @@ const lendsMcp = environments => {
   return { mcpServers: true, ...(ids.length ? { environments: ids } : {}) };
 };
 
-/** A Cloud grant lends the internet connection unless it was unticked: one kept without `internet` lends it too. */
-const lendsInternet = grant => Boolean(grant?.cloud) && grant.internet !== false;
-
 /** Whether the person said no to lending this Cloud before lending was automatic: their own Off (`stopped.reason` "you",
- * or an Off kept from before the reason was) or the internet connection unticked. Lending then starts Paused. */
+ * or an Off kept from before the reason was) or the internet connection unticked in a grant kept from then. Lending
+ * then starts Paused. */
 export function saidNo(record) {
   if (!record?.cloud) return false;
   if (record.enabled !== true) return record.stopped?.reason === "you" || typeof record.stopped?.reason !== "string";
@@ -164,10 +160,10 @@ function terminalLentBeforeAutomatic(records) {
   return grants.every(grant => grant.cloud.accountId !== account || grant.terminal === true) ? account : null;
 }
 
-/** What each Cloud of the person's own gets by itself: the internet connection, their Chrome, apps and screen once
- * computer control works here (`screen`), and the home folder with editing (`home`, null when it can't be lent), on top
- * of the folders lent to it already (`kept`, which Files may keep copies of) and the project folders the move adds. The
- * terminal only when the person turned it on (`terminal`). At most 20 folders, the home folder first. */
+/** What each Cloud of the person's own gets by itself: apps and screen once computer control works here (`screen`), and
+ * the home folder with editing (`home`, null when it can't be lent), on top of the folders lent to it already (`kept`,
+ * which Files may keep copies of) and the project folders the move adds. The terminal only when the person turned it on
+ * (`terminal`). At most 20 folders, the home folder first. */
 export function automaticGrant({ kept = [], home = null, screen = false, projects = [], terminal = false }) {
   const byPath = new Map();
   const keptHome = home ? kept.find(folder => folder.path === home.path) : null;
@@ -175,7 +171,7 @@ export function automaticGrant({ kept = [], home = null, screen = false, project
     const known = byPath.get(folder.path);
     byPath.set(folder.path, known ? { ...known, write: known.write || folder.write === true } : folder);
   }
-  return { folders: [...byPath.values()].slice(0, 20), screen: screen === true, internet: true, chrome: true, terminal: terminal === true };
+  return { folders: [...byPath.values()].slice(0, 20), screen: screen === true, terminal: terminal === true };
 }
 
 const lentAs = folder => `${folder.path}\n${folder.write === true}`;
@@ -183,7 +179,7 @@ const lentAs = folder => `${folder.path}\n${folder.write === true}`;
 export function lendsAsWanted(record, wanted) {
   if (record?.enabled !== true || !record.cloud || !Array.isArray(record.folders)) return false;
   const have = new Set(record.folders.map(lentAs));
-  return record.internet === true && record.chrome === true && (record.computer === true) === wanted.screen && (record.terminal === true) === wanted.terminal
+  return (record.computer === true) === wanted.screen && (record.terminal === true) === wanted.terminal
     && have.size === wanted.folders.length && wanted.folders.every(folder => have.has(lentAs(folder)));
 }
 
@@ -191,18 +187,9 @@ class Paused extends Error {}
 
 const LENT_PLATFORMS = new Set(["darwin", "win32", "linux"]);
 const RECONNECT_EVERY_MS = 15 * 60_000;
-/** Waits before the device link is dialled again, longer after each attempt that never opened. */
-const LINK_RETRY_MS = [2_000, 5_000, 15_000, 60_000];
-/** The link carried bytes this recently: the tray says the computer is in use. */
-const IN_USE_MS = 5_000;
-/** A site opened through this computer goes into its activity once per outcome in this long, so a page's many
- * connections are one line. */
-const BROWSE_NOTE_MS = 10 * 60_000;
-
 /** Outbound HTTPS only: no local listening port, and pairing cookies and the connector secret stay in Electron. */
 /** `reconnect(origin)`: signs this app back in to the person's own Cloud when its session there has ended, so lending
- * resumes by itself; at most every 15 minutes. `linkHeaders(env)`: the device link's sign-in, as the poll's fetch
- * carries it (the session cookie). `myCloud()`: the saved server that is the person's own My Cloud, which the move's
+ * resumes by itself; at most every 15 minutes. `myCloud()`: the saved server that is the person's own My Cloud, which the move's
  * project folders are lent to. `ownClouds()`: the saved servers that are the verified session's own Clouds, never a
  * Team Cloud: each is lent this computer by itself (automaticGrant) unless lending is paused. `screen()`: computer
  * control's state, whose `lent` says whether apps and screen are lent: computer control
@@ -213,7 +200,7 @@ const BROWSE_NOTE_MS = 10 * 60_000;
  * own prompt, `startScreen()` starts computer control again (its state after), and `confirmTerminal()` turns on
  * running commands once the person confirms it here. */
 export function createComputerSharing({ file, fetch: fetchImpl, environments, localEnvironments = () => [], cuaConnection, hostControl, screenLocked = () => false, idleSeconds = () => null, protectedPaths = [], enabled = async () => false, home = os.homedir(), activityFile, cloud = () => null, onChange = () => {}, reconnect = null, now = Date.now, power = createCloudPowerGate(),
-  linkHeaders = () => ({}), WebSocket: linkSocket = globalThis.WebSocket, egress = {}, myCloud = () => null, ownClouds = () => [], screen = () => false, askForScreen = () => {}, cloudPower = () => null,
+  myCloud = () => null, ownClouds = () => [], screen = () => false, askForScreen = () => {}, cloudPower = () => null,
   prompt = async () => null, startScreen = async () => null, confirmTerminal = async () => false, log = () => {}, t = nativeText.englishText.t }) {
   const protectedRoots = [path.dirname(file), ...protectedPaths.filter(entry => typeof entry === "string" && entry), ...personalSecretPaths(home)];
   const activity = createLendingActivity(activityFile ?? path.join(path.dirname(file), "lending-activity.jsonl"));
@@ -236,17 +223,13 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
   const changeGrant = id => { const version = (grantVersions.get(id) ?? 0) + 1; grantVersions.set(id, version); return version; };
   const status = new Map();
   const reconnected = new Map();
-  /** The Clouds whose device link is open now. */
-  const linked = new Set();
-  const inUse = new Map();
   let closed = false;
   let maintainerOff = false;
   let executing = null;
   const changed = () => { if (!closed) try { onChange(summary()); } catch {} };
   const summary = () => {
-    const browsing = [...inUse.keys()].find(id => linked.has(id));
     const lent = paused ? [] : environments().filter(env => records[env.id]?.cloud && records[env.id]?.enabled === true);
-    const using = lent.filter(env => executing?.env === env.id || (inUse.has(env.id) && linked.has(env.id)));
+    const using = lent.filter(env => executing?.env === env.id);
     return {
       lending: lent.map(env => env.id),
       clouds: (paused ? ownClouds() : lent).map(env => env.name),
@@ -256,7 +239,7 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
       using: using.map(env => env.name),
       paused,
       terminal: terminalAccount !== null && terminalAccount === signedInAccount(),
-      busy: executing ?? (browsing ? { env: browsing, action: "internet" } : null),
+      busy: executing ?? null,
       screen: screenNow,
     };
   };
@@ -268,25 +251,6 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
     if (JSON.stringify(next) !== before) changed();
     return status === true || next?.lent === true;
   });
-  /** Each site My Cloud's browsers opened through this computer, or that its check refused, as activity. */
-  const noted = new Map();
-  const browsed = env => (target, result) => {
-    if (!result?.socket && !result?.refused) return;
-    const key = `${env.id}\n${target.chrome === true ? "chrome" : target.host}\n${result.refused ?? "ok"}`;
-    if (now() - (noted.get(key) ?? -Infinity) < BROWSE_NOTE_MS) return;
-    if (noted.size >= 1000) for (const [old, at] of noted) if (now() - at >= BROWSE_NOTE_MS) noted.delete(old);
-    noted.set(key, now());
-    const viaChrome = target.chrome === true;
-    activity.record({ env, action: viaChrome ? "chrome" : "internet", detail: viaChrome ? "" : String(target.host), ok: Boolean(result.socket), ...(result.refused ? { error: String(result.refused) } : {}) });
-  };
-  const traffic = id => () => {
-    const was = inUse.get(id);
-    clearTimeout(was);
-    const timer = setTimeout(() => { if (inUse.get(id) === timer) { inUse.delete(id); changed(); } }, IN_USE_MS);
-    timer.unref?.();
-    inUse.set(id, timer);
-    if (!was) changed();
-  };
   // A remote workspace's capability is not authority here: recheck the local gate (maintainer grants only).
   const requireEnabled = async () => {
     const allowed = !closed && !maintainerOff && await enabled().catch(() => false);
@@ -359,7 +323,7 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
       .catch(error => { throw error.status === 401 || error.status === 403 ? Object.assign(error, { problem: "connect-first" }) : error; });
     if (auth.kind !== "session" || !uuid(auth.id) || !uuid(descriptor.environmentId)) throw Object.assign(new Error("Complete server pairing or sign-in first"), { problem: "connect-first" });
     if (descriptor.capabilities?.sharedComputers !== true) throw new Error("Update this server to enable computer sharing");
-    return { auth, info: { sessionId: auth.id, environmentId: descriptor.environmentId }, details: descriptor.capabilities?.lendingDetails === true, link: descriptor.capabilities?.deviceLink === true, chrome: descriptor.capabilities?.myChromeLink === true, timeouts: descriptor.capabilities?.commandTimeouts === true, long: descriptor.capabilities?.longCommands === true, edits: descriptor.capabilities?.fileEdits === true, asks: descriptor.capabilities?.computerAsks === true, mcp: descriptor.capabilities?.lentMcp === true };
+    return { auth, info: { sessionId: auth.id, environmentId: descriptor.environmentId }, details: descriptor.capabilities?.lendingDetails === true, timeouts: descriptor.capabilities?.commandTimeouts === true, long: descriptor.capabilities?.longCommands === true, edits: descriptor.capabilities?.fileEdits === true, asks: descriptor.capabilities?.computerAsks === true, mcp: descriptor.capabilities?.lentMcp === true };
   };
   const identity = async env => {
     await requireEnabled();
@@ -372,13 +336,11 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
    * server the move chose (lending-target.mjs `own:<environment id>`). */
   const ownHomeId = env => { const current = cloud(env); return current?.origin === env.origin && current.accountId?.startsWith("own:") ? current.accountId.slice(4) : null; };
   const cloudIdentity = async env => {
-    const { auth, info, details, link, chrome: takesChrome, timeouts, long, edits, mcp } = await describe(env);
+    const { auth, info, details, timeouts, long, edits, mcp } = await describe(env);
     const own = ownHomeId(env);
     if (own !== null && (auth.own !== true || info.environmentId !== own)) throw Object.assign(new Error(t("native.lend.homeChanged")), { problem: "not-cloud" });
     if ((own === null && auth.cloudHome !== true) || !Array.isArray(auth.scopes) || !auth.scopes.includes("admin")) throw Object.assign(new Error("This server is not My Cloud"), { problem: "not-cloud" });
     if (details) supportsDetails.add(env.id); else supportsDetails.delete(env.id);
-    if (link) supportsLink.add(env.id); else supportsLink.delete(env.id);
-    if (takesChrome) supportsChrome.add(env.id); else supportsChrome.delete(env.id);
     if (timeouts) supportsTimeouts.add(env.id); else supportsTimeouts.delete(env.id);
     if (long) supportsLong.add(env.id); else supportsLong.delete(env.id);
     if (edits) supportsEdits.add(env.id); else supportsEdits.delete(env.id);
@@ -388,35 +350,9 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
   /** The Clouds that keep MCP servers for this computer to run. */
   const supportsMcp = new Set();
   const supportsDetails = new Set();
-  const supportsLink = new Set();
-  /** The Clouds that take the person's Chrome over the device link. */
-  const supportsChrome = new Set();
   const supportsTimeouts = new Set();
   const supportsLong = new Set();
   const supportsEdits = new Set();
-  /** My Cloud's browsers reach the web through this computer while lending runs; never while My Cloud sleeps, so a
-   * sleeping Cloud is never dialled. */
-  const keepLink = async (env, grant, signal) => {
-    for (let failures = 0; !signal.aborted;) {
-      if (sleepsHere(env) && sleepGate(env).asleep()) {
-        await sleepGate(env).wait(signal);
-        continue;
-      }
-      let opened = false;
-      const signIn = await Promise.resolve().then(() => linkHeaders(env)).catch(() => ({}));
-      const ended = await runDeviceLink({
-        url: linkUrl(env.origin, linkPath(grant.id)), signal, WebSocket: linkSocket, egress, traffic: traffic(env.id), onStream: browsed(env),
-        lends: () => ({ internet: lendsInternet(grant) }),
-        headers: { ...signIn, origin: env.origin, ...BACKGROUND_HEADERS, "x-alca-computer-secret": grant.secret },
-        onOpen: () => { opened = true; failures = 0; linked.add(env.id); changed(); },
-      });
-      linked.delete(env.id); changed();
-      if (signal.aborted) return;
-      if (ended.code === LINK_ASLEEP) { if (sleepsHere(env)) sleepGate(env).hold(); continue; }
-      if (!opened) failures++;
-      try { await delay(LINK_RETRY_MS[Math.min(failures, LINK_RETRY_MS.length - 1)], undefined, { signal }); } catch { return; }
-    }
-  };
   const matches = (grant, info) => grant?.sessionId === info.sessionId && grant?.environmentId === info.environmentId;
   const stop = id => {
     const live = running.get(id);
@@ -447,7 +383,7 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
               if (records[env.id]?.id === grant.id) store({ ...records, [env.id]: grant });
             }
           } else if (!matches(grant, await identity(env))) throw new Error("Server sign-in changed. Review computer access again in Settings.");
-          // A folder deleted since is left out, so the rest (the internet connection too) keeps working; any other refusal
+          // A folder deleted since is left out, so the rest keeps working; any other refusal
           // still stops lending.
           const present = new Set((await existingFolders(grant.folders, validateSharedFolders)).map(folder => folder.id));
           const folders = grant.folders.filter(folder => present.has(folder.id));
@@ -459,8 +395,6 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
             folders: folders.map(({ id, name, write }) => ({ id, name, write })), terminal: grant.terminal, computer: grant.computer,
             // So My Cloud's bots say "your PC" on Windows and "your Mac" only on a Mac; only a server that takes it gets it.
             ...(supportsDetails.has(env.id) && LENT_PLATFORMS.has(process.platform) ? { platform: process.platform } : {}),
-            ...(grant.cloud && supportsLink.has(env.id) ? { internet: lendsInternet(grant) } : {}),
-            ...(grant.cloud && supportsChrome.has(env.id) ? { chrome: grant.chrome === true } : {}),
             ...(supportsTimeouts.has(env.id) ? { commandTimeouts: true } : {}),
             ...(supportsLong.has(env.id) ? { longCommands: true } : {}),
             ...(supportsEdits.has(env.id) ? { fileEdits: true } : {}),
@@ -469,7 +403,6 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
           if (signal.aborted) break;
           status.set(env.id, { connected: true });
           changed();
-          if (supportsLink.has(env.id) && (lendsInternet(grant) || (grant.cloud && grant.chrome === true && supportsChrome.has(env.id)))) live.link ??= keepLink(env, grant, signal).catch(() => {});
           while (!signal.aborted) {
             await gate();
             awake();
@@ -563,15 +496,6 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
       }
     })().catch(() => {});
   };
-  /** Lent and connected, it says whether its internet connection is in use yet: "on", "connecting", or "unsupported" by
-   * a Cloud too old for the device link. */
-  const internetState = (env, lent) => lendsInternet(lent) && lent.enabled === true && status.get(env.id)?.connected
-    ? { internet: true, link: !supportsLink.has(env.id) ? "unsupported" : linked.has(env.id) ? "on" : "connecting" }
-    : { internet: lendsInternet(lent) };
-  /** The same for the person's Chrome: "on", "connecting", or "unsupported" by a Cloud that does not take it. */
-  const chromeState = (env, lent) => lent?.cloud && lent.chrome === true && lent.enabled === true && status.get(env.id)?.connected
-    ? { chrome: true, chromeLink: !supportsChrome.has(env.id) ? "unsupported" : linked.has(env.id) ? "on" : "connecting" }
-    : { chrome: lent?.cloud ? lent.enabled === true && lent.chrome === true : false };
   const state = id => {
     const grant = records[id];
     return { enabled: grant?.enabled === true, folders: Array.isArray(grant?.folders) ? grant.folders : [], terminal: grant?.terminal === true, computer: grant?.computer === true, ...status.get(id) };
@@ -594,8 +518,6 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
       folders: lent && Array.isArray(lent.folders) ? lent.folders : [],
       screen: lent?.computer === true,
       terminal: lent?.enabled === true && lent.terminal === true,
-      ...internetState(env, lent),
-      ...chromeState(env, lent),
       busy: Boolean(env && executing?.env === env.id),
       ...(env ? status.get(env.id) : {}),
     };
@@ -604,8 +526,8 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
     (grant.cloud
       ? typeof grant.cloud.accountId === "string" && typeof grant.cloud.origin === "string" && (grant.environmentId === null || uuid(grant.environmentId))
       : uuid(grant.sessionId) && uuid(grant.environmentId));
-  const cloudGrant = (env, current, info, { folders = [], screen, internet, terminal, chrome }) => ({ ...info, id: randomUUID(), secret: randomBytes(32).toString("hex"), enabled: true, folders,
-    terminal: terminal === true, computer: screen === true, internet: internet === true, chrome: chrome === true, cloud: { accountId: current.accountId, origin: env.origin } });
+  const cloudGrant = (env, current, info, { folders = [], screen, terminal }) => ({ ...info, id: randomUUID(), secret: randomBytes(32).toString("hex"), enabled: true, folders,
+    terminal: terminal === true, computer: screen === true, cloud: { accountId: current.accountId, origin: env.origin } });
   const verifiedCloud = env => {
     const current = cloud(env);
     return current?.status === "connected" && current.accountId && current.origin === env.origin ? current : null;
@@ -619,7 +541,7 @@ export function createComputerSharing({ file, fetch: fetchImpl, environments, lo
     const current = verifiedCloud(env);
     if (!current) throw Object.assign(new Error("Open My Cloud first."), { problem: "connect-first" });
     const folders = await validateSharedFolders(input?.folders, { homeEdits: true });
-    if (!folders.length && input?.screen !== true && input?.internet !== true && input?.chrome !== true && input?.terminal !== true) throw new Error(t("native.lend.chooseCapability"));
+    if (!folders.length && input?.screen !== true && input?.terminal !== true) throw new Error(t("native.lend.chooseCapability"));
     let info = { sessionId: null, environmentId: null };
     try { info = await cloudIdentity(env); } catch (error) { if (error.problem !== "connect-first") throw error; }
     if (grantVersions.get(env.id) !== version) return cloudState(env);

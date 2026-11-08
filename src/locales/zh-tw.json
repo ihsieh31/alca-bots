@@ -788,7 +788,6 @@
   "lending.action.runCommand": "執行指令",
   "lending.action.screenTools": "檢查應用程式與螢幕控制",
   "lending.action.screen": "使用應用程式與螢幕",
-  "lending.action.website": "開啟網站",
   "lending.action.invalid": "格式錯誤的要求",
   "lending.action.other": "其他要求",
   "memory.lendingReview": "這個機器人的記憶在一段不是你撰寫的對話中被變更，因此無法使用你的電腦。請檢查下方筆記，然後將其標示為已檢閱。",

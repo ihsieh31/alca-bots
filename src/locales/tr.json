@@ -823,7 +823,6 @@
   "lending.action.runCommand": "Bir komut çalıştırdı",
   "lending.action.screenTools": "Uygulama ve ekran kontrollerini denetledi",
   "lending.action.screen": "Uygulamaları ve ekranı kullandı",
-  "lending.action.website": "Bir web sitesi açtı",
   "lending.action.invalid": "Hatalı biçimlendirilmiş istek",
   "lending.action.other": "Diğer istek",
   "memory.lendingReview": "Bu botun hafızası sizin yazmadığınız bir sohbette değiştirildi, bu nedenle bilgisayarınızı kullanamaz. Aşağıdaki notları kontrol edin, ardından incelendi olarak işaretleyin.",

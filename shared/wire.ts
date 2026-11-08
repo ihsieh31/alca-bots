@@ -388,9 +388,6 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   fallback?: Array<{ instanceId: string; model: string }>;
   /** Whether this bot gets the app's built-in browser. */
   browser?: boolean;
-  /** Record a screenshot and a short note of each browser action, kept with
-   * the conversation. Off unless true. */
-  recordBrowserSteps?: boolean;
   /** Memory upkeep: the harness captures facts from finished chats into
    * MEMORY.md and topic files, adds facts about the person to About me and
    * tidies nightly. On unless explicitly false. */
@@ -404,8 +401,6 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   mcpServers?: string[];
   /** Owner-selected original tool identities. An empty allowlist permits none. */
   toolScope?: ToolScope;
-  /** Id of a named browser profile; absent = the bot's own private session. */
-  browserProfile?: string;
   playbooks?: InstalledPlaybook[];
   installedPackage?: InstalledPackageMetadata;
   /** Aggregate of task and room activity; transient, reset on load. */

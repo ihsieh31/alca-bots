@@ -68,7 +68,7 @@ rooms:
       skills: [{ name: "launch-report", description: "Write the report.", text: expect.stringContaining("Body."), enabled: true, file: "skills/launch-report/SKILL.md" }],
     });
     expect(team.bots[1]).toMatchObject({ name: "Priya", team: "Launch Room", model: { instanceId: "claude", model: "claude-haiku-5-5" },
-      browser: { enabled: true, profile: "guest" }, tools: { deny: ["native:Bash"] }, soul: "You are Priya.", skills: [], manages: [] });
+      browser: { enabled: true }, tools: { deny: ["native:Bash"] }, soul: "You are Priya.", skills: [], manages: [] });
     expect(team.bots[1]).not.toHaveProperty("chief");
     expect(team.teams).toEqual([{ name: "Launch Room", brief: "We rehearse.", prune: true }]);
     expect(team.rooms).toEqual([{ name: "Rehearsal", members: ["Room Lead", "Priya"], responder: "Room Lead" }]);

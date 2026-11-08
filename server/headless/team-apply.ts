@@ -89,10 +89,6 @@ export function botPatch(desired: DesiredBot, echo: Rec, team: string | undefine
   if (desired.cwd && echo.cwd !== desired.cwd) { patch.cwd = desired.cwd; changes.push(`folder ${echo.cwd ?? "default"} → ${desired.cwd}`); }
   if (desired.browser) {
     if ((echo.browser !== false) !== desired.browser.enabled) { patch.browser = desired.browser.enabled; changes.push(`browser ${desired.browser.enabled ? "on" : "off"}`); }
-    if (desired.browser.profile !== undefined && echo.browserProfile !== desired.browser.profile) {
-      patch.browserProfile = desired.browser.profile;
-      changes.push(`browser profile ${echo.browserProfile ?? "its own"} → ${desired.browser.profile}`);
-    }
   }
   if (desired.tools !== undefined && canonicalScope(echo.toolScope) !== canonicalScope(desired.tools)) {
     // null clears the selection on the server: every tool
@@ -443,7 +439,7 @@ export async function teamExportVerb(ctx: VerbContext): Promise<VerbOutcome> {
     else entry.approval = approval;
     if (bot.computer) entry.computer = bot.computer;
     if (bot.cwd) entry.cwd = bot.cwd;
-    if (bot.browser === false || bot.browserProfile) entry.browser = { enabled: bot.browser !== false, ...(bot.browserProfile ? { profile: bot.browserProfile } : {}) };
+    if (bot.browser === false) entry.browser = { enabled: false };
     if (!everyTool(bot.toolScope)) entry.tools = bot.toolScope;
     const listing: Rec[] = (await client.json<Rec>(`/api/bots/${enc(bot.id)}/skills`)).skills ?? [];
     if (listing.length) entry.skills = [];

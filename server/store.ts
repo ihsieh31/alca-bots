@@ -11,7 +11,7 @@ import type { TeamComputers } from "./team-computers.ts";
 import { removeBotFolder, soulFile, soulHash, writeSoulMirror } from "./bot-folder.ts";
 import type { BotProfilePatch } from "./bot-profile.ts";
 import { peerAllowKey, type PeerAction } from "./peer-approval-key.ts";
-import { DATA_DIR, EVENTS_DIR, NATIVE_DIR, loadBrowserProfileIdAliases } from "./config.ts";
+import { DATA_DIR, EVENTS_DIR, NATIVE_DIR } from "./config.ts";
 import * as mdb from "./message-db.ts";
 import { forgetBotMemoryJournal, journalFile } from "./memory-journal.ts";
 import { runCommand, type Command } from "./commands.ts";
@@ -330,7 +330,6 @@ export class Store {
     }
     this.rememberSections([...this.bots, ...this.groups].map((record) => record.section));
     let botsMigrated = false;
-    const browserProfileAliases = loadBrowserProfileIdAliases();
     const chiefSectionsSeen = new Set<string>();
     let groupsMigrated = false;
     for (const b of this.bots) {
@@ -350,12 +349,11 @@ export class Store {
           console.warn(`[bot-folder] could not create SOUL.md for ${b.id}: ${(e as Error).message}`);
         }
       }
-      if (b.browserProfile) {
-        const browserProfile = browserProfileAliases.get(b.browserProfile);
-        if (browserProfile && browserProfile !== b.browserProfile) {
-          b.browserProfile = browserProfile;
-          botsMigrated = true;
-        }
+      const retired = b as unknown as { browserProfile?: unknown; recordBrowserSteps?: unknown };
+      if (retired.browserProfile !== undefined || retired.recordBrowserSteps !== undefined) {
+        delete retired.browserProfile;
+        delete retired.recordBrowserSteps;
+        botsMigrated = true;
       }
       if (b.cloudBackend !== undefined && b.cloudBackend !== "box" && b.cloudBackend !== "vps") {
         delete b.cloudBackend;

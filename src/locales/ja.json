@@ -1324,8 +1324,6 @@
   "lending.action.runCommand": "コマンドを実行",
   "lending.action.screenTools": "アプリと画面の操作機能を確認",
   "lending.action.screen": "アプリと画面を操作",
-  "lending.action.website": "ウェブサイトを開いた",
-  "lending.action.chrome": "Chrome を使用",
   "lending.action.invalid": "形式が不正なリクエスト",
   "lending.action.other": "その他のリクエスト",
   "memory.lendingReview": "このボットのメモリーは、ご自身が書き込んでいない会話で変更されたため、お使いのコンピューターを使えません。下のメモを確認し、確認済みにしてください。",

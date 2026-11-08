@@ -823,7 +823,6 @@
   "lending.action.runCommand": "Đã chạy một lệnh",
   "lending.action.screenTools": "Đã kiểm tra quyền điều khiển ứng dụng và màn hình",
   "lending.action.screen": "Đã sử dụng ứng dụng và màn hình",
-  "lending.action.website": "Đã mở một trang web",
   "lending.action.invalid": "Yêu cầu không đúng định dạng",
   "lending.action.other": "Yêu cầu khác",
   "memory.lendingReview": "Bộ nhớ của bot này đã bị thay đổi trong một cuộc trò chuyện mà bạn không viết, vì vậy bot không thể sử dụng máy tính của bạn. Hãy kiểm tra các ghi chú bên dưới, sau đó đánh dấu đã xem lại.",

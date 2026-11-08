@@ -1245,8 +1245,6 @@
   "lending.action.runCommand": "명령 실행",
   "lending.action.screenTools": "앱과 화면 제어 확인",
   "lending.action.screen": "앱과 화면 사용",
-  "lending.action.website": "웹사이트 열기",
-  "lending.action.chrome": "Chrome 사용",
   "lending.action.invalid": "잘못된 요청",
   "lending.action.other": "기타 요청",
   "memory.lendingReview": "직접 쓰지 않은 대화에서 이 봇의 메모리가 바뀌어서 컴퓨터를 쓸 수 없어요. 아래 메모를 확인한 뒤 검토 완료로 표시하세요.",

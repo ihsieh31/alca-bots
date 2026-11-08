@@ -1,6 +1,5 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import type { DeviceLinks, LinkedComputer } from "./device-links.ts";
 import { awayNotice, deviceWord, lendScreenSteps, LENT_PLATFORMS, type LentComputers, type LentPlatform } from "./lent-computers.ts";
 import type { LentCopies } from "./lent-copies.ts";
 export { LentComputers } from "./lent-computers.ts";
@@ -11,10 +10,6 @@ export const sharedComputerRegistration = z.object({
   folders: z.array(folder).max(20), terminal: z.boolean(), computer: z.boolean(),
   /** Sent only to a server that advertises lendingDetails; older servers refuse unknown fields. */
   platform: z.enum(LENT_PLATFORMS).optional(),
-  /** Its internet connection, for the bots' browsers; sent only to a server that advertises deviceLink. */
-  internet: z.boolean().optional(),
-  /** Its real Chrome, for the bots' browser; sent only to a server that advertises myChromeLink. */
-  chrome: z.boolean().optional(),
   /** It takes and honours run_command's timeout_seconds; sent only to a server that advertises commandTimeouts. Older
    * desktops refuse a job with a field they do not know, and stop every command at 30 seconds. */
   commandTimeouts: z.literal(true).optional(),
@@ -61,12 +56,12 @@ const jobDeadlineMs = (registration: Registration, operation: Operation) =>
 export type SharedComputerOwner = { session: string; person: string };
 export type SharedComputerStatus = {
   id: string; name: string; online: boolean; busy: boolean; lastSeenAt: number;
-  scopes: { folders: { id: string; name: string; write: boolean }[]; terminal: boolean; screen: boolean; internet: boolean; chrome: boolean };
+  scopes: { folders: { id: string; name: string; write: boolean }[]; terminal: boolean; screen: boolean };
 };
 /** A computer lent now or before: what the person's own Cloud page shows, online or not, across restarts. */
 export type KnownLentComputer = {
   id: string; name: string; platform: "darwin" | "win32" | "linux" | null; online: boolean; busy: boolean; lent: boolean;
-  lastSeenAt: number; lastUsedAt: number | null; scopes: { folders: number; terminal: boolean; screen: boolean; internet: boolean; chrome: boolean };
+  lastSeenAt: number; lastUsedAt: number | null; scopes: { folders: number; terminal: boolean; screen: boolean };
 };
 type Job = {
   id: string; operation: Operation; active: () => boolean; sent: boolean; leased: boolean; resolve: (result: unknown) => void; reject: (error: Error) => void;
@@ -150,15 +145,14 @@ export class SharedComputers {
   private closed = false;
   private sessionLive: (id: string) => boolean;
   private lent: LentComputers | undefined;
-  private links: Pick<DeviceLinks, "drop"> | undefined;
   /** A Cloud home's copies of lent folders: what a computer that is away still lends (server/lent-copies.ts). */
   private copies: Pick<LentCopies, "away" | "answer"> | undefined;
   /** A computer connected, changed what it lends, or stopped. */
   changed: () => void = () => {};
   /** On the person's own Cloud, the bots' tool that asks them to turn on what their computer doesn't give now. */
   askTool: string | null = null;
-  constructor(sessionLive: (id: string) => boolean, lent?: LentComputers, links?: Pick<DeviceLinks, "drop">, copies?: Pick<LentCopies, "away" | "answer">) {
-    this.sessionLive = sessionLive; this.lent = lent; this.links = links; this.copies = copies;
+  constructor(sessionLive: (id: string) => boolean, lent?: LentComputers, copies?: Pick<LentCopies, "away" | "answer">) {
+    this.sessionLive = sessionLive; this.lent = lent; this.copies = copies;
   }
   private static key(session: string, id: string) { return `${session}\n${id}`; }
   register(registration: Registration, owner: SharedComputerOwner, secret: string) {
@@ -168,8 +162,6 @@ export class SharedComputers {
     const old = this.computers.get(key);
     if (old) {
       this.authorize(registration.id, owner.session, secret);
-      // Its link was let in for the internet connection and Chrome as lent then: lent or taken back since, the link starts over.
-      if ((old.registration.internet === true) !== (registration.internet === true) || (old.registration.chrome === true) !== (registration.chrome === true)) this.links?.drop(key);
       old.registration = registration; old.seen = Date.now();
       this.remember(registration, old.owner.person);
       this.changed();
@@ -179,7 +171,7 @@ export class SharedComputers {
     // A new id from the same session replaces its entry; no other session can reach, replace or squat this key.
     for (const [stale, entry] of this.computers) {
       if (entry.owner.session !== owner.session) continue;
-      this.computers.delete(stale); entry.wake?.(); this.links?.drop(stale);
+      this.computers.delete(stale); entry.wake?.();
       for (const job of entry.jobs.values()) this.finish(entry, job, failure("This computer's access changed. An in-flight action may have completed; inspect before retrying."));
     }
     if (this.computers.size >= TOTAL) throw failure("Too many shared computers");
@@ -189,12 +181,12 @@ export class SharedComputers {
   }
   private remember(registration: Registration, person: string) {
     this.lent?.connected(person, { id: registration.id, name: registration.name, platform: registration.platform,
-      folders: registration.folders.length, terminal: registration.terminal, screen: registration.computer, internet: registration.internet === true, chrome: registration.chrome === true,
+      folders: registration.folders.length, terminal: registration.terminal, screen: registration.computer,
       ...(registration.environments ? { environments: registration.environments } : {}) });
   }
   private reap() {
     for (const [key, entry] of this.computers) {
-      if (entry.jobs.size === 0 && (!this.sessionLive(entry.owner.session) || Date.now() - entry.seen > RETAIN_MS)) { this.computers.delete(key); this.links?.drop(key); }
+      if (entry.jobs.size === 0 && (!this.sessionLive(entry.owner.session) || Date.now() - entry.seen > RETAIN_MS)) this.computers.delete(key);
     }
   }
   private online(entry: Computer) { return this.sessionLive(entry.owner.session) && Date.now() - entry.seen < 40_000; }
@@ -246,7 +238,7 @@ export class SharedComputers {
       const entry = live.find(candidate => candidate.registration.id === record.id);
       return { id: record.id, name: record.name, platform: record.platform, online: entry ? this.online(entry) : false, busy: (entry?.jobs.size ?? 0) > 0,
         lent: record.stoppedAt === null, lastSeenAt: entry ? Math.max(entry.seen, record.lastSeenAt) : record.lastSeenAt, lastUsedAt: record.lastUsedAt,
-        scopes: { folders: record.folders, terminal: record.terminal, screen: record.screen, internet: record.internet === true, chrome: record.chrome === true } };
+        scopes: { folders: record.folders, terminal: record.terminal, screen: record.screen } };
     });
   }
   /** For a bot: which known computer is offline and since when, and the sentence to say; nothing while one is online. */
@@ -263,27 +255,6 @@ export class SharedComputers {
     if (this.askTool) return { screen: `${entry.registration.name} doesn't lend its apps and screen right now. To use them, ${askHint(this.askTool, "screen").replace(/^Call/, "call")}` };
     return { screen: `${entry.registration.name} does not lend its apps and screen. ${lendScreenSteps(deviceWord(entry.registration.platform))}` };
   }
-  /** A computer that lends its internet connection but is away: the bots' browsers here use My Cloud's own connection
-   * meanwhile, and say so once. Nothing while one is online, or when none lends it. */
-  internetAway(principal: string): { away: "PC" | "Mac" | "computer" } | null {
-    const online = new Set(this.list(principal).map(registration => registration.id));
-    const lending = (this.lent?.list(principal) ?? []).filter(record => record.internet === true && record.stoppedAt === null);
-    if (!lending.length || lending.some(record => online.has(record.id))) return null;
-    return { away: deviceWord(lending[0]!.platform) };
-  }
-  /** The newest computer lending its Chrome, and whether it is online now; null when none lends it. */
-  chromeLender(principal: string): { name: string; device: "PC" | "Mac" | "computer"; online: boolean } | null {
-    const record = (this.lent?.list(principal) ?? []).find(candidate => candidate.chrome === true && candidate.stoppedAt === null);
-    if (!record) return null;
-    return { name: record.name, device: deviceWord(record.platform), online: this.list(principal).some(registration => registration.id === record.id) };
-  }
-  /** The registered computer behind a device link: the same session and secret as its poll. */
-  linkable(id: string, session: string, secret: string): LinkedComputer {
-    const entry = this.authorize(id, session, secret);
-    entry.seen = Date.now();
-    return { key: SharedComputers.key(session, id), person: entry.owner.person, internet: entry.registration.internet === true, chrome: entry.registration.chrome === true, seenAs: null,
-      live: () => this.sessionLive(session), used: () => this.lent?.used(entry.owner.person, id) };
-  }
   status(principal: string | null): SharedComputerStatus[] {
     if (!principal) return [];
     this.reap();
@@ -291,7 +262,7 @@ export class SharedComputers {
       id: entry.registration.id, name: entry.registration.name, online: this.online(entry), busy: entry.jobs.size > 0, lastSeenAt: entry.seen,
       scopes: {
         folders: entry.registration.folders.map(({ id, name, write }) => ({ id, name, write })),
-        terminal: entry.registration.terminal, screen: entry.registration.computer, internet: entry.registration.internet === true, chrome: entry.registration.chrome === true,
+        terminal: entry.registration.terminal, screen: entry.registration.computer,
       },
     }));
   }
@@ -352,7 +323,7 @@ export class SharedComputers {
   disconnect(id: string, session: string, secret: string, paused = false) {
     const entry = this.authorize(id, session, secret);
     if (paused) this.lent?.seen(entry.owner.person, id); else this.lent?.stopped(entry.owner.person, id);
-    this.computers.delete(SharedComputers.key(session, id)); entry.wake?.(); this.links?.drop(SharedComputers.key(session, id));
+    this.computers.delete(SharedComputers.key(session, id)); entry.wake?.();
     for (const job of entry.jobs.values()) this.finish(entry, job, failure("Computer disconnected. An in-flight action may have completed; inspect before retrying."));
     this.changed();
   }
@@ -409,7 +380,6 @@ export class SharedComputers {
   }
   close() {
     this.closed = true;
-    for (const key of this.computers.keys()) this.links?.drop(key);
     for (const entry of this.computers.values()) {
       entry.wake?.();
       for (const job of entry.jobs.values()) this.finish(entry, job, failure("Workspace stopped. Inspect any in-flight action before retrying."));

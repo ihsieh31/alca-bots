@@ -618,7 +618,6 @@
   "lending.action.runCommand": "Виконав команду",
   "lending.action.screenTools": "Перевірив керування застосунками й екраном",
   "lending.action.screen": "Використав застосунки й екран",
-  "lending.action.website": "Відкрив вебсайт",
   "lending.action.invalid": "Хибний запит",
   "lending.action.other": "Інший запит",
   "memory.learnFromRooms.noModelSteps": "ШІ цього бота не може зробити потрібний для цього фоновий виклик моделі, тож він нічого не навчиться з групових чатів.",

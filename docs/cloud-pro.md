@@ -572,8 +572,8 @@ frames the web UI: the desktop app shows it in its own window.
 ## This computer works for your Clouds
 
 The Cloud is home: bots and chats live there. The person's Mac or PC is a computer
-the Cloud uses while it is awake: its folders, its screen and apps, its home
-internet connection. There is no setting for it. Every Cloud of
+the Cloud uses while it is awake: its folders and its screen and apps. There is
+no setting for it. Every Cloud of
 the person's own uses this computer by itself while the desktop app runs and is
 signed in as them (`lendAutomatically` in `electron/computer-sharing.mjs`): My
 Cloud and each other Cloud the verified session lists as theirs
@@ -589,10 +589,6 @@ keep computer sharing exactly as before: off unless a maintainer sets
 
 The grant (`automaticGrant`) is the same for every Cloud of the person's own:
 
-- **Internet connection**: the sites that turn away data centres (Instagram,
-  YouTube, Google sign-in) open for the bots' browser on that Cloud through this
-  computer, so they see the person's home connection; every other site loads
-  straight from the Cloud (see "The internet connection" below).
 - **The home folder, to read and edit.** A write overwrites a file only after
   reading its current version (checked against its hash), and nothing is ever
   deleted. A read takes a file of up to 2 MiB (text whose escaping would not fit
@@ -644,9 +640,7 @@ to resume, a menu-bar item (the notification area on Windows) shows it
   they do while this computer is away.
 - **See activity** opens this computer's own record of what its Clouds did here
   (`electron/lending-activity-window.mjs`): every request, refused ones
-  included, and each website opened through its internet connection (**Opened a
-  website** with its name, once per site and outcome every 10 minutes, so a
-  page's many connections are one line). Main draws it as a static page in the
+  included. Main draws it as a static page in the
   app's language (`electron/lending-words.mjs`, held equal to `src/locales` by a
   test): every value escaped, no script, nothing loaded.
 
@@ -682,70 +676,22 @@ Someone who had said no before lending was automatic starts **Paused**
 (`stopped.reason` "you", or an Off kept from before the reason was) or an
 unticked internet connection, for any Cloud of their own. Nobody is opened up
 after saying no: Resume is theirs, and a Resume is kept, so the old Off never
-pauses again. A **Not now** to the old popup was no Off: lending had only the
-internet connection then, and becomes automatic like anyone else's.
+pauses again. A **Not now** to the old popup was no Off, and becomes automatic
+like anyone else's.
 
 Anyone else gets the automatic grant at the next start. A grant kept from before
-keeps its folders, gains the home folder and the internet connection, and
-keeps a terminal it had: when every grant of one account lent the terminal and
+keeps its folders, gains the home folder, and keeps a terminal it had: when every grant of one account lent the terminal and
 nobody said no to lending, **Let Clouds run commands on this Mac** starts on for
 that account and no other; a **Settings → Servers → Computer access** grant kept for
 a Cloud's own entry gives way to it. Only a kept grant that already lends what it
 should runs as it is: one that doesn't never connects, even for a moment.
 
-### The internet connection
+### The internet connection (removed)
 
-Since ego lite replaced the built-in browser, a Cloud home has no bot browser,
-so no browser traffic takes this route any more; the device link below stays
-for the other lent tools. What follows describes how it worked.
-Every bot browser on a Cloud home connected through its per-session
-SOCKS egress gate (`server/egress/gate.ts`). While the owner's lent
-computer is online with the internet connection on, the gate has one more way
-out for the sites that turn away data centres, the computer itself
-(`server/device-links.ts`, offered by the old browser egress registry for
-its list of home-connection sites):
-
-- **The device link.** One WebSocket per lent computer, opened by the desktop's
-  main process to `wss://<My Cloud>/api/shared-computers/<id>/link` with the
-  same sign-in as the poll (the session cookie plus the grant's secret). It
-  carries open, data, credit, end and close frames for many TCP streams, each
-  side sending a stream's bytes only while the other has room (a 256 KiB
-  window per stream, at most 128 streams), with pings both ways: a link that
-  goes silent is dropped within seconds on either side. The Cloud advertises
-  `capabilities.deviceLink`; a desktop never dials an older Cloud. The path is
-  held like the poll, so it never keeps My Cloud awake, and the desktop never
-  dials it while My Cloud sleeps: it waits on the same power gate, and My
-  Cloud closes it as asleep (code 4001) the moment it agrees to sleep.
-- **What goes through it.** Reddit is refused first, as before. A name for
-  this machine (`localhost`) and every address that is not on the public
-  internet stay on the Cloud's own way, under its own policy (a bot's dev
-  server here still loads; the local network and metadata stay refused). Only
-  the sites that turn away data centres become a stream on the link, and the
-  computer resolves the name itself: Instagram (its 429), YouTube with its
-  videos, which play only for the address that asked for them
-  (`googlevideo.com`) and its player's check (`jnn-pa.googleapis.com`), and all
-  of Google in every country (sign-in refuses a data centre and search answers
-  it with "unusual traffic"; a Google account signed in from home stays on
-  home). Every other site loads straight from My Cloud: through a home
-  connection on the other side of the world it is much slower (measured in
-  PR #3201: in India with My Cloud in Frankfurt, BBC News took 58 s instead of
-  2 s and the Python docs 3.6 s instead of 0.6 s), and a site that answers a
-  data centre gains nothing from it. The list is My Cloud's alone, so a new
-  site needs only a Cloud update.
-- **The computer's own check** (`electron/device-egress.mjs`, with the one
-  address list both sides use, `electron/egress-addresses.mjs`): only ports 80
-  and 443; never loopback, the computer itself, the networks it sits on (its
-  own IPv6 prefix included), the private ranges (100.64/10 and fc00::/7
-  included), the home's own public address (the address My Cloud sees the link
-  come from), link-local, metadata or reserved addresses, after unwrapping NAT64
-  and 6to4; every address a name resolves to must pass, and it connects only to
-  the addresses it checked. A refusal reaches the bot's page-health line ("the
-  person's own computer or home network", "a port other than 80 and 443").
-- **When the computer is away**, those sites load from My Cloud's own
-  connection at once, a connection in flight ends with the link, and the bot
-  is told once, the first time one of them loads that way: "The person's Mac is
-  away, so sites that turn away data centres, such as Instagram, YouTube and
-  Google sign-in, load from My Cloud's own connection for now and may refuse…".
+A computer no longer lends its internet connection or its Chrome. Both existed
+only for the built-in browser on a Cloud home, which ego lite replaced, and the
+device link that carried them is gone. A grant kept from before still loads;
+its `internet` and `chrome` fields are ignored.
 
 ### How it is enforced
 
@@ -810,8 +756,7 @@ On the Cloud home (`server/shared-computers.ts`, `server/index.ts`):
   for each computer lent to it, by name, its platform (sent by desktops once
   the Cloud advertises `lendingDetails`), how many folders it lends and whether
   apps and screen or a terminal, when it was last online (written at most once
-  a minute) and last used (a page opened through its internet connection
-  counts, at most once a minute), and whether it stopped lending (paused there,
+  a minute) and last used (at most once a minute), and whether it stopped lending (paused there,
   or signed out of AlcaBot Cloud). Never a
   folder name or path, a secret or anything a job carried; kept 90 days.
 - **What bots are told.** `list_shared_computers` lists online computers with

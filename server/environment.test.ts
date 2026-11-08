@@ -136,10 +136,9 @@ describe("environment identity", () => {
     expect(environmentDescriptor({ environmentId: "abc", desktopManaged: true }).capabilities, "only a Cloud home, or a server one person owns, takes a move").not.toHaveProperty("move");
     expect(environmentDescriptor({ environmentId: "abc", desktopManaged: false, ownHome: true }).capabilities).toEqual({ remoteSessions: true, move: 1, selfUpdate: "operator", emailSignIn: false, jobs: true });
     expect(environmentDescriptor({ environmentId: "abc", desktopManaged: false, ownHome: false }).capabilities).not.toHaveProperty("move");
-    // A lent computer may lend its internet connection only to a Cloud home that lends at all.
     expect(environmentDescriptor({ environmentId: "abc", desktopManaged: false, cloudHome: true, sharedComputers: true }).capabilities)
-      .toEqual({ remoteSessions: true, sharedComputers: true, lendingDetails: true, commandTimeouts: true, longCommands: true, fileEdits: true, deviceLink: true, lentMcp: true, myChromeLink: true, computerAsks: true, cloudHome: true, move: 1, selfUpdate: "operator", emailSignIn: false, jobs: true });
-    expect(environmentDescriptor({ environmentId: "abc", desktopManaged: true, sharedComputers: true }).capabilities).not.toHaveProperty("deviceLink");
+      .toEqual({ remoteSessions: true, sharedComputers: true, lendingDetails: true, commandTimeouts: true, longCommands: true, fileEdits: true, lentMcp: true, computerAsks: true, cloudHome: true, move: 1, selfUpdate: "operator", emailSignIn: false, jobs: true });
+    expect(environmentDescriptor({ environmentId: "abc", desktopManaged: true, sharedComputers: true }).capabilities).not.toHaveProperty("computerAsks");
   });
 
   it("advertises lentMcp wherever computers are lent, except on a team Cloud", () => {
@@ -149,12 +148,12 @@ describe("environment identity", () => {
     expect(environmentDescriptor({ ...base, sharedComputers: false, cloudHome: true }).capabilities).not.toHaveProperty("lentMcp");
   });
 
-  it("advertises myChromeLink only on a personal Cloud home with lending", () => {
+  it("advertises computerAsks only on a personal Cloud home with lending", () => {
     const base = { environmentId: "abc", desktopManaged: false };
-    expect(environmentDescriptor({ ...base, sharedComputers: true, cloudHome: true }).capabilities.myChromeLink).toBe(true);
-    expect(environmentDescriptor({ ...base, sharedComputers: true, cloudHome: true, cloudTeam: true }).capabilities).not.toHaveProperty("myChromeLink");
-    expect(environmentDescriptor({ ...base, sharedComputers: true, cloudHome: false }).capabilities).not.toHaveProperty("myChromeLink");
-    expect(environmentDescriptor({ ...base, sharedComputers: false, cloudHome: true }).capabilities).not.toHaveProperty("myChromeLink");
+    expect(environmentDescriptor({ ...base, sharedComputers: true, cloudHome: true }).capabilities.computerAsks).toBe(true);
+    expect(environmentDescriptor({ ...base, sharedComputers: true, cloudHome: true, cloudTeam: true }).capabilities).not.toHaveProperty("computerAsks");
+    expect(environmentDescriptor({ ...base, sharedComputers: true, cloudHome: false }).capabilities).not.toHaveProperty("computerAsks");
+    expect(environmentDescriptor({ ...base, sharedComputers: false, cloudHome: true }).capabilities).not.toHaveProperty("computerAsks");
   });
 
   it("says a team's Cloud home is a team's, so a sign-in page names the team", () => {

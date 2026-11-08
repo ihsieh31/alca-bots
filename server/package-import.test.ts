@@ -135,7 +135,7 @@ describe("importing a whole team", () => {
     ]);
   });
 
-  it("turns on Record browser steps for the bots the file asks it for, with no card", async () => {
+  it("imports a file that still asks for the removed Record browser steps, and drops it", async () => {
     const app = await installation();
     const raw = fixture("full-team.v2.json");
     raw.package.agents.find((agent: { key: string }) => agent.key === "scout").recordBrowserSteps = true;
@@ -143,9 +143,8 @@ describe("importing a whole team", () => {
     const result = app.importer.importPackageDocument(document, { trust: "file", mode: "add" }, app.deps);
     if (result.alreadyAdded) throw new Error("unexpected");
     const byKey = new Map(result.bots.map((bot) => [bot.installedPackage!.agentKey, app.store.bot(bot.id)!]));
-    expect(byKey.get("scout")!.recordBrowserSteps).toBe(true);
+    expect(byKey.get("scout")).not.toHaveProperty("recordBrowserSteps");
     expect(byKey.get("lead")).not.toHaveProperty("recordBrowserSteps");
-    expect(() => app.parsePackageDocument({ ...raw, package: { ...raw.package, agents: [{ ...raw.package.agents[0], recordBrowserSteps: "yes" }] } })).toThrow();
   });
 
   it("imports the same file twice as two independent copies", async () => {

@@ -1167,7 +1167,6 @@
   "lending.action.runCommand": "Ha eseguito un comando",
   "lending.action.screenTools": "Ha controllato i comandi di app e schermo",
   "lending.action.screen": "Ha usato app e schermo",
-  "lending.action.website": "Ha aperto un sito",
   "lending.action.invalid": "Richiesta malformata",
   "lending.action.other": "Altra richiesta",
   "memory.lendingReview": "La memoria di questo bot è stata modificata in una conversazione che non hai scritto tu, quindi non può usare il tuo computer. Controlla le note qui sotto, poi scegli Segna come riviste.",

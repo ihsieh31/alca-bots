@@ -1183,7 +1183,6 @@
   "lending.action.runCommand": "Uruchomiono polecenie",
   "lending.action.screenTools": "Sprawdzono sterowanie aplikacjami i ekranem",
   "lending.action.screen": "Użyto aplikacji i ekranu",
-  "lending.action.website": "Otwarto stronę internetową",
   "lending.action.invalid": "Nieprawidłowe żądanie",
   "lending.action.other": "Inne żądanie",
   "memory.lendingReview": "Pamięć tego bota została zmieniona w rozmowie zapoczątkowanej przez kogoś innego, więc nie może on używać twojego komputera. Sprawdź poniższe notatki, a następnie oznacz je jako przejrzane.",

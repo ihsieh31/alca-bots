@@ -56,18 +56,18 @@ test("Files' list follows lending: a folder shared from the Files page becomes t
 
 test("lending for Files lends a folder read only on top of what is lent, and stops lending when it was all", async () => {
   const env = { id: "cloud", origin: "https://alca-u-aaaaaaaaaaaa.fly.dev" };
-  let state = { enabled: true, folders: [folder("Documents")], screen: true, internet: true, chrome: false, terminal: false };
+  let state = { enabled: true, folders: [folder("Documents")], screen: true, terminal: false };
   const saved = [], revoked = [];
   const sharing = { cloudState: () => state, saveCloud: async (_env, input) => { saved.push(input); state = { ...state, ...input, enabled: true }; return state; }, revoke: () => { revoked.push(true); state = { ...state, enabled: false }; }, lentToCloud: () => ({ off: true }) };
   const lending = lendingForFiles({ environment: () => env, sharing: () => sharing, validate: async ([entry]) => [{ ...entry, name: entry.path.split("/").at(-1) }] });
   const lent = await lending.lend("/Users/ash/Clients");
   assert.equal(lent.write, false);
-  assert.deepEqual(saved.at(-1), { folders: [state.folders[0], lent], screen: true, internet: true, chrome: false, terminal: false });
+  assert.deepEqual(saved.at(-1), { folders: [state.folders[0], lent], screen: true, terminal: false });
   assert.equal(await lending.lend("/Users/ash/Clients").then((again) => again.id), lent.id, "lent already: nothing changes");
   assert.equal(saved.length, 1);
   await lending.unlend(lent.id);
   assert.deepEqual(saved.at(-1).folders.map((entry) => entry.name), ["Documents"]);
-  state = { enabled: true, folders: [lent], screen: false, internet: false, chrome: false, terminal: false };
+  state = { enabled: true, folders: [lent], screen: false, terminal: false };
   await lending.unlend(lent.id);
   assert.equal(revoked.length, 1, "nothing else was lent: lending stops");
   // Off: a folder added from the Files page lends just it.
@@ -197,7 +197,7 @@ test("a Cloud from before lent copies gets none: lending stays live only there, 
 test("a lent folder deleted from disk never stops lending or unlending the rest", async () => {
   const env = { id: "cloud", origin: "https://alca-u-aaaaaaaaaaaa.fly.dev" };
   const gone = folder("Gone"), kept = folder("Kept");
-  let state = { enabled: true, folders: [gone, kept], screen: false, internet: true, chrome: false, terminal: false };
+  let state = { enabled: true, folders: [gone, kept], screen: true, terminal: false };
   const saved = [];
   const sharing = { cloudState: () => state, saveCloud: async (_env, input) => { saved.push(input); state = { ...state, ...input }; return state; }, revoke: () => {}, lentToCloud: () => ({ off: true }) };
   // As validateSharedFolders does: a folder no longer on disk rejects with ENOENT.

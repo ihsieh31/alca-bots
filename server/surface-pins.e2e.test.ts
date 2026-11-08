@@ -89,7 +89,7 @@ describe("surface pin provenance against the real server", () => {
         TEMP: home, TMP: home, TMPDIR: home,
         ALCA_PORT: String(port), ALCA_WEBHOOK_PORT: String(port + 1), ALCA_STATIC_DIR: ui, ALCA_TEST_VM_STATE: stateFile,
         ALCA_BOAT_API: boatApi, ALCA_USER_DATA: join(home, "user-data"), ALCA_TEST_DESKTOP_CUA_CONNECTION: cuaDescriptor,
-        ...(withBrowser ? { ALCA_AGENT_BROWSER_PATH: inertBrowser, AGENT_BROWSER_EXECUTABLE_PATH: inertBrowser } : {}),
+        ...(withBrowser ? { ALCA_EGO_BROWSER_PATH: inertBrowser } : {}),
       }, stdio: ["ignore", "pipe", "pipe"],
     });
     child = proc;
@@ -121,7 +121,7 @@ describe("surface pin provenance against the real server", () => {
     dumpFile = join(home, "dump.json");
     finishFile = join(home, "finish");
     cuaDescriptor = join(home, "user-data", "cua-connection.json");
-    inertBrowser = join(home, "agent-browser");
+    inertBrowser = join(home, "ego-browser");
     writeFileSync(inertBrowser, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
     vmState();
     mkdirSync(data);
@@ -272,7 +272,7 @@ describe("surface pin provenance against the real server", () => {
     await stop();
   });
 
-  it("mounts the built-in browser beside the computer in a thread a teammate opened, and not in a person's thread", async () => {
+  it("mounts ego lite beside the computer in a thread a teammate opened, and not in a person's thread", async () => {
     await start(true);
     const { bot } = await apiOk("POST", "/api/bots", { name: "Delegated Browser Bot" });
     const [own, delegated] = (await Promise.all([

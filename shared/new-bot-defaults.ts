@@ -13,7 +13,6 @@ export type BotDefaultsProfile = Partial<Pick<WireBot,
   computer?: WireBot["computer"] | null;
   cwd?: string | null;
   peers?: string[] | null;
-  browserProfile?: string | null;
   mcpServers?: string[] | null;
   toolScope?: ToolScope | null;
   parkDirectMessages?: boolean;

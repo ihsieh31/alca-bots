@@ -30,24 +30,6 @@ describe("shared computer authority and lifecycle", () => {
     expect(JSON.stringify(broker.list(alice.person))).not.toContain(secret);
     broker.close();
   });
-  it("chromeLender names the newest computer that lends Chrome, and whether it is online", () => {
-    const dir = mkdtempSync(join(tmpdir(), "alca-chrome-"));
-    let live = true;
-    const broker = new SharedComputers(() => live, new LentComputers(join(dir, "lent.json")));
-    const a = { ...registration(), name: "A", platform: "darwin" as const, chrome: true };
-    const b = { ...registration(), name: "B", platform: "darwin" as const, chrome: false };
-    broker.register(a, alice, secret);
-    broker.register(b, { session: "owner2", person: alice.person }, secret);
-    expect(broker.chromeLender(alice.person)).toEqual({ name: "A", device: "Mac", online: true });
-    expect(broker.chromeLender(bob.person)).toBeNull();
-    live = false;
-    expect(broker.chromeLender(alice.person)).toEqual({ name: "A", device: "Mac", online: false });
-    live = true;
-    broker.disconnect(a.id, alice.session, secret);
-    expect(broker.chromeLender(alice.person)).toBeNull();
-    broker.close();
-    rmSync(dir, { recursive: true, force: true });
-  });
   it("delivers a job once, refuses concurrent work, and never replays after disconnect", async () => {
     const broker = new SharedComputers(() => true);
     const computer = registration(); broker.register(computer, alice, secret);
@@ -324,7 +306,7 @@ describe("status for the next step's placement", () => {
     const docs = { id: randomUUID(), name: "Docs", write: true };
     const mac = registration({ computer: true, folders: [docs] }); broker.register(mac, alice, secret);
     broker.register(registration({ terminal: true }), bob, other);
-    expect(broker.status(alice.person)).toEqual([{ id: mac.id, name: "Desktop", online: true, busy: false, lastSeenAt: expect.any(Number), scopes: { folders: [docs], terminal: false, screen: true, internet: false, chrome: false } }]);
+    expect(broker.status(alice.person)).toEqual([{ id: mac.id, name: "Desktop", online: true, busy: false, lastSeenAt: expect.any(Number), scopes: { folders: [docs], terminal: false, screen: true } }]);
     expect(broker.status(null)).toEqual([]);
     expect(JSON.stringify(broker.status(alice.person))).not.toContain(secret);
     await vi.advanceTimersByTimeAsync(40_001);

@@ -526,7 +526,6 @@
   "lending.action.runCommand": "एक कमांड चलाई",
   "lending.action.screenTools": "ऐप और स्क्रीन के नियंत्रण जाँचे",
   "lending.action.screen": "ऐप और स्क्रीन इस्तेमाल किए",
-  "lending.action.website": "एक वेबसाइट खोली",
   "lending.action.invalid": "गलत अनुरोध",
   "lending.action.other": "अन्य अनुरोध",
   "memory.learnFromRooms.noModelSteps": "इस बॉट का AI इसके लिए ज़रूरी बैकग्राउंड मॉडल कॉल नहीं कर सकता, इसलिए यह ग्रुप चैट से कुछ नहीं सीखेगा।",

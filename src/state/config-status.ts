@@ -144,8 +144,6 @@ export interface ConfigStatus {
   onboarding?: OnboardingStatus;
   /** Whether bots can browse through ego lite here. */
   browserEngine?: BrowserEngineSummary;
-  /** Named browser sessions any bot can be pointed at. */
-  browserProfiles?: BrowserProfile[];
   /** The enrolled organisation's read-only desktop policy; null when this
    * desktop is not enrolled or its Admin sends no policy. */
   managedPolicy?: ManagedPolicySummary | null;
@@ -175,15 +173,4 @@ export interface ManagedPolicySummary {
 export interface BrowserEngineSummary {
   kind: "engine" | "unavailable";
   reason?: string;
-}
-
-export interface BrowserProfile {
-  id: string;
-  name: string;
-  /** "chrome": the profile's bots use the person's own Chrome (My Chrome).
-   * Absent is the built-in browser. */
-  browser?: "chrome";
-  /** Read-only durable Electron routing inherited from legacy profiles.
-   * Config PATCH payloads must omit it. */
-  partitionId?: string;
 }

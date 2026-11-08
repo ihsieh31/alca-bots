@@ -24,14 +24,6 @@ export interface CloudLendingState {
   folders: SharedFolder[];
   /** Apps and screen. */
   screen: boolean;
-  /** Its internet connection, for the bots' browsers on My Cloud. */
-  internet: boolean;
-  /** Its Chrome, for the bots on My Cloud. */
-  chrome: boolean;
-  /** Lent and connected with Chrome: whether My Cloud reaches it yet. */
-  chromeLink?: "on" | "connecting" | "unsupported";
-  /** Lent and connected with the internet connection: whether My Cloud's browsing goes through it yet. */
-  link?: "on" | "connecting" | "unsupported";
   /** An action from the Cloud is running on this computer right now. */
   busy: boolean;
   connected?: boolean;
@@ -111,13 +103,7 @@ export function createComputerSharing(options: {
   now?: () => number;
   /** My Cloud's power gate: lending to it waits, calling nothing, while it sleeps. */
   power?: import("./cloud-power.mjs").CloudPowerGate;
-  /** `busy.action` is "internet" while a Cloud's browsing goes through this computer. */
   onChange?: (summary: LendingSummary) => void;
-  /** The device link's sign-in for My Cloud, as the poll's fetch carries it (its session cookie). */
-  linkHeaders?: (env: Workspace) => Record<string, string> | Promise<Record<string, string>>;
-  WebSocket?: typeof globalThis.WebSocket;
-  /** This computer's own check on each connection, for tests: how it looks names up and connects. */
-  egress?: Omit<NonNullable<Parameters<typeof import("./device-egress.mjs").createDeviceEgress>[0]>, "seenAs">;
   /** The saved server that is the person's own My Cloud: the move's project folders are lent to it. */
   myCloud?: () => Workspace | null;
   /** The saved servers that are the verified session's own Clouds, never a Team Cloud: each is lent this computer by itself. */
@@ -151,9 +137,9 @@ export function createComputerSharing(options: {
   /** Lending's last requests have been answered or have timed out; a Cloud's answer can re-issue its session cookie. */
   goodbyesDone(): Promise<unknown>;
   lendingToCloud(): boolean;
-  /** A server is using this computer now: a job running on it, or its browsing going through this computer. */
+  /** A server is running a job on this computer right now. */
   busy(): boolean;
-  saveCloud(env: Workspace, input: { folders: unknown; screen?: boolean; internet?: boolean; chrome?: boolean; terminal?: boolean }, version?: number): Promise<CloudLendingState>;
+  saveCloud(env: Workspace, input: { folders: unknown; screen?: boolean; terminal?: boolean }, version?: number): Promise<CloudLendingState>;
   /** The move's project folders, lent to My Cloud with editing; rejects while that can't happen yet. */
   lendProjects(paths: string[], place?: { id: string; origin: string; name: string } | null): Promise<void>;
   paused(): boolean;

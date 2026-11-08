@@ -51,7 +51,7 @@ async function fixture(t) {
 
 for (const mode of ["Cloud", "Computer access"]) {
   const save = (f, terminal) => mode === "Cloud"
-    ? f.sharing.saveCloud(f.env, { folders: [], internet: true, terminal })
+    ? f.sharing.saveCloud(f.env, { folders: [], screen: true, terminal })
     : f.sharing.save(f.env, { folders: [], computer: true, terminal }, f.info);
 
   test(`${mode}: Stop invalidates a pending terminal grant`, async t => {

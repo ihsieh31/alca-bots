@@ -41,7 +41,7 @@ async function settled(f) {
 
 test("switching: this computer stops working for the account left, its Cloud is told nothing and can go to sleep, and it comes back with that account", async (t) => {
   const f = await fixture(t);
-  await f.sharing.saveCloud(f.env, { folders: [], internet: true });
+  await f.sharing.saveCloud(f.env, { folders: [], screen: true });
   f.sharing.cloudChanged();
   await settled(f);
   assert.equal(f.sharing.lendingToCloud(), true);
@@ -68,7 +68,7 @@ test("switching: this computer stops working for the account left, its Cloud is 
 
 test("leaving another account, or none, stops nothing", async (t) => {
   const f = await fixture(t);
-  await f.sharing.saveCloud(f.env, { folders: [], internet: true });
+  await f.sharing.saveCloud(f.env, { folders: [], screen: true });
   f.sharing.cloudChanged();
   await until(() => f.polls.length > 0, "the lent connection");
   f.sharing.leaveAccount("acct-z");
@@ -80,7 +80,7 @@ test("a lending pass already under way when the account is left lends nothing mo
   const screen = Promise.withResolvers();
   let held = false;
   const f = await fixture(t, { screen: () => (held ? screen.promise : false) });
-  await f.sharing.saveCloud(f.env, { folders: [], internet: true });
+  await f.sharing.saveCloud(f.env, { folders: [], screen: true });
   await settled(f);
   held = true;
   f.sharing.cloudChanged();

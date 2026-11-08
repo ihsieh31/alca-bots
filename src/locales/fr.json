@@ -526,7 +526,6 @@
   "lending.action.runCommand": "A exécuté une commande",
   "lending.action.screenTools": "A vérifié les commandes des apps et de l’écran",
   "lending.action.screen": "A utilisé les apps et l’écran",
-  "lending.action.website": "A ouvert un site web",
   "lending.action.invalid": "Demande mal formée",
   "lending.action.other": "Autre demande",
   "memory.learnFromRooms.noModelSteps": "L’IA de ce bot ne peut pas faire l’appel de modèle en arrière-plan nécessaire, il n’apprendra donc rien des discussions de groupe.",

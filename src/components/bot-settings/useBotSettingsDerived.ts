@@ -40,7 +40,6 @@ export type BotPatch = Partial<
     | "approvePeerComms"
     | "composio"
     | "browser"
-    | "recordBrowserSteps"
     | "mcpServers"
     | "modelSelection"
   >

@@ -35,7 +35,7 @@ function cloudHome() {
     const route = new URL(url).pathname;
     if (route === "/api/auth/session") return json({ kind: "session", id: state.sessionId, scopes: ["admin", "client"], cloudHome: true });
     if (route === "/.well-known/alcabots/environment") {
-      return json({ environmentId: state.environmentId, capabilities: { sharedComputers: true, lendingDetails: true, deviceLink: true, myChromeLink: true, computerAsks: true } });
+      return json({ environmentId: state.environmentId, capabilities: { sharedComputers: true, lendingDetails: true, computerAsks: true } });
     }
     const body = init?.body ? JSON.parse(init.body) : {};
     if (route === "/api/shared-computers/connect") { state.connects.push(body); return json({ ok: true }); }

@@ -1138,76 +1138,19 @@ describe("Store", () => {
     expect(saved.find((bot) => bot.id === absent.id)).not.toHaveProperty("cloudBackend");
   });
 
-  it("migrates legacy browser profile references without collapsing case-distinct accounts", () => {
+  it("drops the removed browser profile and Record browser steps fields from saved bots", () => {
     const store = new Store(selection);
-    const first = store.createBot();
-    const duplicate = store.createBot();
-    const caseVariant = store.createBot();
-    const configFile = join(DATA_DIR, "config.json");
+    const bot = store.createBot();
     const botsFile = join(DATA_DIR, "bots.json");
-    writeFileSync(configFile, JSON.stringify({
-      browserProfiles: [
-        { id: "Work", name: "Primary" },
-        { id: "Work", name: "Duplicate" },
-        { id: "work", name: "Lowercase variant" },
-      ],
-    }));
-    const bots: BotRecord[] = JSON.parse(readFileSync(botsFile, "utf8"));
-    bots.find((bot) => bot.id === first.id)!.browserProfile = "Work";
-    bots.find((bot) => bot.id === duplicate.id)!.browserProfile = "Work";
-    bots.find((bot) => bot.id === caseVariant.id)!.browserProfile = "work";
+    const bots: Array<BotRecord & Record<string, unknown>> = JSON.parse(readFileSync(botsFile, "utf8"));
+    Object.assign(bots.find((record) => record.id === bot.id)!, { browserProfile: "Work", recordBrowserSteps: true });
     writeFileSync(botsFile, JSON.stringify(bots));
 
     const reloaded = new Store(selection);
-    expect(reloaded.bot(first.id)?.browserProfile).toBe("work-2");
-    expect(reloaded.bot(duplicate.id)?.browserProfile).toBe("work-2");
-    expect(reloaded.bot(caseVariant.id)?.browserProfile).toBe("work");
-
-    const persisted: BotRecord[] = JSON.parse(readFileSync(botsFile, "utf8"));
-    expect(persisted.find((bot) => bot.id === first.id)?.browserProfile).toBe("work-2");
-    expect(persisted.find((bot) => bot.id === duplicate.id)?.browserProfile).toBe("work-2");
-    expect(persisted.find((bot) => bot.id === caseVariant.id)?.browserProfile).toBe("work");
-
-    const reloadedAgain = new Store(selection);
-    expect(reloadedAgain.bot(first.id)?.browserProfile).toBe("work-2");
-    expect(reloadedAgain.bot(duplicate.id)?.browserProfile).toBe("work-2");
-    expect(reloadedAgain.bot(caseVariant.id)?.browserProfile).toBe("work");
-  });
-
-  it("keeps explicit suffix browser references stable across legacy migration", () => {
-    const store = new Store(selection);
-    const upper = store.createBot();
-    const canonical = store.createBot();
-    const suffixed = store.createBot();
-    const configFile = join(DATA_DIR, "config.json");
-    const botsFile = join(DATA_DIR, "bots.json");
-    writeFileSync(configFile, JSON.stringify({
-      browserProfiles: [
-        { id: "Work", name: "Uppercase" },
-        { id: "work", name: "Canonical" },
-        { id: "work-2", name: "Explicit suffix" },
-      ],
-    }));
-    const bots: BotRecord[] = JSON.parse(readFileSync(botsFile, "utf8"));
-    bots.find((bot) => bot.id === upper.id)!.browserProfile = "Work";
-    bots.find((bot) => bot.id === canonical.id)!.browserProfile = "work";
-    bots.find((bot) => bot.id === suffixed.id)!.browserProfile = "work-2";
-    writeFileSync(botsFile, JSON.stringify(bots));
-
-    const reloaded = new Store(selection);
-    expect(reloaded.bot(upper.id)?.browserProfile).toBe("work-3");
-    expect(reloaded.bot(canonical.id)?.browserProfile).toBe("work");
-    expect(reloaded.bot(suffixed.id)?.browserProfile).toBe("work-2");
-
-    const persisted: BotRecord[] = JSON.parse(readFileSync(botsFile, "utf8"));
-    expect(persisted.find((bot) => bot.id === upper.id)?.browserProfile).toBe("work-3");
-    expect(persisted.find((bot) => bot.id === canonical.id)?.browserProfile).toBe("work");
-    expect(persisted.find((bot) => bot.id === suffixed.id)?.browserProfile).toBe("work-2");
-
-    const reloadedAgain = new Store(selection);
-    expect(reloadedAgain.bot(upper.id)?.browserProfile).toBe("work-3");
-    expect(reloadedAgain.bot(canonical.id)?.browserProfile).toBe("work");
-    expect(reloadedAgain.bot(suffixed.id)?.browserProfile).toBe("work-2");
+    expect(reloaded.bot(bot.id)).not.toHaveProperty("browserProfile");
+    expect(reloaded.bot(bot.id)).not.toHaveProperty("recordBrowserSteps");
+    const persisted: Array<Record<string, unknown>> = JSON.parse(readFileSync(botsFile, "utf8"));
+    expect(persisted.find((record) => record.id === bot.id)).not.toHaveProperty("browserProfile");
   });
 
   it("migrates unambiguous legacy peer grants without guessing duplicate names", () => {

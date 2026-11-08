@@ -655,7 +655,6 @@
   "lending.action.runCommand": "Einen Befehl ausgeführt",
   "lending.action.screenTools": "Die App- und Bildschirmsteuerung geprüft",
   "lending.action.screen": "Apps und Bildschirm verwendet",
-  "lending.action.website": "Eine Website geöffnet",
   "lending.action.invalid": "Fehlerhafte Anfrage",
   "lending.action.other": "Andere Anfrage",
   "memory.learnFromRooms.noModelSteps": "Die KI dieses Bots kann den dafür nötigen Modellaufruf im Hintergrund nicht ausführen, daher lernt er nichts aus Gruppenchats.",

@@ -244,7 +244,7 @@ await import(${JSON.stringify(fake)});
     fetch: (url: string, init: RequestInit) => fetch(url, { ...init, headers: { ...init.headers as Record<string, string>, authorization: `Bearer ${owner}`, host: HOST, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https", origin: `https://${HOST}` } }),
   });
   connector.start();
-  for (const deadline = Date.now() + 8000; !(connector.cloudState(env).connected && connector.cloudState(env).chrome);) {
+  for (const deadline = Date.now() + 8000; !(connector.cloudState(env).connected);) {
     if (Date.now() > deadline) throw new Error(`the Mac never connected: ${JSON.stringify(connector.cloudState(env))}`);
     await new Promise((resolve) => setTimeout(resolve, 50));
   }

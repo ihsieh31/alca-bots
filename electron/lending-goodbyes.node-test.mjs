@@ -34,7 +34,7 @@ async function fixture(t, { screen = () => false } = {}) {
 
 test("signing out: lending's goodbye to each Cloud is waited for, so its answer can't put a session cookie back after the clear", async (t) => {
   const f = await fixture(t);
-  await f.sharing.saveCloud(f.env, { folders: [], internet: true });
+  await f.sharing.saveCloud(f.env, { folders: [], screen: true });
   f.sharing.cloudChanged();
   await until(() => f.polls > 0, "the lent connection");
   await f.sharing.goodbyesDone();
@@ -50,7 +50,7 @@ test("signing out: lending's goodbye to each Cloud is waited for, so its answer 
 
 test("a goodbye that fails doesn't hold the sign-out up", async (t) => {
   const f = await fixture(t);
-  await f.sharing.saveCloud(f.env, { folders: [], internet: true });
+  await f.sharing.saveCloud(f.env, { folders: [], screen: true });
   f.sharing.cloudChanged();
   await until(() => f.polls > 0, "the lent connection");
   await f.sharing.goodbyesDone();
@@ -65,7 +65,7 @@ test("a lending pass under way is waited for too, since its end is what stops th
   const screen = Promise.withResolvers();
   let held = false;
   const f = await fixture(t, { screen: () => (held ? screen.promise : false) });
-  await f.sharing.saveCloud(f.env, { folders: [], internet: true });
+  await f.sharing.saveCloud(f.env, { folders: [], screen: true });
   f.sharing.cloudChanged();
   await until(() => f.polls > 0, "the lent connection");
   await f.sharing.goodbyesDone();

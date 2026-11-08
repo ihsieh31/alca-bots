@@ -38,7 +38,6 @@ export type BotUpdatePatch = Partial<
     | "approvePeerComms"
     | "composio"
     | "browser"
-    | "browserProfile"
     | "memoryUpkeep"
     | "cacheKeepWarm"
     | "mcpServers"

@@ -172,7 +172,7 @@ describe("a lent folder while its computer is away", () => {
 
 describe("SharedComputers with lent copies", () => {
   it("answers a folder action for an away computer from its copy, and the rest as offline", async () => {
-    const computers = new SharedComputers(() => true, undefined, undefined, copies);
+    const computers = new SharedComputers(() => true, undefined, copies);
     const read = await computers.request({ computer_id: lending, action: "read_file", folder_id: notes, path: "plan.md" }, OWNER, () => true) as any;
     expect(body(read).content).toBe("the plan");
     await expect(computers.request({ computer_id: lending, action: "run_command", command: "ls" }, OWNER, () => true)).rejects.toThrow(/This shared computer is offline/);

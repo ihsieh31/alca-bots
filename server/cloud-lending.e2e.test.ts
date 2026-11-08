@@ -108,7 +108,6 @@ function lend(env: { id: string; name: string; origin: string }, desktop: Pick<P
     file: join(home, "desktop-profile", "computer-sharing.json"), environments: () => [env], cuaConnection: async () => null, enabled: async () => false,
     cloud: () => ({ status: "connected", accountId: "acct_fixture", origin: base }), home: join(home, "mac-home"), ...desktop,
     fetch: (url: string, init: RequestInit) => fetch(url, { ...init, headers: { ...init.headers as Record<string, string>, authorization: `Bearer ${owner}`, host: HOST, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https", origin: `https://${HOST}` } }),
-    linkHeaders: () => ({ authorization: `Bearer ${owner}`, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https" }),
   });
 }
 
@@ -217,7 +216,7 @@ it("the person's Mac, lent by itself through the real connector, is usable by th
     fetch: (url: string, init: RequestInit) => fetch(url, { ...init, headers: { ...init.headers as Record<string, string>, authorization: `Bearer ${owner}`, host: HOST, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https", origin: `https://${HOST}` } }),
   });
   connector.start();
-  await expect.poll(() => connector!.cloudState(env).connected && connector!.cloudState(env).chrome, { timeout: 8000 }).toBe(true);
+  await expect.poll(() => connector!.cloudState(env).connected, { timeout: 8000 }).toBe(true);
   expect(maintainerChecks).toBe(0);
 
   const status = (await api("GET", "/api/shared-computers", { token: owner })).body.computers;
@@ -572,7 +571,6 @@ it("a Mac signed in to My Cloud is lent by itself, its home folder with editing,
     file: join(home, "desktop-profile", "computer-sharing.json"), environments: () => [env], myCloud: () => env, ownClouds: () => [env], cuaConnection: async () => null, enabled: async () => false,
     cloud: () => ({ status: "connected", accountId: "acct_fixture", origin: base }), home: macHome,
     fetch: (url: string, init: RequestInit) => fetch(url, { ...init, headers: { ...init.headers as Record<string, string>, authorization: `Bearer ${owner}`, host: HOST, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https", origin: `https://${HOST}` } }),
-    linkHeaders: () => ({ authorization: `Bearer ${owner}`, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https" }),
   });
   const lending = connector;
   lending.start();
@@ -599,7 +597,6 @@ it("paused, the PC still hears a bot that needs it: one card in the chat, the ap
     screen: () => ({ ready: true, lent: true, reason: null, fix: null }),
     prompt: async (_env: unknown, ask: { id: string }) => { prompts.push(ask.id); return null; },
     fetch: (url: string, init: RequestInit) => fetch(url, { ...init, headers: { ...init.headers as Record<string, string>, authorization: `Bearer ${owner}`, host: HOST, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https", origin: `https://${HOST}` } }),
-    linkHeaders: () => ({ authorization: `Bearer ${owner}`, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https" }),
   });
   const lending = connector;
   lending.start();

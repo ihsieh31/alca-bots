@@ -677,8 +677,6 @@ export async function launchHomeWorld(fx: CloudSendFixture, { chrome, ports, ver
     lending = createComputerSharing({
       file: join(lentHome, "computer-sharing.json"), home: lentHome, fetch: cookieFetch as typeof fetch, environments: () => envState.environments,
       cloud: target.cloud, myCloud: target.environment, ownClouds: target.places, screen: () => false, cuaConnection: async () => null,
-      linkHeaders: async (env: { origin: string }) => ({ cookie: ((await cdp.request("Network.getCookies", { urls: [env.origin] }, win.sessionId)).cookies as Array<{ name: string; value: string }>)
-        .map((entry) => `${entry.name}=${entry.value}`).join("; ") }),
     });
     cleanup.unshift(() => lending?.close());
   }

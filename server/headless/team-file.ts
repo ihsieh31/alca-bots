@@ -47,7 +47,7 @@ const botFields = {
   approval: z.enum(["ask", "edits", "auto", "full"], { error: "must be ask, edits, auto or full (custom is set in the desktop app)" }).optional(),
   computer: z.enum(["auto", "off", "browser", "local", "vm", "cloud"]).optional(),
   cwd: z.string().min(1).optional(),
-  browser: z.union([z.boolean(), z.object({ enabled: z.boolean(), profile: z.string().trim().min(1).max(100).optional() }).strict()]).optional(),
+  browser: z.union([z.boolean(), z.object({ enabled: z.boolean(), profile: z.unknown().optional() }).strict().transform(({ profile: _drop, ...rest }) => rest)]).optional(),
   tools: z.object({ allow: z.array(z.string()).optional(), deny: z.array(z.string()).optional() }).strict().optional(),
   skills: z.array(z.object({ file: z.string().trim().min(1), enabled: z.boolean().optional() }).strict()).optional(),
 };
@@ -96,7 +96,7 @@ export interface DesiredBot {
   approval?: "ask" | "edits" | "auto" | "full";
   computer?: "auto" | "off" | "browser" | "local" | "vm" | "cloud";
   cwd?: string;
-  browser?: { enabled: boolean; profile?: string };
+  browser?: { enabled: boolean };
   /** null: no selection, so every tool (a file's `tools: {}` or `{ deny: [] }`). */
   tools?: ToolScope | null;
   skills: DesiredSkill[];

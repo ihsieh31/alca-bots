@@ -31,7 +31,7 @@ describe("what a server remembers about computers lent to it", () => {
     now += 60_000;
     lent.connected("cloud-home", { id: again, name: "ASH-PC", folders: 0, terminal: false, screen: true });
     const reread = new LentComputers(path, () => now);
-    expect(reread.list("cloud-home")).toEqual([{ id: again, person: "cloud-home", name: "ASH-PC", platform: "win32", folders: 0, terminal: false, screen: true, internet: false, chrome: false,
+    expect(reread.list("cloud-home")).toEqual([{ id: again, person: "cloud-home", name: "ASH-PC", platform: "win32", folders: 0, terminal: false, screen: true,
       lastSeenAt: now, lastUsedAt: Date.UTC(2026, 9, 7, 14, 2) + 90_000, stoppedAt: null }]);
     expect(reread.list("someone-else")).toEqual([]);
     expect(reread.list(null)).toEqual([]);
@@ -77,7 +77,7 @@ describe("the shared-computer registry with that memory", () => {
     const pc = lend({ platform: "win32" });
     broker.register(pc, { session: "s1", person: "cloud-home" }, secret);
     expect(broker.away("cloud-home")).toEqual({});
-    expect(broker.known("cloud-home")).toEqual([expect.objectContaining({ id: pc.id, name: "ASH-PC", platform: "win32", online: true, lent: true, scopes: { folders: 1, terminal: false, screen: true, internet: false, chrome: false } })]);
+    expect(broker.known("cloud-home")).toEqual([expect.objectContaining({ id: pc.id, name: "ASH-PC", platform: "win32", online: true, lent: true, scopes: { folders: 1, terminal: false, screen: true } })]);
     live = false;
     expect(broker.away("cloud-home").say).toMatch(/^Their PC ASH-PC is shared with the Cloud but offline \(last online \d{4}-\d\d-\d\d \d\d:\d\d UTC\)/u);
     const offline = expect(broker.request({ computer_id: pc.id, action: "computer_tools" }, "cloud-home", () => true))
@@ -96,35 +96,14 @@ describe("the shared-computer registry with that memory", () => {
     broker.close();
   });
 
-  it("remembers a computer that lends its internet connection, even an old record without it, and says when the bots browse from My Cloud's own connection", () => {
+  it("reads an old lent-computer record and drops its retired internet and Chrome scopes", () => {
     const path = file();
     const at = Date.UTC(2026, 9, 7, 14, 2);
-    // A record from before the internet connection could be lent.
-    writeFileSync(path, JSON.stringify({ version: 1, computers: [{ id: randomUUID(), person: "cloud-home", name: "OLD-PC", platform: "win32", folders: 1, terminal: false, screen: false, lastSeenAt: at, lastUsedAt: null, stoppedAt: null }] }));
-    expect(new LentComputers(path).list("cloud-home")).toHaveLength(1);
-    let live = true;
-    const broker = new SharedComputers(() => live, new LentComputers(path));
-    expect(broker.internetAway("cloud-home"), "no computer lends its connection: nothing to say").toBeNull();
-    const mac = lend({ name: "Ash's MacBook", platform: "darwin", internet: true });
-    expect(sharedComputerRegistration.safeParse(mac).success).toBe(true);
-    broker.register(mac, { session: "s1", person: "cloud-home" }, secret);
-    expect(broker.known("cloud-home")[0]).toEqual(expect.objectContaining({ name: "Ash's MacBook", online: true, scopes: { folders: 1, terminal: false, screen: true, internet: true, chrome: false } }));
-    expect(broker.status("cloud-home")[0]!.scopes.internet).toBe(true);
-    expect(broker.internetAway("cloud-home"), "online: the browsing goes through it").toBeNull();
-    live = false;
-    expect(broker.internetAway("cloud-home")).toEqual({ away: "Mac" });
-    expect(new LentComputers(path).list("cloud-home")[0]).toEqual(expect.objectContaining({ name: "Ash's MacBook", internet: true }));
-    live = true;
-    broker.disconnect(mac.id, "s1", secret);
-    expect(broker.internetAway("cloud-home"), "turned off there: no longer lent, so nothing to say").toBeNull();
-    broker.close();
-  });
-
-  it("remembers whether a computer lends its Chrome", () => {
-    const path = file();
-    const lent = new LentComputers(path);
-    lent.connected("cloud-home", { id: randomUUID(), name: "ASH-PC", platform: "win32", folders: 0, terminal: false, screen: false, chrome: true });
-    expect(new LentComputers(path).list("cloud-home")[0]!.chrome).toBe(true);
+    writeFileSync(path, JSON.stringify({ version: 1, computers: [{ id: randomUUID(), person: "cloud-home", name: "OLD-PC", platform: "win32", folders: 1, terminal: false, screen: false, internet: true, chrome: true, lastSeenAt: at, lastUsedAt: null, stoppedAt: null }] }));
+    const old = new LentComputers(path).list("cloud-home")[0]!;
+    expect(old.name).toBe("OLD-PC");
+    expect(old).not.toHaveProperty("internet");
+    expect(old).not.toHaveProperty("chrome");
   });
 
   it("keeps a paused computer lent: it reads as offline, never as turned off, and an older desktop's disconnect still stops it", () => {
