@@ -142,6 +142,7 @@ describe("scopes", () => {
       ["GET", "/api/auth/session"], ["POST", "/api/auth/stream-ticket"], ["POST", "/api/auth/logout"],
       ["GET", "/api/bots/x/slack-management"],
       ["POST", "/api/bots/x/sign-in-cards/m/done"], ["POST", "/api/bots/x/sign-in-cards/m/cancel"],
+      ["GET", "/api/bots/x/browser/live"], ["POST", "/api/bots/x/browser/action"],
       ["GET", "/api/threads/t/messages/m/app"], ["POST", "/api/bots/x/apps/m/rpc"], ["POST", "/api/bots/x/apps/m/context"],
       ["POST", "/api/bots/x/queue/q/steer"], ["POST", "/api/groups/g/queue/q/steer"],
     ] as const) expect(requiredScope(method, path), `${method} ${path}`).toBe("client");
@@ -259,6 +260,7 @@ describe("resolveRequestAuth", () => {
       ["POST", "/api/bots/b/read"], ["POST", "/api/bots/b/respond"],
       ["POST", "/api/bots/b/secret-cards/card/provide"],
       ["GET", "/api/events"], ["PATCH", "/api/bots/b/profile"],
+      ["GET", "/api/bots/b/browser/live"], ["POST", "/api/bots/b/browser/action"],
     ]) expect(check(method, path).auth?.kind, path).toBe("loopback");
     expect(check("GET", "/api/phones/self/jobs").auth).toEqual({ kind: "loopback", scopes: ["admin", "client"], companionDevice: "phone-1" });
     const plain = resolveRequestAuth(request({ host: "127.0.0.1:8799", "x-alcabots-companion": "1", "x-alcabots-companion-device": "phone-1" }, "GET"), {

@@ -6,6 +6,7 @@ import { createInterface } from "node:readline";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { egoBrowserCommand, egoBrowserIntegration } from "./ego-browser.ts";
+import { botSpaces, setEgoHold } from "./ego-state.ts";
 import { SPAWNED_PROXIES } from "./proxy-paths.ts";
 
 const dir = mkdtempSync(join(tmpdir(), "ego-proxy-"));
@@ -18,6 +19,9 @@ if (args[0] !== "nodejs") process.exit(2);
 let script = "";
 process.stdin.on("data", (c) => { script += c; });
 process.stdin.on("end", () => {
+  const made = ${JSON.stringify(join(dir, "made"))};
+  if (script.includes("listTaskSpaces")) { console.log(JSON.stringify(require("node:fs").existsSync(made) ? [1, 2] : [1])); return; }
+  if (script.includes("NEWSPACE")) { require("node:fs").writeFileSync(made, ""); console.log("spaceId: 1"); return; }
   if (script.includes("FAIL")) { console.error("EGO_PAGE_UNRESPONSIVE"); process.exit(1); }
   if (script.includes("HANG")) { setInterval(() => {}, 1000); return; }
   if (script.includes("SHOT")) { require("node:fs").writeFileSync(${JSON.stringify(png)}, Buffer.from([137, 80, 78, 71])); console.log("saved " + ${JSON.stringify(png)}); return; }
@@ -28,9 +32,9 @@ chmodSync(fake, 0o755);
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
-async function session(calls: Array<{ name: string; arguments?: Record<string, unknown> }>) {
+async function session(calls: Array<{ name: string; arguments?: Record<string, unknown> }>, extraEnv: Record<string, string> = {}) {
   const child = spawn(process.execPath, [SPAWNED_PROXIES.egoBrowser], {
-    env: { ...process.env, ALCA_EGO_BROWSER_COMMAND: fake, ALCA_EGO_BROWSER_ARGS: "[]" },
+    env: { ...process.env, ALCA_EGO_BROWSER_COMMAND: fake, ALCA_EGO_BROWSER_ARGS: "[]", ...extraEnv },
     stdio: ["pipe", "pipe", "inherit"],
   });
   const lines = createInterface({ input: child.stdout });
@@ -51,6 +55,17 @@ async function session(calls: Array<{ name: string; arguments?: Record<string, u
 }
 
 describe("ego-browser proxy", () => {
+  it("records the spaces a bot's script made or named, and refuses while the person holds the browser", async () => {
+    const state = join(dir, "state");
+    const env = { ALCA_EGO_BOT_ID: "bot-1", ALCA_EGO_STATE_DIR: state };
+    await session([{ name: "ego_browser_run", arguments: { script: "NEWSPACE" } }], env);
+    expect(botSpaces(state, "bot-1")).toEqual([2, 1]);
+    setEgoHold(state, "bot-1", { by: "phone", until: Date.now() + 60_000 });
+    const { results } = await session([{ name: "ego_browser_run", arguments: { script: "anything" } }], env);
+    expect(results[0]).toMatchObject({ isError: true });
+    expect(results[0]!.content[0]!.text).toMatch(/controlling ego lite from their phone/);
+  });
+
   it("lists the guide and run tools", async () => {
     const { tools } = await session([]);
     expect((tools as { tools: Array<{ name: string }> }).tools.map((tool) => tool.name)).toEqual(["ego_browser_guide", "ego_browser_run"]);

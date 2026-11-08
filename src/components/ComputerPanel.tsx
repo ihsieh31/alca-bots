@@ -813,18 +813,10 @@ export function ComputerPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bot.id]);
 
-  const setNativeBrowserControl = useCallback(async (): Promise<boolean> => true, []);
-
-  const transitionControl = useCallback(async (action: ComputerControlAction) => {
-    // Security: every computer surface must gate Electron's direct browser host; the server hold is bot-wide, and a
-    // shell-capable agent could otherwise bypass the server proxy while the person drives.
-    return transitionComputerControlLease({
-      action,
-      syncNativeBrowser: panelView !== "browser",
-      requestControl,
-      setNativeBrowserControl,
-    });
-  }, [panelView, requestControl, setNativeBrowserControl]);
+  const transitionControl = useCallback(
+    async (action: ComputerControlAction) => transitionComputerControlLease({ action, requestControl }),
+    [requestControl],
+  );
 
   const controlAction = useCallback(async (action: ComputerControlAction): Promise<boolean> => {
     setControlPending(true);

@@ -97,16 +97,16 @@ it("never echoes a secret or token in its refusal", () => {
 });
 
 
-it("offers ego lite and cloud computers, never this computer or a Local VM", () => {
-  expect((["cloud", "vm", "local", "browser"] as const).filter(cloudHomeOffersPlace)).toEqual(["cloud", "browser"]);
+it("offers only cloud computers, never this computer, a Local VM or ego lite", () => {
+  expect((["cloud", "vm", "local", "browser"] as const).filter(cloudHomeOffersPlace)).toEqual(["cloud"]);
   expect(cloudHomePlaceRefusal("cloud")).toBeUndefined();
-  expect(cloudHomePlaceRefusal("browser")).toBeUndefined();
+  expect(cloudHomePlaceRefusal("browser")).toMatch(/runs on your own computer/);
 });
 
 it("refuses the places it never offers with what is true there, not a setup step", () => {
   const local = cloudHomePlaceRefusal("local")!, vm = cloudHomePlaceRefusal("vm")!;
-  expect(local).toBe("This computer isn't a place in the Cloud. Set Works on to Auto, Cloud desktop or Browser; your own computer is reached while AlcaBots is open on it.");
-  expect(vm).toBe("Cloud bots can't use a private desktop. Set Works on to Auto, Cloud desktop or Browser.");
+  expect(local).toBe("This computer isn't a place in the Cloud. Set Works on to Auto or Cloud desktop; your own computer is reached while AlcaBots is open on it.");
+  expect(vm).toBe("Cloud bots can't use a private desktop. Set Works on to Auto or Cloud desktop.");
   for (const text of [local, vm]) {
     expect(text).not.toMatch(/configure|Computer panel|install|set (?:it|one) up/i);
     // A failed turn shows the first 160 characters of its error.

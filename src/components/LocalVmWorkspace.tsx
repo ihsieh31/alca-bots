@@ -92,10 +92,6 @@ function bestEffortRelease(botId: string, controlLeaseId: string) {
   }).catch(() => {});
 }
 
-async function setNativeBrowserControl(_botId: string, _held: boolean): Promise<boolean> {
-  return true;
-}
-
 function dispatchControl(
   dispatch: WorkspaceDispatch,
   botId: string,
@@ -571,9 +567,7 @@ export function LocalVmWorkspace({
       async take(botId) {
         const snapshot = await transitionComputerControlLease({
           action: "take",
-          syncNativeBrowser: true,
           requestControl: (action) => requestComputerControl(botId, action, controlLeaseId),
-          setNativeBrowserControl: (held) => setNativeBrowserControl(botId, held),
         });
         dispatchControl(dispatch, botId, snapshot);
         if (snapshot.held && snapshot.owned === true) controlledBotIdRef.current = botId;
@@ -583,9 +577,7 @@ export function LocalVmWorkspace({
       async release(botId) {
         const snapshot = await transitionComputerControlLease({
           action: "release",
-          syncNativeBrowser: true,
           requestControl: (action) => requestComputerControl(botId, action, controlLeaseId),
-          setNativeBrowserControl: (held) => setNativeBrowserControl(botId, held),
         });
         dispatchControl(dispatch, botId, snapshot);
         if (controlledBotIdRef.current === botId) controlledBotIdRef.current = null;

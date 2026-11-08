@@ -342,6 +342,9 @@ export const CLIENT_ALLOW: ReadonlyArray<{ methods: readonly string[]; path: Reg
   // A secret only the conversation's own person may type in: kept behind the card, never in Settings (routes/secret-cards.ts).
   { methods: ["POST"], path: /^\/api\/bots\/[\w-]+\/secret-cards\/[\w-]+\/save$/ },
   { methods: ["POST"], path: /^\/api\/bots\/[\w-]+\/sign-in-cards\/[\w-]+\/(?:done|cancel)$/ },
+  // A member reaches only the bots shown to them.
+  { methods: ["GET"], path: /^\/api\/bots\/[\w-]+\/browser\/live$/ },
+  { methods: ["POST"], path: /^\/api\/bots\/[\w-]+\/browser\/action$/ },
   { methods: ["GET"], path: /^\/api\/bots\/[\w-]+\/connector-cards\/[\w-]+\/status$/ },
   { methods: ["POST"], path: /^\/api\/bots\/[\w-]+\/connector-cards\/[\w-]+\/(?:resume|dismiss)$/ },
   // A member signs in to their own MCP server from its card; the handler keeps an app's card and a shared server's an admin's.

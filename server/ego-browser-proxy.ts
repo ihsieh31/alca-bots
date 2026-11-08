@@ -7,6 +7,8 @@ import { readFile, stat } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 import readline from "node:readline";
 
+import { egoHold, printedSpaceIds, recordBotSpaces } from "./ego-state.ts";
+
 const COMMAND = process.env.ALCA_EGO_BROWSER_COMMAND ?? "ego-browser";
 const PREFIX: string[] = (() => {
   try {
@@ -16,6 +18,11 @@ const PREFIX: string[] = (() => {
     return [];
   }
 })();
+
+const BOT_ID = process.env.ALCA_EGO_BOT_ID ?? "";
+const STATE_DIR = process.env.ALCA_EGO_STATE_DIR ?? "";
+const HELD = "The person is controlling ego lite from their phone right now. Do not use the browser until they hand it back: tell them you are waiting, or continue with work that needs no browser.";
+const LIST_SPACES = "console.log(JSON.stringify((await listTaskSpaces()).map((space) => space.id)));";
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 const MAX_TIMEOUT_MS = 600_000;
@@ -126,8 +133,11 @@ async function callTool(name: string, args: Json): Promise<{ content: Content[];
     if (script.length > MAX_SCRIPT_CHARS) return { content: [{ type: "text", text: `The script is longer than ${MAX_SCRIPT_CHARS} characters.` }], isError: true };
     const requested = typeof args.timeoutMs === "number" && Number.isFinite(args.timeoutMs) ? args.timeoutMs : DEFAULT_TIMEOUT_MS;
     const timeoutMs = Math.min(Math.max(Math.round(requested), 1_000), MAX_TIMEOUT_MS);
+    if (BOT_ID && STATE_DIR && egoHold(STATE_DIR, BOT_ID)) return { content: [{ type: "text", text: HELD }], isError: true };
+    const before = BOT_ID && STATE_DIR ? await spaceIds() : null;
     const started = Date.now() - 1_000;
     const result = await runEgo(["nodejs"], script, timeoutMs);
+    if (before) await rememberSpaces(before, result.output);
     if (result.code === null && !result.timedOut) return { content: [{ type: "text", text: notRunning(result) }], isError: true };
     const text = clip(result.output.trim() || "(the script printed nothing)")
       + (result.timedOut ? `\n[stopped after ${timeoutMs} ms; the browser may still be acting. Observe the page before retrying.]` : "")
@@ -135,6 +145,26 @@ async function callTool(name: string, args: Json): Promise<{ content: Content[];
     return { content: [{ type: "text", text }, ...(await printedImages(result.output, started))], isError: result.timedOut || result.code !== 0 };
   }
   return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
+}
+
+async function spaceIds(): Promise<number[] | null> {
+  const listed = await runEgo(["nodejs"], LIST_SPACES, 15_000);
+  const line = listed.output.trim().split("\n").reverse().find((row) => row.startsWith("["));
+  try {
+    const ids: unknown = line ? JSON.parse(line) : null;
+    return Array.isArray(ids) ? ids.filter((id): id is number => Number.isSafeInteger(id)) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The spaces this run made, and those it printed as its own, are the bot's: the live view shows them on the person's phone. */
+async function rememberSpaces(before: number[], output: string): Promise<void> {
+  const after = await spaceIds();
+  if (!after) return;
+  const made = after.filter((id) => !before.includes(id));
+  const named = printedSpaceIds(output).filter((id) => after.includes(id));
+  try { recordBotSpaces(STATE_DIR, BOT_ID, [...new Set([...named, ...made])]); } catch { /* the live view only loses this run's spaces */ }
 }
 
 function notRunning(result: RunResult): string {

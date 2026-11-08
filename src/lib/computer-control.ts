@@ -57,26 +57,17 @@ export function heldComputerControlBotIds(
     .map(([botId]) => botId);
 }
 
-/** Take is local-first, release server-first; BrowserPanel owns the same choreography itself. */
 export async function transitionComputerControlLease<
   Action extends ComputerControlAction,
   Snapshot extends ComputerControlSnapshot,
 >(input: {
   action: Action;
-  syncNativeBrowser: boolean;
   requestControl: (action: Action) => Promise<Snapshot>;
-  setNativeBrowserControl: (held: boolean) => Promise<boolean>;
 }): Promise<Snapshot> {
-  const { action, syncNativeBrowser, requestControl, setNativeBrowserControl } = input;
-  if (action === "take" && syncNativeBrowser && !(await setNativeBrowserControl(true))) {
-    throw new Error(t("computer.err.pauseBrowser", { app: productName() }));
-  }
+  const { action, requestControl } = input;
   const snap = await requestControl(action);
   if (snap.held !== (action === "take")) {
     throw new Error(t(action === "take" ? "computer.err.confirmControl" : "computer.err.releaseControl", { app: productName() }));
-  }
-  if (action === "release" && syncNativeBrowser && !(await setNativeBrowserControl(false))) {
-    throw new Error(t("computer.err.browserStillPaused"));
   }
   return snap;
 }

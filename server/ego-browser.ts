@@ -1,3 +1,6 @@
+import { spawn } from "node:child_process";
+import { join } from "node:path";
+
 import { AGENTS_NODE_FLAG, SPAWNED_PROXIES } from "./proxy-paths.ts";
 import { findCliCandidates, resolveCliSpawn } from "./env-path.ts";
 
@@ -20,14 +23,47 @@ export function egoBrowserCommand(env: NodeJS.ProcessEnv = process.env): EgoBrow
   return resolveCliSpawn(found, [], env);
 }
 
-export function egoBrowserIntegration(env: NodeJS.ProcessEnv = process.env): { command: string; args: string[]; env: Record<string, string> } | null {
+export const EGO_BOT_ENV = "ALCA_EGO_BOT_ID";
+export const EGO_STATE_ENV = "ALCA_EGO_STATE_DIR";
+
+/** Where the proxy and the live view share each bot's task spaces and a person's hold (ego-state.ts). */
+export function egoStateDir(dataDir: string): string {
+  return join(dataDir, "ego-browser");
+}
+
+export function egoBrowserIntegration(env: NodeJS.ProcessEnv = process.env, link?: { botId: string; stateDir: string }):
+  { command: string; args: string[]; env: Record<string, string> } | null {
   const ego = egoBrowserCommand(env);
   if (!ego) return null;
   return {
     command: process.execPath,
     args: [SPAWNED_PROXIES.egoBrowser],
-    env: { ...AGENTS_NODE_FLAG, [EGO_COMMAND_ENV]: ego.command, [EGO_ARGS_ENV]: JSON.stringify(ego.args) },
+    env: { ...AGENTS_NODE_FLAG, [EGO_COMMAND_ENV]: ego.command, [EGO_ARGS_ENV]: JSON.stringify(ego.args),
+      ...(link ? { [EGO_BOT_ENV]: link.botId, [EGO_STATE_ENV]: link.stateDir } : {}) },
   };
+}
+
+export interface EgoRun {
+  code: number | null;
+  output: string;
+  timedOut: boolean;
+}
+
+/** Runs one script with `ego-browser nodejs`, keeping at most `maxChars` of its output. */
+export function runEgoScript(ego: EgoBrowserCommand, script: string, timeoutMs: number, maxChars = 240_000): Promise<EgoRun> {
+  return new Promise((resolve) => {
+    const child = spawn(ego.command, [...ego.args, "nodejs"], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+    let output = "";
+    let timedOut = false;
+    const append = (chunk: Buffer) => { if (output.length < maxChars) output += chunk.toString("utf8"); };
+    child.stdout.on("data", append);
+    child.stderr.on("data", append);
+    const timer = setTimeout(() => { timedOut = true; child.kill("SIGTERM"); }, timeoutMs);
+    child.on("error", (error) => { clearTimeout(timer); resolve({ code: null, output: `${output}${error.message}`, timedOut }); });
+    child.on("close", (code) => { clearTimeout(timer); resolve({ code, output, timedOut }); });
+    child.stdin.on("error", () => undefined);
+    child.stdin.end(script);
+  });
 }
 
 export function egoBrowserStatus(env: NodeJS.ProcessEnv = process.env): { kind: "ready"; path: string } | { kind: "unavailable"; reason: string } {

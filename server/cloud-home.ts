@@ -114,8 +114,9 @@ export { cloudHomeOffersPlace } from "../shared/cloud-home.ts";
 
 /** In the person's words; a turn's error shows 160 characters, so each fits. */
 export function cloudHomePlaceRefusal(place: Surface): string | undefined {
-  if (place === "local") return "This computer isn't a place in the Cloud. Set Works on to Auto, Cloud desktop or Browser; your own computer is reached while AlcaBots is open on it.";
-  if (place === "vm") return "Cloud bots can't use a private desktop. Set Works on to Auto, Cloud desktop or Browser.";
+  if (place === "local") return "This computer isn't a place in the Cloud. Set Works on to Auto or Cloud desktop; your own computer is reached while AlcaBots is open on it.";
+  if (place === "vm") return "Cloud bots can't use a private desktop. Set Works on to Auto or Cloud desktop.";
+  if (place === "browser") return "ego lite runs on your own computer, not in the Cloud. Set Works on to Auto or Cloud desktop.";
   return undefined;
 }
 

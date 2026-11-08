@@ -9,6 +9,15 @@ signed-in sites list, `fill_login` and saved logins, recorded browser steps,
 My Chrome and the Chrome a computer lends to My Cloud, and the headless
 browser on servers and in Docker.
 
+Later the same day the phone apps' live view came back on top of ego lite:
+`server/ego-live.ts` serves the v1 protocol (`GET /api/bots/:id/browser/live`
+as server-sent events, `POST /api/bots/:id/browser/action`) by polling a
+screenshot of the active tab in the bot's newest task space through
+`ego-browser nodejs`, and runs a person's input with the Page API. The proxy
+records which spaces each bot used and refuses `ego_browser_run` while a
+person holds the bot's browser; both live as files under the data folder's
+`ego-browser/` (`server/ego-state.ts`), since the proxy is its own process.
+
 ## Why
 
 - ego lite is a browser people and agents share: the person sees every page
