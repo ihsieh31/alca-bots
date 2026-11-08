@@ -11,6 +11,8 @@ import { generateIdentity, LinkClient, pairDevice, type LinkCredentials } from "
 import { startRelay } from "../../link/relay/server.ts";
 import { HTTP_CHANNEL, HTTP_CHUNK_BYTES, linkRequestRefusal, requestHeadersFor, responseHeadersFor, type HttpEvent } from "../../shared/link-http.ts";
 import { parseLinkPairingFragment } from "../../shared/link.ts";
+import { createLinkEventSource } from "../../src/phone/event-source.ts";
+import { LinkHttp } from "../../src/phone/link-http.ts";
 import { LinkService, type LinkSessions } from "./service.ts";
 
 class FakeSessions implements LinkSessions {
@@ -267,5 +269,79 @@ describe("the bridge's rules", () => {
   it("drops headers outside the lists", () => {
     expect(requestHeadersFor({ Authorization: "x", Accept: "y", "X-Evil": "z", Range: "bytes=0-1\r\nHost: evil" })).toEqual({ accept: "y" });
     expect(responseHeadersFor({ "set-cookie": ["a"], "content-type": "text/plain" })).toEqual({ "content-type": "text/plain" });
+  });
+});
+
+describe("the phone's fetch", () => {
+  async function phoneFetch(s: Awaited<ReturnType<typeof setup>>) {
+    const { client } = await connected(s);
+    const http = new LinkHttp({ nativeFetch: async () => new Response("native"), origin: "https://phone.example", waitForPeerMs: 200 });
+    client.onReady((_ready, peer) => http.setPeer(peer, client.via));
+    return { client, http };
+  }
+
+  it("turns a request into a real Response", async () => {
+    const big = randomBytes(900_000);
+    const s = await setup(big);
+    const { http, client } = await phoneFetch(s);
+    http.setPeer(client.peerNow ?? null, client.via);
+    const json = await http.fetch("/api/state?x=1", { headers: { accept: "application/json" } });
+    expect(json.status).toBe(200);
+    expect(await json.json()).toMatchObject({ path: "/api/state?x=1" });
+    const download = await http.fetch("https://phone.example/api/big");
+    expect(Buffer.from(await download.arrayBuffer()).equals(big)).toBe(true);
+    const form = new FormData();
+    form.set("file", new Blob([new Uint8Array(300_000)]), "a.bin");
+    const posted = await http.fetch("/api/up", { method: "POST", body: form });
+    expect(await posted.json()).toMatchObject({ path: "/api/up" });
+    const seen = s.seen.at(-1)!;
+    expect(seen.headers["content-type"]).toMatch(/^multipart\/form-data; boundary=/);
+    expect(seen.body.length).toBeGreaterThan(300_000);
+    expect(await (await http.fetch("/assets/app.js")).text()).toBe("native");
+    expect(await (await http.fetch("https://else.example/api/x")).text()).toBe("native");
+  }, 30_000);
+
+  it("gives a refused path its HTTP status, cancels on abort and fails like a network error with no session", async () => {
+    const s = await setup(randomBytes(1_500_000));
+    const { http, client } = await phoneFetch(s);
+    http.setPeer(client.peerNow ?? null, client.via);
+    expect((await http.fetch("/api/link")).status).toBe(403);
+    const aborter = new AbortController();
+    const response = await http.fetch("/api/big", { signal: aborter.signal });
+    const read = response.arrayBuffer();
+    aborter.abort();
+    await expect(read).rejects.toThrow(/abort/i);
+    http.setPeer(null);
+    await expect(http.fetch("/api/x")).rejects.toThrow(TypeError);
+  }, 30_000);
+
+  it("reads an event stream with the shared parser, across chunks and line endings", async () => {
+    const encoder = new TextEncoder();
+    const chunks = ["retry: 10\nid: 7\r\nev", "ent: ping\r\ndata: a\r\ndata: b\r\n\r\n: keepalive\n\ndata: hello\n", "\n"];
+    const opened: Array<string | null> = [];
+    let calls = 0;
+    const fetcher: typeof fetch = async (_url, init) => {
+      opened.push(new Headers(init?.headers).get("last-event-id"));
+      if (++calls > 1) return new Response("no", { status: 403 });
+      return new Response(new ReadableStream({
+        start(controller) {
+          for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
+          controller.close();
+        },
+      }), { headers: { "content-type": "text/event-stream" } });
+    };
+    const LinkEventSource = createLinkEventSource(fetcher, () => "https://phone.example/");
+    const source = new LinkEventSource("/api/events");
+    const got: string[] = [];
+    source.addEventListener("ping", (e: Event) => got.push(`ping:${(e as MessageEvent).data}:${(e as MessageEvent).lastEventId}`));
+    source.onmessage = (e: MessageEvent) => got.push(`message:${e.data}`);
+    let errors = 0;
+    source.onerror = () => { errors++; };
+    await until(() => got.length === 2);
+    expect(got).toEqual(["ping:a\nb:7", "message:hello"]);
+    expect(source.url).toBe("https://phone.example/api/events");
+    await until(() => errors === 2);
+    expect(source.readyState).toBe(2);
+    expect(opened).toEqual([null, "7"]);
   });
 });

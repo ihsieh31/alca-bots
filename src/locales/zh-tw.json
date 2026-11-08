@@ -4801,5 +4801,20 @@
   "server.meetings.end.meet_refused": "Google Meet 沒有讓我以訪客身分進入。主持人可以在主持人控制項中允許訪客，或者這場會議可能不允許組織外的人加入。",
   "server.meetings.end.speech_unavailable": "我無法為這場會議取得語音轉文字服務，所以沒有加入。",
   "server.meetings.card.settingUp": "正在設定逐字稿（僅首次，約一分鐘）…",
-  "server.meetings.card.speechStopped": "逐字稿已停止：{problem}"
+  "server.meetings.card.speechStopped": "逐字稿已停止：{problem}",
+  "phone.thisBrowser": "這個瀏覽器",
+  "phone.pair.title": "連接 {app}",
+  "phone.pair.intro": "在電腦上打開「設定」→「手機」，選「連接手機」，然後輸入畫面上的配對碼。",
+  "phone.pair.homeScreen": "請先把這個網頁加到主畫面，再從主畫面打開並輸入配對碼。iPhone 的主畫面 App 和 Safari 的連線資料是分開的。",
+  "phone.pair.code": "配對碼",
+  "phone.pair.relay": "中繼站位址",
+  "phone.pair.useOwnRelay": "使用自己的中繼站",
+  "phone.pair.badCode": "配對碼不太對，應該是 9 或 10 位數字。",
+  "phone.pair.failed": "連不上。請確認配對碼正確、電腦也開著，然後再試一次。",
+  "phone.pair.connect": "連接",
+  "phone.pair.connecting": "連接中…",
+  "phone.connecting": "正在連接 {computer}…",
+  "phone.offline.title": "連不到 {computer}",
+  "phone.offline.body": "電腦可能在睡眠或離線。這個頁面會繼續重試。",
+  "phone.removed": "這支手機已從電腦移除。輸入新的配對碼即可重新連接。"
 }

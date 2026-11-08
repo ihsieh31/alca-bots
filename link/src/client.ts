@@ -94,6 +94,8 @@ export interface LinkClientOptions {
   rtcRetryMs?: number;
   /** Time for one try: offer → answer → channel → handshake (default 12 s). */
   rtcTimeoutMs?: number;
+  /** How long a replaced session stays open for what is still arriving on it (default 3 s). */
+  moveGraceMs?: number;
 }
 
 export type LinkPath = "lan" | "relay" | "rtc";
@@ -204,6 +206,11 @@ export class LinkClient {
     if (lan) c.lan = lan;
     if (JSON.stringify([c.relays, c.direct, c.lan]) !== before)
       for (const h of this.credentialHandlers) h({ ...c });
+  }
+
+  /** The session in use now, for a caller that binds work to one session. */
+  get peerNow(): LinkPeer | undefined {
+    return this.peer;
   }
 
   onEvent(h: (ch: string, e: unknown) => void): () => void {
@@ -393,7 +400,7 @@ export class LinkClient {
     this.keepAlive(peer);
     for (const h of this.readyHandlers) h(s.ready, peer);
     // Answers still on their way over the old path get a moment to land.
-    if (before && before !== peer) setTimeout(() => before.close("moved to a direct connection"), 3000);
+    if (before && before !== peer) setTimeout(() => before.close("moved to a direct connection"), this.o.moveGraceMs ?? 3000);
     if (via !== "rtc") this.planRtc(peer, Math.max(0, this.rtcHold - Date.now()));
     return peer;
   }

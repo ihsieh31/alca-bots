@@ -9504,5 +9504,20 @@
   "server.meetings.end.meet_refused": "Google Meet didn't let me in as a guest. The host can allow guests in Host controls, or the meeting may not allow people outside the organization.",
   "server.meetings.end.speech_unavailable": "I couldn't get speech-to-text for this meeting, so I didn't join.",
   "server.meetings.card.settingUp": "Setting up transcription (one-time, about a minute)…",
-  "server.meetings.card.speechStopped": "Transcription stopped: {problem}"
+  "server.meetings.card.speechStopped": "Transcription stopped: {problem}",
+  "phone.thisBrowser": "This browser",
+  "phone.pair.title": "Connect to {app}",
+  "phone.pair.intro": "On your computer, open Settings, then Phone, and choose Connect a phone. Enter the code it shows.",
+  "phone.pair.homeScreen": "Add this page to your Home Screen first, then open it from there and enter the code. An iPhone keeps a Home Screen app's connection separate from Safari's.",
+  "phone.pair.code": "Pairing code",
+  "phone.pair.relay": "Relay address",
+  "phone.pair.useOwnRelay": "Use my own relay",
+  "phone.pair.badCode": "That code doesn't look right. It has 9 or 10 digits.",
+  "phone.pair.failed": "That didn't connect. Check the code and that your computer is on, then try again.",
+  "phone.pair.connect": "Connect",
+  "phone.pair.connecting": "Connecting…",
+  "phone.connecting": "Connecting to {computer}…",
+  "phone.offline.title": "Can't reach {computer}",
+  "phone.offline.body": "It may be asleep or offline. This page keeps trying.",
+  "phone.removed": "This phone was removed from your computer. Enter a new code to connect it again."
 }
