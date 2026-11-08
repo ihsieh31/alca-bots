@@ -79,7 +79,8 @@ try {
   const pairing = await api("POST", "/api/link/pairings", { access: "full" });
 
   browser = await chromium.launch({ channel: "chrome", headless: true });
-  const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
   const problems = [];
   page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
   page.on("response", (response) => { if (response.status() >= 400) problems.push(`http ${response.status()}: ${response.url()}`); });
@@ -104,7 +105,22 @@ try {
   await sleep(1500);
   await page.screenshot({ path: join(shots, "phone-chat.png") });
   const via = (await api("GET", "/api/link")).devices[0];
-  console.log(JSON.stringify({ ok: true, device: via, problems: problems.slice(0, 12) }, null, 2));
+  // XMLHttpRequest isn't moved onto the connection by the page, so it stands for an <img> or a <video>.
+  await until(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller)), "service worker in control");
+  const media = await page.evaluate(() => new Promise((resolve) => {
+    const request = new XMLHttpRequest();
+    request.open("GET", "/api/bots");
+    request.onload = () => resolve({ status: request.status, bots: request.responseText.includes("Ledger") });
+    request.onerror = () => resolve({ status: 0 });
+    request.send();
+  }));
+  if (media.status !== 200 || !media.bots) throw new Error(`media through the service worker: ${JSON.stringify(media)}`);
+  await context.setOffline(true);
+  await page.reload();
+  await page.locator("#root > *").first().waitFor({ timeout: 15_000 });
+  await page.screenshot({ path: join(shots, "phone-offline.png") });
+  await context.setOffline(false);
+    console.log(JSON.stringify({ ok: true, device: via, problems: problems.slice(0, 12) }, null, 2));
 } catch (error) {
   failed = true;
   console.error(error);

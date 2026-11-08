@@ -4829,6 +4829,8 @@
   "phone.shell.partners": "夥伴",
   "phone.shell.work": "工作",
   "phone.shell.more": "更多",
+  "phone.shell.updateReady": "有新版本，點一下更新",
+  "phone.shell.updating": "更新中…",
   "phone.shell.navigation": "主要導覽",
   "phone.shell.back": "返回",
   "phone.shell.closeSheet": "關閉",

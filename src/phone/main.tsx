@@ -21,6 +21,8 @@ import { createLinkEventSource } from "./event-source";
 import { forgetCredentials, phoneIdentity, readCredentials, saveCredentials } from "./keystore";
 import { LinkHttp } from "./link-http";
 import { linkPathFor, setLinkState } from "./link-state";
+import { attachMediaBridge } from "./media-bridge";
+import { recoverFromMissingCode, startServiceWorker } from "./sw-client";
 
 settleAdvancedModeDefault();
 applySkinChoice(readSkinChoice());
@@ -30,6 +32,8 @@ applyChatWidth(readChatWidth());
 const http = new LinkHttp({ nativeFetch: globalThis.fetch.bind(globalThis), origin: location.origin });
 globalThis.fetch = http.fetch;
 globalThis.EventSource = createLinkEventSource(http.fetch, () => location.href) as unknown as typeof EventSource;
+attachMediaBridge(http.fetch);
+recoverFromMissingCode();
 
 /** Taken from the address at once, so the code isn't left in the history or copied with the link. */
 function takePairingLink(): LinkPairingLink | null {
@@ -190,6 +194,7 @@ function Phone({ initial, link }: { initial: { credentials: LinkCredentials; ide
 
 async function boot(): Promise<void> {
   const link = takePairingLink();
+  await startServiceWorker();
   const credentials = await readCredentials();
   const initial = credentials ? { credentials, identity: await phoneIdentity() } : null;
   document.title = productName();

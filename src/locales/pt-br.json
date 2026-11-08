@@ -9528,6 +9528,8 @@
   "phone.shell.partners": "Parceiros",
   "phone.shell.work": "Trabalho",
   "phone.shell.more": "Mais",
+  "phone.shell.updateReady": "Nova versão. Toque para atualizar",
+  "phone.shell.updating": "Atualizando…",
   "phone.shell.navigation": "Principal",
   "phone.shell.back": "Voltar",
   "phone.shell.closeSheet": "Fechar",

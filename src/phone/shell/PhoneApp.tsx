@@ -21,6 +21,7 @@ import { openBot, openThread, StoreProvider, useStore } from "@/state/store";
 import { useTeamChats } from "@/state/team-chats";
 import { needsYouVersion, useTeamPeopleLoader } from "@/state/team-people";
 import { useLinkState } from "../link-state";
+import { applyUpdate, useUpdateReady } from "../sw-client";
 import { ChatScreen } from "./ChatScreen";
 import { todayView, type ThreadRow } from "./derive";
 import { lightTap } from "./motion";
@@ -70,6 +71,17 @@ function ConnectionLine() {
     <div className={cn("phone-connection", offline && "phone-connection-shown")} role="status" aria-hidden={!offline}>
       <span>{offline ? t("phone.shell.reconnecting", { computer: link.computer }) : ""}</span>
     </div>
+  );
+}
+
+function UpdatePill() {
+  const ready = useUpdateReady();
+  const [applying, setApplying] = useState(false);
+  if (!ready) return null;
+  return (
+    <button type="button" className="phone-update-pill" disabled={applying} onClick={() => { lightTap(); setApplying(true); applyUpdate(); }}>
+      {t(applying ? "phone.shell.updating" : "phone.shell.updateReady")}
+    </button>
   );
 }
 
@@ -136,6 +148,7 @@ function Shell() {
   return (
     <div data-phone-shell data-pushed={pushed ? "" : undefined} className="phone-shell">
       <ConnectionLine />
+      <UpdatePill />
       <div className="phone-base">
         <div key={nav.tab} className="phone-tab-page">
           {state.notice ? <div className="px-5 pt-3"><ChatNotice notice={state.notice} /></div> : null}
