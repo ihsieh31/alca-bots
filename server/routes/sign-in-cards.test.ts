@@ -56,7 +56,6 @@ describe("sign-in card routes", () => {
   it("leaves other methods and paths to the next route", async () => {
     const { base, settled, post } = await serve();
     expect(await (await fetch(`${base}/api/bots/scout/sign-in-cards/m1/done`)).json()).toEqual({ from: "inline routes" });
-    expect(await (await post("/api/bots/scout/sign-in-cards/m1/save-login", { threadId: "t1" })).json()).toEqual({ from: "inline routes" });
     expect(await (await post("/api/bots/scout/sign-in-cards/m1/open", { threadId: "t1" })).json()).toEqual({ from: "inline routes" });
     expect(settled).toEqual([]);
   });

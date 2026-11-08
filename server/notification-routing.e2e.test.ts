@@ -227,7 +227,7 @@ describe("a room turn belongs to the room", () => {
     const bot = await createBot("Handsy", "stuck");
     let roomId: string | undefined;
     try {
-      // a sign-in needs a place to sign in on: this bot works in its built-in browser
+      // a sign-in needs a place to sign in on: this bot works in ego lite
       expect((await api("PATCH", "/api/config", { features: { browser: true } })).status).toBe(200);
       const placed = await api("PATCH", `/api/bots/${bot.id}`, { computer: "browser" });
       expect(placed.status, JSON.stringify(placed.body)).toBe(200);

@@ -187,21 +187,6 @@ describe("Chat MCP session", () => {
     await expect(session.execute("audit_write", { value: "again" }, f.controller.signal)).rejects.toThrow("closed");
   });
 
-  it.each([
-    ["browser", true],
-    ["custom", false],
-  ] as const)("drops a blank url for agent_browser_read only on the built-in browser (%s)", async (mountAs, dropped) => {
-    const readSchema = { type: "object", properties: { url: { type: "string" } }, additionalProperties: false };
-    const f = fixture(`if (message.method === "tools/list") { reply(message, {tools:[{name:"agent_browser_read",description:"Omit url to read the active tab.",inputSchema:schema}]}); continue; }`, readSchema);
-    const session = await mountChatTools(mountAs === "browser" ? { browser: f.server } : { custom: { browser: f.server } }, f.controller.signal, true);
-    sessions.push(session);
-    const name = session.definitions[0]!.function.name;
-    await session.execute(name, { url: " " }, f.controller.signal);
-    await session.execute(name, { url: "https://example.com" }, f.controller.signal);
-    const calls = f.read().calls.filter((call) => call.method === "tools/call").map((call) => call.params?.arguments);
-    expect(calls).toEqual([dropped ? {} : { url: " " }, { url: "https://example.com" }]);
-  });
-
   it("shows a model behind Moonshot each schema fitted to its limit, and still checks calls against the full one", async () => {
     const full = wideSchema(110);
     const f = fixture("", full);
@@ -746,7 +731,7 @@ describe("Chat MCP tool limit", () => {
   }
   const windowsTurn = (agents: number, more: Partial<NonNullable<Parameters<typeof mountChatTools>[0]>> = {}) => ({
     localComputer: { ...catalog(CUA_DRIVER_WINDOWS_TOOLS), scope: "local-computer" as const },
-    browser: catalog(syntheticToolNames("agent_browser", 32)),
+    browser: catalog(syntheticToolNames("ego_browser", 32)),
     agents: catalog(syntheticToolNames("agent", agents)),
     composio: catalog(syntheticToolNames("router", 7)),
     data: catalog(syntheticToolNames("table", 5)),
@@ -765,7 +750,7 @@ describe("Chat MCP tool limit", () => {
     expect(names.filter((name) => name.startsWith("browser_"))).toHaveLength(32);
   });
 
-  it("lists the computer's own browser tools when the turn has no built-in browser", async () => {
+  it("lists the computer's own browser tools when the turn has no ego lite", async () => {
     const { names } = await mount({ localComputer: { ...catalog(CUA_DRIVER_WINDOWS_TOOLS), scope: "local-computer" } });
     expect(names).toEqual(expect.arrayContaining(["computer_browser_navigate", "computer_get_browser_state", "computer_click"]));
     expect(names).not.toContain("computer_install_ffmpeg");
@@ -1219,7 +1204,7 @@ describe("Chat MCP tool limit, fairly shared", () => {
     try {
       const session = await mountChatTools({
         localComputer: { ...catalog(CUA_DRIVER_WINDOWS_TOOLS), scope: "local-computer" },
-        browser: catalog(syntheticToolNames("agent_browser", 32)),
+        browser: catalog(syntheticToolNames("ego_browser", 32)),
         agents: catalog(syntheticToolNames("agent", 42)),
         custom,
       }, controller.signal, true, undefined, undefined, undefined, undefined, undefined, toolLimit);

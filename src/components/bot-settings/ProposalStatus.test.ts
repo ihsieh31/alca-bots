@@ -60,7 +60,7 @@ function makeDerived(): ReturnType<typeof import("./useBotSettingsDerived").useB
     browserAllowed: true,
     browserEnabled: false,
     browserSelectable: false,
-    browserDisabledReason: "The built-in browser needs the AlcaBots desktop app",
+    browserDisabledReason: "ego lite needs the AlcaBots desktop app",
     sectionName: "General",
     currentChief: undefined,
     botRoutines: [],

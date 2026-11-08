@@ -39,7 +39,7 @@ async function doctorOnce(ctx: VerbContext): Promise<VerbOutcome> {
     warnings.push(`this session expires in ${Math.max(0, Math.floor((session.expiresAt - Date.now()) / DAY))} days: get a new one with alcabots connect`);
   }
   const browser = config?.browserEngine ?? null;
-  if (browser && browser.kind !== "engine") warnings.push(`bots have no built-in browser here: ${browser.reason ?? "not installed"}${browser.installable ? " (install it with `alcabots browser install`)" : ""}`);
+  if (browser && browser.kind !== "engine") warnings.push(`bots have no browser here: ${browser.reason ?? "ego lite is not installed"} (see \`alcabots browser install\`)`);
   const ok = isOmb && !tooOld && availableEngines.length > 0;
   const who = !session ? "unknown" : session.kind === "loopback"
     ? `this computer${session.trust === "service" ? " (as a local service, not the owner)" : " (the owner)"}`

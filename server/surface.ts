@@ -38,10 +38,10 @@ export function surfaceOfComputerKind(kind: "box" | "vps" | "vm" | "local" | nul
 }
 
 const NO_BROWSER_NOTE =
-  " This bot is set to work in the built-in browser, but the built-in browser is switched off in App Settings, so you have no browser and no computer this turn — say so instead of guessing.";
+  " This bot is set to work in ego lite, but the browser is switched off in App Settings or ego lite is not installed on this computer, so you have no browser and no computer this turn — say so instead of guessing.";
 
 const OFF_NOTE =
-  " This bot's \"Works on\" setting is Off, so no computer and no built-in browser are mounted this turn: you cannot open a page, click, or type on any screen. If the user asks for something that needs one, tell them Works on is Off in this bot's settings — never claim you are opening a browser you do not have.";
+  " This bot's \"Works on\" setting is Off, so no computer and no browser are mounted this turn: you cannot open a page, click, or type on any screen. If the user asks for something that needs one, tell them Works on is Off in this bot's settings — never claim you are opening a browser you do not have.";
 
 export function computerSkippedNote(cause: string): string {
   const why = cause.trim().replace(/[\s.]+$/, "");
@@ -70,7 +70,7 @@ function placeOf(input: { destination: Destination; pinnedSurface?: Surface | nu
     if (browserOn) return { computer: "off", browser: true, pinned: "browser", note: "" };
     // A missing browser is not permission to act on the host instead.
     return { computer: "off", browser: false, pinned: pin,
-      note: " This conversation is pinned to the built-in browser, but its tools are unavailable this turn. No computer is mounted instead. Do not claim to have used it; a different place must be selected before acting there." };
+      note: " This conversation is pinned to ego lite, but its tools are unavailable this turn. No computer is mounted instead. Do not claim to have used it; a different place must be selected before acting there." };
   }
   if (pin) return { computer: pin, browser: beside, pinned: pin, note: "" };
   if (destination === "browser") {
@@ -155,18 +155,18 @@ export function surfaceLabel(surface: Surface): string {
     case "local":
       return "this computer";
     case "browser":
-      return "the built-in browser";
+      return "ego lite";
   }
 }
 
 /** This computer is the person's own: web work goes elsewhere first, and their first-use question is the harness's to ask. */
 const WEB_WORK_ORDER = "For web work such as finding, booking or looking something up, use, in this order:";
 const YOUR_COMPUTER_LAST =
-  " Use their own browser or screen only when the task needs their own signed-in session and nothing else works. Before your first action on it in a request, AlcaBots asks them once whether you may, at every approval level except Full access: do not ask in chat yourself, and if they say no, finish another way. " + PLAIN_WORDS;
+  " Use their other browsers or screen only when the task needs their own signed-in session and nothing else works. Before your first action on it in a request, AlcaBots asks them once whether you may, at every approval level except Full access: do not ask in chat yourself, and if they say no, finish another way. " + PLAIN_WORDS;
 const YOUR_COMPUTER_BESIDE_BROWSER =
-  ` This computer is the person's own: their screen, their apps and the browsers they are signed in to. ${WEB_WORK_ORDER} a connected app that does it, your built-in browser, a cloud computer if select_computer offers one.${YOUR_COMPUTER_LAST}`;
+  ` This computer is the person's own: their screen, their apps and the browsers they are signed in to. ${WEB_WORK_ORDER} a connected app that does it, ego lite (the browser you share with them), a cloud computer if select_computer offers one.${YOUR_COMPUTER_LAST}`;
 const YOUR_COMPUTER_ALONE =
-  ` Everything you do on screen happens on this computer, which is the person's own: their screen, their apps and the browsers they are signed in to; there is no built-in browser of yours this turn. ${WEB_WORK_ORDER} a connected app that does it, web search and fetching pages, a cloud computer if select_computer offers one.${YOUR_COMPUTER_LAST} If you need the user to sign in, tell them it is on this computer.`;
+  ` Everything you do on screen happens on this computer, which is the person's own: their screen, their apps and the browsers they are signed in to; ego lite is not mounted this turn. ${WEB_WORK_ORDER} a connected app that does it, web search and fetching pages, a cloud computer if select_computer offers one.${YOUR_COMPUTER_LAST} If you need the user to sign in, tell them it is on this computer.`;
 
 /** A connected app does a task more cheaply and surely than any screen, and one that is refused or broken is the person's
  * to fix: worked around on a screen, it stays broken and they never hear why. */
@@ -182,7 +182,7 @@ const ASK_TO_SWITCH = `explain the mismatch and ask the user to change where thi
 const REPORT_BACK = "tell the bot that gave you this job which place you need and end your turn, because no person watches this conversation";
 
 const SURFACE_AUTHORITY =
-  ` For browser and computer tasks, use AlcaBots's mounted browser/computer tools first: inspect the target, perform the action, and verify its result before claiming success. Discover deferred tools by their server/name when needed. Do not substitute the provider's own desktop, a shell-launched browser, or another automation path for the selected AlcaBots surface. Ordinary code and file tasks may still use their normal tools. Announcing an action is not performing it. A request naming another place does not move these tools: this computer is the user's host, Local VM is an isolated desktop, the cloud computer is remote, and the built-in browser is a separate browser. If the requested place differs from the mounted one, ${ASK_TO_SWITCH}; never act on a different computer or describe a host window as a VM.`;
+  ` For browser and computer tasks, use AlcaBots's mounted browser/computer tools first: inspect the target, perform the action, and verify its result before claiming success. Discover deferred tools by their server/name when needed. Do not substitute the provider's own desktop, a shell-launched browser, or another automation path for the selected AlcaBots surface. Ordinary code and file tasks may still use their normal tools. Announcing an action is not performing it. A request naming another place does not move these tools: this computer is the user's host, Local VM is an isolated desktop, the cloud computer is remote, and ego lite is its own browser window. If the requested place differs from the mounted one, ${ASK_TO_SWITCH}; never act on a different computer or describe a host window as a VM.`;
 
 /** A Cloud home without the shared-computer tools cannot reach the person's own computer at all. */
 const UNREACHABLE_OWN = "the user's own computer cannot be reached from here";
@@ -196,8 +196,8 @@ const OWN_COMPUTER_WORDING: ReadonlyArray<readonly [RegExp | string, string]> = 
 
 /** A Cloud home has neither this computer nor a Local VM; each pair rewrites one phrase of the wording above. */
 const CLOUD_HOME_WORDING: ReadonlyArray<readonly [string, string]> = [
-  ["this computer is the user's host, Local VM is an isolated desktop, the cloud computer is remote, and the built-in browser is a separate browser",
-    `the cloud computer is remote, the built-in browser is a separate browser, and ${UNREACHABLE_OWN}`],
+  ["this computer is the user's host, Local VM is an isolated desktop, the cloud computer is remote, and ego lite is its own browser window",
+    `the cloud computer is remote, and ${UNREACHABLE_OWN}`],
   [" or describe a host window as a VM", ""],
   ["select an available Local VM without asking", "select an available cloud computer without asking"],
   [" Never silently replace an explicitly requested VM with the host desktop.", ""],
@@ -222,23 +222,23 @@ export function surfacePrompt(
   let text = "";
   if (mounted.computer === "local" && !opts.cloudHome) {
     text = mounted.browser
-      ? ` Two surfaces are mounted this turn: the built-in browser (the browser server's browser_navigate, browser_snapshot, browser_click, browser_fill and friends) and this computer (the computer server's tools). Web tasks → the built-in browser. Desktop apps, files and shell → this computer tools. Pick one surface for a task and stay on it; if you need the user to sign in, say which surface — the Browser tab or this computer.${YOUR_COMPUTER_BESIDE_BROWSER}`
+      ? ` Two surfaces are mounted this turn: ego lite, the browser on the person's computer (the browser server's ego_browser_guide and ego_browser_run) and this computer (the computer server's tools). Web tasks → ego lite. Desktop apps, files and shell → this computer tools. Pick one surface for a task and stay on it; if you need the user to sign in, say which surface — ego lite or this computer.${YOUR_COMPUTER_BESIDE_BROWSER}`
       : YOUR_COMPUTER_ALONE;
   } else if (computer && mounted.browser) {
     text =
-      ` Two surfaces are mounted this turn: the built-in browser (the browser server's browser_navigate, browser_snapshot, browser_click, browser_fill and friends) and ${computer} (the computer server's tools). Web tasks → the built-in browser. Desktop apps, files and shell → ${computer} tools. Pick one surface for a task and stay on it; if you need the user to sign in, say which surface — the Browser tab or ${computer}.`;
+      ` Two surfaces are mounted this turn: ego lite, the browser on the person's computer (the browser server's ego_browser_guide and ego_browser_run) and ${computer} (the computer server's tools). Web tasks → ego lite. Desktop apps, files and shell → ${computer} tools. Pick one surface for a task and stay on it; if you need the user to sign in, say which surface — ego lite or ${computer}.`;
   } else if (computer) {
     text =
-      ` Everything you do on screen happens on ${computer}, web pages included, through its own browser; there is no separate built-in browser this turn. If you need the user to sign in, tell them it is on ${computer}.`;
+      ` Everything you do on screen happens on ${computer}, web pages included, through its own browser; ego lite is not mounted this turn. If you need the user to sign in, tell them it is on ${computer}.`;
   } else if (mounted.browser) {
     text =
-      " Everything you do on screen happens in the built-in browser tab; there is no desktop computer this turn, but your own shell and file tools still work for ordinary code and file tasks, if you have them. If you need the user to sign in, tell them it is in the Browser tab of the Screen panel.";
+      " Everything you do on screen happens in ego lite, the browser on the person's computer (the browser server's ego_browser_guide and ego_browser_run); there is no desktop computer this turn, but your own shell and file tools still work for ordinary code and file tasks, if you have them. If you need the user to sign in, hand the task space to them in ego lite and tell them so.";
   }
   if (text) text += RESTATE_SENTENCE + (opts.canSelect
     ? SURFACE_AUTHORITY.replace(ASK_TO_SWITCH, "inspect connected choices with select_computer and select the requested available place; on a pending result end this turn so AlcaBots can reconnect the correct tools and continue the original request")
     : reportBack ? SURFACE_AUTHORITY.replace(ASK_TO_SWITCH, REPORT_BACK) : SURFACE_AUTHORITY);
   else if (!opts.note && !opts.canSelect) {
-    text = ` No computer or built-in browser tools are mounted this turn. You cannot open apps, click, or inspect a screen through AlcaBots. If asked for screen work, ${reportBack ? REPORT_BACK : "explain this and ask the user to choose where this conversation works in the Screen panel"}; do not claim to have opened or checked it.`;
+    text = ` No computer or browser tools are mounted this turn. You cannot open apps, click, or inspect a screen through AlcaBots. If asked for screen work, ${reportBack ? REPORT_BACK : "explain this and ask the user to choose where this conversation works in the Screen panel"}; do not claim to have opened or checked it.`;
   }
   if (opts.pinned) {
     text += ` This conversation is pinned to ${surfaceLabel(opts.pinned)}; changing places requires ${opts.canSelect ? "select_computer or " : ""}the user's choice in ${PLACE_CONTROL}, not a different tool name.`;

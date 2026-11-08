@@ -325,7 +325,7 @@ describe("the sidecar in front of an unmodified harness", () => {
     const before = await ids();
     const settings: Array<[string, unknown]> = [
       ["approvalMode", "full"], ["approvalMode", "ask"], ["alwaysAllow", ["Bash(*)"]], ["chiefOfStaff", true], ["computer", "local"],
-      ["cwd", "/"], ["peers", []], ["approvePeerComms", false], ["mcpServers", ["github"]], ["browserProfile", "guest"],
+      ["cwd", "/"], ["peers", []], ["approvePeerComms", false], ["mcpServers", ["github"]],
       ["toolScope", { allow: ["native:*"] }], ["composio", true], ["browser", true],
     ];
     const fields: Array<[string, unknown]> = [

@@ -963,7 +963,7 @@ the `list_shared_computers` and `shared_computer` tools.
 ## The image
 
 The `Dockerfile`'s `cloud-home` target shares the server image's runtime
-layers (Node, Chrome's libraries, agent-browser and its Chrome) and adds:
+layers (Node and the server bundle) and adds:
 
 - Caddy, as the only listener the network can reach: `0.0.0.0:8080` with
   `deploy/fly/Caddyfile`, and also 443 for the home's own domain with
@@ -1105,8 +1105,7 @@ provider outage. So on a Cloud home (`server/engine-memory.ts`):
 - **The kernel's order** (`server/oom-score.ts`): everything a bot runs is
   born with `oom_score_adj` 1000: its engine and every tool and MCP server
   that engine starts, the MCP servers the server runs for it, the helper
-  engines (background text, keep-warm pings), and its browser (agent-browser,
-  its daemon and Chrome, whose tabs Chrome then scores 200 and up). The
+  engines (background text, keep-warm pings). The
   server is -800 and Caddy -900, so the health check is the last to go, and
   the root supervisor that restarts them is -1000, never picked. When memory
   runs out the kernel takes a bot's process, never the workspace.

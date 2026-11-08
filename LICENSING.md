@@ -27,11 +27,24 @@ repository**. Upstream supports building without it: the server then reports
 Contributions are accepted under the Apache License 2.0. Submit only code you
 wrote or have the right to contribute.
 
-## Third-party components and trademarks
+## Third-party components
 
 Bundled third-party software keeps its own licenses; notices, license texts and
 source locations are listed in [NOTICE](NOTICE) and
 [`third_party/`](third_party/).
+
+## ego lite
+
+Bots browse through [ego lite](https://lite.ego.app/), a browser by Citro Labs
+that each person installs on their own computer. It is proprietary software
+under [its own terms](https://lite.ego.app/terms), which the person accepts
+with Citro Labs; this repository does not include or distribute ego lite or its
+`ego-browser` CLI, and only runs the CLI the person installed. The bots'
+guidance for it adapts the MIT-licensed ego-browser skill from
+[citrolabs/ego-lite](https://github.com/citrolabs/ego-lite); its license is in
+[`third_party/ego-lite/LICENSE`](third_party/ego-lite/LICENSE).
+
+## Trademarks
 
 OpenMausBot and MausBot, and the OpenMausBot mascot, are trademarks of Supamaus
 Software Private Limited. The Apache License does not grant trademark rights

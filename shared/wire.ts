@@ -386,7 +386,7 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   phoneApps?: import("./phone-apps.ts").PhoneApps;
   /** Ordered backups used only by opt-in, pre-prompt startup recovery. */
   fallback?: Array<{ instanceId: string; model: string }>;
-  /** Whether this bot gets the app's built-in browser. */
+  /** Whether this bot gets the browser (ego lite). */
   browser?: boolean;
   /** Memory upkeep: the harness captures facts from finished chats into
    * MEMORY.md and topic files, adds facts about the person to About me and
@@ -970,7 +970,7 @@ export type ServerFrame =
   | { kind: "runtime"; event: RuntimeEvent }
   /** An MCP server was added, changed or removed: a list of them is stale. */
   | { kind: "mcp.changed" }
-  /** `surface` names what the frame shows: the bot's desktop (`computer`) or its built-in browser. */
+  /** `surface` names what the frame shows: the bot's desktop (`computer`) or its browser. */
   | { kind: "screen"; botId: string; threadId: string; png: string; mime?: string; surface?: "browser" | "computer" }
   /** A bot's computer is being set up or woken for a turn; the chat shows
    * one progress line until its first screen frame. `place` names a cloud

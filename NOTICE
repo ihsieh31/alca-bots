@@ -12,6 +12,14 @@ OpenMausBot and MausBot are trademarks of Supamaus Software Private Limited.
 alca-bots is not affiliated with or endorsed by Milind Soni, OpenMausBot or
 Supamaus Software Private Limited.
 
+The bots' browser integration (server/ego-browser.ts) adapts the usage
+guidance of the ego-browser skill in ego-lite,
+https://github.com/citrolabs/ego-lite, Copyright (c) 2026 CitroLabs, used
+under the MIT License (third_party/ego-lite/LICENSE). ego lite itself, the
+browser that integration drives, is a separate product of Citro Labs Pte.
+Limited under its own terms (https://lite.ego.app/terms). alca-bots does not
+include or distribute it, and is not affiliated with or endorsed by Citro Labs.
+
 The original OpenMausBot NOTICE follows, unchanged.
 
 ----------------------------------------------------------------------------

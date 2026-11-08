@@ -27,7 +27,7 @@ export function overviewRoutineText(routine: OverviewRoutineLine | undefined, lo
 
 const EXACT: Record<string, LocaleKey> = {
   "Works in its private workspace.": "botOverview.line.privateWorkspace",
-  "Has the built-in browser.": "botOverview.line.browser",
+  "Can browse with ego lite.": "botOverview.line.browser",
   "Has no connected apps.": "botOverview.line.noApps",
   "Won't act on a schedule.": "botOverview.line.noSchedule",
   "Can talk to the other bot.": "botOverview.line.talksToOne",

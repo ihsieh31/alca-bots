@@ -6,7 +6,7 @@
 import type { Surface } from "./wire.ts";
 
 /** Where the login has to happen: the place the asking turn worked in.
- * The built-in browser keeps its own sign-ins, apart from any computer's
+ * ego lite keeps its own sign-ins, apart from any computer's
  * browser, so a login made anywhere else would not reach the bot. */
 export type SignInPlace = Surface;
 

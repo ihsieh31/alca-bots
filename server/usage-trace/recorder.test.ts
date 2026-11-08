@@ -96,7 +96,7 @@ describe("trace recorder", () => {
     recorder.observe(tool("bot", "t1", 100, "a", "Bash", { command: "pnpm test" }));
     recorder.observe(tool("bot", "t1", 100, "a", "Bash", { command: "pnpm test" }));
     recorder.observe(done("bot", "t1", 900, "a", false, "Error: 3 tests failed\nat line 4"));
-    recorder.observe(tool("bot", "t1", 1_000, "b", "mcp__browser__agent_browser_open", { url: "https://www.example.com/pricing" }));
+    recorder.observe(tool("bot", "t1", 1_000, "b", "mcp__browser__ego_browser_run", { url: "https://www.example.com/pricing" }));
     recorder.observe(event("bot", "t1", 1_100, { type: "runtime.error", message: "Claude API overloaded (529)" }));
     recorder.observe(event("bot", "t1", 1_200, { type: "turn.completed", ok: false, stopReason: "api_error" }));
     expect(recorder.settle("bot")).toMatchObject({ tools: 2, toolErrors: 1, outcome: { status: "error", reason: "Claude API overloaded (529)" }, usageStatus: "unavailable" });
@@ -137,14 +137,14 @@ describe("trace recorder", () => {
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     const { port } = server.address() as { port: number };
     const call = (path: string, body: unknown) => fetch(`http://127.0.0.1:${port}${path}`, { method: "POST", body: JSON.stringify(body) });
-    await call("/ok", { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "agent_browser_open", arguments: { url: "https://www.figma.com/pricing" } } });
-    await call("/fail", { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "agent_browser_click", arguments: { ref: "@e12" } } });
+    await call("/ok", { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "ego_browser_run", arguments: { url: "https://www.figma.com/pricing" } } });
+    await call("/fail", { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "ego_browser_run", arguments: { ref: "@e12" } } });
     await call("/ok", { jsonrpc: "2.0", id: 3, method: "tools/list" });
     server.close();
     const tools = recorder.liveTurns()[0]!.spans.filter((span) => span.kind === "tool");
     expect(tools.map((tool) => tool.kind === "tool" && [tool.name, tool.status, tool.timedBy, tool.detail, tool.error])).toEqual([
-      ["agent_browser_open", "ok", "alca", "figma.com/pricing", undefined],
-      ["agent_browser_click", "error", "alca", undefined, "Element @e12 is not visible"],
+      ["ego_browser_run", "ok", "alca", "figma.com/pricing", undefined],
+      ["ego_browser_run", "error", "alca", undefined, "Element @e12 is not visible"],
     ]);
     expect(tools.every((tool) => tool.endedAt! - tool.startedAt >= 25)).toBe(true);
   });
@@ -198,7 +198,7 @@ describe("trace recorder", () => {
     delay.enable();
     observe(started("busy", "t1", 0));
     for (let index = 0; index < 2_000; index += 1) {
-      observe(tool("busy", "t1", index * 10, `item-${index}`, "mcp__browser__agent_browser_click", { url: "https://example.com/a" }));
+      observe(tool("busy", "t1", index * 10, `item-${index}`, "mcp__browser__ego_browser_run", { url: "https://example.com/a" }));
       observe(done("busy", "t1", index * 10 + 5, `item-${index}`));
       if (index % 50 === 0) await new Promise((resolve) => setImmediate(resolve));
     }

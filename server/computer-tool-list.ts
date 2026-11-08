@@ -14,7 +14,7 @@ function drivesItsOwnBrowser(name: string): boolean {
   return name.startsWith("browser_") || name === "get_browser_state" || name === "page";
 }
 
-/** Whether a turn's computer lists this tool to the model: never the driver's upkeep, and beside the built-in browser
+/** Whether a turn's computer lists this tool to the model: never the driver's upkeep, and beside ego lite
  * not the driver's own browser either. */
 export function listsComputerTool(name: string, besideBuiltInBrowser: boolean): boolean {
   return !DRIVER_UPKEEP.has(name) && !(besideBuiltInBrowser && drivesItsOwnBrowser(name));

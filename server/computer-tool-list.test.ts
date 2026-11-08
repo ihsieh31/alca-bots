@@ -13,12 +13,12 @@ const DRIVER_BROWSER = ["page", "get_browser_state", "browser_prepare", "browser
   "browser_dialog", "browser_set_input_files", "browser_download", "browser_pointer"];
 
 describe("a turn's computer", () => {
-  it("lists the screen work of Windows' 57 driver tools beside the built-in browser, and none of the driver's upkeep", () => {
+  it("lists the screen work of Windows' 57 driver tools beside ego lite, and none of the driver's upkeep", () => {
     expect(CUA_DRIVER_WINDOWS_TOOLS).toHaveLength(57);
     expect(CUA_DRIVER_WINDOWS_TOOLS.filter((name) => listsComputerTool(name, true))).toEqual(SCREEN_WORK);
   });
 
-  it("keeps the driver's own browser only when no built-in browser is mounted", () => {
+  it("keeps the driver's own browser only when no ego lite is mounted", () => {
     expect(CUA_DRIVER_WINDOWS_TOOLS.filter((name) => listsComputerTool(name, false)).sort()).toEqual([...SCREEN_WORK, ...DRIVER_BROWSER].sort());
   });
 

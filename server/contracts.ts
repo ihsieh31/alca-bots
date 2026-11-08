@@ -187,7 +187,7 @@ export interface SendTurnInput {
     agents?: { command: string; args: string[]; env: Record<string, string> };
     /** Physical Android phone tools over authorized USB debugging. */
     phone?: { command: string; args: string[]; env: Record<string, string> };
-    /** The built-in browser's MCP proxy: one tab per bot, in its own persistent partition. */
+    /** The browser MCP proxy, which drives ego lite through its `ego-browser` CLI. */
     browser?: { command: string; args: string[]; env: Record<string, string> };
     /** The Data tools' MCP proxy: DuckDB on this bot's own database. */
     data?: { command: string; args: string[]; env: Record<string, string> };
@@ -256,7 +256,7 @@ export interface ProviderAdapter {
     mcpToolsFoundByName?: boolean;
     /** True when the driver can mount the first-party physical-phone MCP. */
     phoneMcp?: boolean;
-    /** The driver can mount the built-in browser MCP. */
+    /** The driver can mount the browser MCP (ego lite). */
     browserMcp?: boolean;
     /** The driver can mount the Data tools MCP. */
     dataMcp?: boolean;

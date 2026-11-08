@@ -115,7 +115,7 @@ export function tokensOf(node: TraceNode): TraceTokens | null {
   return null;
 }
 
-const ACTION_PREFIX = /^(?:mcp__.+?__|[a-z][a-z0-9_-]{0,31}__)?(?:agent_browser_|ego_browser_|browser_|computer_)?/i;
+const ACTION_PREFIX = /^(?:mcp__.+?__|[a-z][a-z0-9_-]{0,31}__)?(?:ego_browser_|browser_|computer_)?/i;
 const sentence = (words: string) => words ? words[0]!.toLocaleUpperCase() + words.slice(1) : words;
 
 const ACTIONS: Record<string, LocaleKey> = {

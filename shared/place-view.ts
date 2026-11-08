@@ -90,14 +90,14 @@ export interface PlaceFacts {
     model?: string;
     /** It can use computer tools. */
     computer: boolean;
-    /** It can use the built-in browser. */
+    /** It can use the browser (ego lite). */
     browser: boolean;
     /** Not waiting on a sign-in. */
     signedIn: boolean;
   };
   /** The bot's tool selection includes the computer. */
   toolsAllowComputer: boolean;
-  /** The built-in browser is switched on for this installation and bot. */
+  /** The browser (ego lite) is switched on for this installation and bot. */
   browserOn: boolean;
   role: "admin" | "user";
   mode?: "simple" | "advanced";
@@ -114,9 +114,9 @@ export interface PlaceFacts {
 /** The English catalog, mirrored by en.json. */
 export const PLACE_EN = {
   "place.view.auto.short": "Chooses for you",
-  "place.view.auto.lineMyCloud": "Uses the built-in browser. In a chat, it starts its cloud desktop by itself when a task needs desktop apps.",
-  "place.view.auto.lineDesktop": "Uses the built-in browser, a private desktop on this computer, or this computer's screen, whichever the task needs.",
-  "place.view.auto.lineLinux": "Uses the built-in browser, or a running private desktop when a task needs one.",
+  "place.view.auto.lineMyCloud": "In a chat, it starts its cloud desktop by itself when a task needs one.",
+  "place.view.auto.lineDesktop": "Uses ego lite, a private desktop on this computer, or this computer's screen, whichever the task needs.",
+  "place.view.auto.lineLinux": "Uses a running private desktop when a task needs one.",
   "place.view.autoTeam.short": "Shared",
   "place.view.autoTeam.line": "Uses {computer}, the cloud desktop this department shares.",
   "place.view.ccCannot.short": "Not with this model",
@@ -160,11 +160,11 @@ export const PLACE_EN = {
   "place.view.vps.short": "Your own machine",
   "place.view.vps.line": "Uses your own Linux machine, connected over SSH.",
   "place.view.browser.short": "Web pages only",
-  "place.view.browser.line": "Works in the built-in browser only: web pages, no desktop apps.",
+  "place.view.browser.line": "Works in ego lite only: web pages, no desktop apps.",
   "place.view.browserOff.short": "Switched off",
   "place.view.browserOff.line": "The bot's own browser is switched off, so it can't open web pages.",
   "place.view.browserCannot.short": "Not with this model",
-  "place.view.browserCannot.line": "{model} can't use the built-in browser.",
+  "place.view.browserCannot.line": "{model} can't use ego lite.",
   "place.view.local.short": "Your screen",
   "place.view.local.line": "Uses your screen, mouse, and keyboard.",
   "place.view.localUnavailable.short": "Can't use it yet",
@@ -215,7 +215,7 @@ export const PLACE_WORDS: Record<PlaceActionId, string> = {
   "try-again": "Try again.",
   "open-my-cloud": "Open My Cloud from the menu at the top of the sidebar.",
   "add-boat-key": "Connect your Boat account in Settings → API keys.",
-  "turn-on-browser": "Turn on the built-in browser in the Screen panel.",
+  "turn-on-browser": "Turn on the browser (ego lite) in the Screen panel.",
   "open-team-map": "Open Team map to manage it.",
   "open-vm-settings": "Check it in Settings → Bot desktops.",
   "clear-pin": "Clear this conversation's place in the composer to continue.",

@@ -74,7 +74,7 @@ describe("trace tree", () => {
   it("folds a long run of one kind of tool into a group and keeps short runs apart", () => {
     const items = [
       ...[0, 1, 2, 3].flatMap((n) => [
-        { kind: "tool", id: `b${n}`, name: "mcp__browser__agent_browser_click", icon: "browser", startedAt: n * 100, endedAt: n * 100 + 40, status: n === 2 ? "error" : "ok", timedBy: "engine" } as TraceTool,
+        { kind: "tool", id: `b${n}`, name: "mcp__browser__ego_browser_run", icon: "browser", startedAt: n * 100, endedAt: n * 100 + 40, status: n === 2 ? "error" : "ok", timedBy: "engine" } as TraceTool,
         { kind: "step", id: `s${n}`, startedAt: n * 100 + 40, endedAt: n * 100 + 100 } as TraceStep,
       ]),
       { kind: "tool", id: "x", name: "Bash", icon: "terminal", startedAt: 500, endedAt: 510, status: "ok", timedBy: "engine" } as TraceTool,

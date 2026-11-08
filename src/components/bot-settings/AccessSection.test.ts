@@ -75,7 +75,7 @@ function makeDerived(overrides: Partial<ReturnType<typeof useBotSettingsDerived>
     browserAllowed: true,
     browserEnabled: false,
     browserSelectable: false,
-    browserDisabledReason: "The built-in browser needs the AlcaBots desktop app",
+    browserDisabledReason: "ego lite needs the AlcaBots desktop app",
     sectionName: "General",
     currentChief: undefined,
     botRoutines: [],

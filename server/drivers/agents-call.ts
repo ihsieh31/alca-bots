@@ -56,7 +56,7 @@ export function toolCallContextFromEnv(env: NodeJS.ProcessEnv): ToolCallContext 
 }
 
 const SIGN_IN_PLACES: Record<string, string> = {
-  browser: "your built-in browser",
+  browser: "ego lite, the browser on their computer",
   local: "this computer",
   vm: "the Local VM",
   cloud: "the cloud computer",

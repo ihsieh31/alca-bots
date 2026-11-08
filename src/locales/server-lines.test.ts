@@ -458,7 +458,7 @@ const PENDING: Readonly<Record<string, ReadonlyArray<readonly [file: string, sni
     ["server/surface.ts", "the cloud computer"],
     ["server/surface.ts", "the Local VM"],
     ["server/surface.ts", "this computer"],
-    ["server/surface.ts", "the built-in browser"],
+    ["server/surface.ts", "ego lite"],
   ],
   "questions, approvals and setup cards": [
     ["server/auto-approve.ts", "the saved command permission"],

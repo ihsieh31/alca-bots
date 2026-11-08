@@ -370,7 +370,7 @@ it("offers its bots the browser and cloud computers only, and tells them they ca
     expect(systemPrompt).toContain(cloudHomePrompt(true, [], [], true));
     expect(systemPrompt).toContain("check list_shared_computers");
     expect(systemPrompt).toContain("call ask_for_computer");
-    expect(systemPrompt).toContain("never do it on their cloud computer or in the built-in browser instead unless they ask you to");
+    expect(systemPrompt).toContain("never do it on their cloud computer instead unless they ask you to");
     expect(systemPrompt).not.toMatch(/Local VM is an isolated desktop|user's host|host desktop|select an available Local VM/);
     const agents = mcpConfig.mcpServers.agents;
     expect(agents.env.ALCA_CLOUD_HOME).toBe("1");

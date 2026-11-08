@@ -11,7 +11,7 @@ import { harnessMcpRequest } from "./harness-mcp-proxy.ts";
 let server: Server;
 let url = "";
 let status = 200;
-let payload: unknown = { result: { tools: [{ name: "agent_browser_snapshot" }] } };
+let payload: unknown = { result: { tools: [{ name: "ego_browser_run" }] } };
 const requests: Array<{ path: string | undefined; auth: string | undefined; body: unknown }> = [];
 beforeAll(async () => {
   server = createServer((req, res) => {
@@ -41,11 +41,11 @@ describe("harness MCP capability proxy", () => {
 
   it("relays only the RPC result and scoped capability, not a session/engine command", async () => {
     status = 200;
-    payload = { result: { tools: [{ name: "agent_browser_snapshot" }] } };
-    await expect(harnessMcpRequest(frame("tools/list"), connection())).resolves.toEqual({ jsonrpc: "2.0", id: 1, result: { tools: [{ name: "agent_browser_snapshot" }] } });
+    payload = { result: { tools: [{ name: "ego_browser_run" }] } };
+    await expect(harnessMcpRequest(frame("tools/list"), connection())).resolves.toEqual({ jsonrpc: "2.0", id: 1, result: { tools: [{ name: "ego_browser_run" }] } });
     expect(requests.at(-1)).toEqual({ path: "/api/internal/browser/mcp", auth: "Bearer scoped-capability", body: { method: "tools/list", params: {} } });
     payload = { result: { content: [{ type: "image", data: "jpeg", mimeType: "image/jpeg" }] } };
-    await expect(harnessMcpRequest(frame("tools/call", { name: "agent_browser_snapshot" }), connection())).resolves.toMatchObject({ result: { content: [{ type: "image", data: "jpeg" }] } });
+    await expect(harnessMcpRequest(frame("tools/call", { name: "ego_browser_run" }), connection())).resolves.toMatchObject({ result: { content: [{ type: "image", data: "jpeg" }] } });
   });
 
   it("sends Email calls to their own harness route with the Email instructions", async () => {
@@ -108,7 +108,7 @@ describe("harness MCP capability proxy", () => {
 
   it("tells a restarting server, a restart during the call and a timeout apart", async () => {
     const textOf = (answer: unknown) => (answer as { result: { content: Array<{ text: string }> } }).result.content[0]!.text;
-    const click = frame("tools/call", { name: "agent_browser_click", arguments: { selector: "@e1" } });
+    const click = frame("tools/call", { name: "ego_browser_run", arguments: { selector: "@e1" } });
     const listening = async (handler?: (req: IncomingMessage) => void) => {
       const peer = createServer((req) => handler?.(req));
       await new Promise<void>((resolve) => peer.listen(0, "127.0.0.1", resolve));
@@ -163,7 +163,7 @@ describe("harness MCP capability proxy", () => {
 
   it("runs as the actual stdin/stdout MCP entry point with no engine credentials", async () => {
     status = 200;
-    payload = { result: { tools: [{ name: "agent_browser_snapshot" }] } };
+    payload = { result: { tools: [{ name: "ego_browser_run" }] } };
     const child: ChildProcessWithoutNullStreams = spawn(process.execPath, ["--experimental-strip-types", fileURLToPath(new URL("./harness-mcp-proxy.ts", import.meta.url)), "computer"], {
       // Codex hands every server the same environment: each reads only its own family's token.
       env: { ALCA_HARNESS_URL: url, ALCA_MCP_TOKEN_COMPUTER: "entrypoint-capability", ALCA_MCP_TOKEN_DATA: "data-capability" }, stdio: ["pipe", "pipe", "pipe"],
@@ -179,7 +179,7 @@ describe("harness MCP capability proxy", () => {
     });
     try {
       child.stdin.write(`${JSON.stringify(frame("tools/list"))}\n`);
-      await expect(result).resolves.toMatchObject({ result: { tools: [{ name: "agent_browser_snapshot" }] } });
+      await expect(result).resolves.toMatchObject({ result: { tools: [{ name: "ego_browser_run" }] } });
       expect(requests.at(-1)).toMatchObject({ path: "/api/internal/computer/mcp", auth: "Bearer entrypoint-capability" });
     } finally {
       child.kill();

@@ -242,7 +242,7 @@ function reachesLines(facts: OverviewFacts): string[] {
   } else if (couldUseApps(facts) && !apps.authoritative) {
     lines.push("Connected apps could not be checked.");
   }
-  if (facts.browserEnabled && facts.engine?.browserMcp && facts.bot.browser !== false && facts.bot.computer !== "off") lines.push("Has the built-in browser.");
+  if (facts.browserEnabled && facts.engine?.browserMcp && facts.bot.browser !== false && facts.bot.computer !== "off") lines.push("Can browse with ego lite.");
   const peers = facts.sectionPeers;
   if (facts.engine?.agentsMcp && peers > 0 && facts.bot.peers?.length !== 0) {
     lines.push(Array.isArray(facts.bot.peers)

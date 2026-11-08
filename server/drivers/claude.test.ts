@@ -1523,7 +1523,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     await instance.adapter.sendTurn({
       threadId: "t-surface-resume", text: "Open the test page.",
       resumeCursor: "previous-host-computer-session",
-      system: "Everything you do on screen happens in the built-in browser tab; no host computer tools are mounted.",
+      system: "Everything you do on screen happens in ego lite, the browser on the person's computer (the browser server's ego_browser_guide and ego_browser_run); no host computer tools are mounted.",
       integrations: { browser: { command: process.execPath, args: ["fixture-browser"], env: {} } },
     });
     await recorder.until((event) => event.type === "turn.completed");

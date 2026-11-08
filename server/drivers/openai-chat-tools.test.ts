@@ -1355,7 +1355,7 @@ describe("a configured MCP server that cannot mount", () => {
   });
 });
 
-describe("a turn with the person's Windows computer, the built-in browser and the agents server", () => {
+describe("a turn with the person's Windows computer, ego lite and the agents server", () => {
   function catalog(names: readonly string[]) {
     const { dir, server } = catalogServer(names);
     cleanups.push(() => removeTempDir(dir));
@@ -1363,7 +1363,7 @@ describe("a turn with the person's Windows computer, the built-in browser and th
   }
   const integrations = (agents: number, more: SendTurnInput["integrations"] = {}): SendTurnInput["integrations"] => ({
     localComputer: { ...catalog(CUA_DRIVER_WINDOWS_TOOLS), scope: "local-computer" },
-    browser: catalog(syntheticToolNames("agent_browser", 32)),
+    browser: catalog(syntheticToolNames("ego_browser", 32)),
     agents: catalog(syntheticToolNames("agent", agents)),
     composio: catalog(syntheticToolNames("router", 7)),
     data: catalog(syntheticToolNames("table", 5)),

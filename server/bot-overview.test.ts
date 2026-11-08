@@ -96,12 +96,12 @@ describe("buildBotOverview", () => {
 
   it("does not advertise a browser disabled globally or unsupported by the engine", () => {
     const facts = baseFacts({ bot: { ...baseFacts().bot, computer: "browser" }, browserEnabled: true, engine: { browserMcp: false } });
-    expect(buildBotOverview(facts).reaches).not.toContain("Has the built-in browser.");
+    expect(buildBotOverview(facts).reaches).not.toContain("Can browse with ego lite.");
     facts.engine = { browserMcp: true };
     facts.browserEnabled = false;
-    expect(buildBotOverview(facts).reaches).not.toContain("Has the built-in browser.");
+    expect(buildBotOverview(facts).reaches).not.toContain("Can browse with ego lite.");
     facts.browserEnabled = true;
-    expect(buildBotOverview(facts).reaches).toContain("Has the built-in browser.");
+    expect(buildBotOverview(facts).reaches).toContain("Can browse with ego lite.");
   });
 
   it("renders an enabled interval routine with its last completed run", () => {

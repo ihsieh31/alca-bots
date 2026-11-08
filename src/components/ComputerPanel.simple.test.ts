@@ -364,7 +364,7 @@ describe("Where the bot works", () => {
     expect(rendered.html).toContain("Where Scout works");
     expect(nodes(card.props.children).find((node) => node.props.role === "group")!.props.className).toContain("grid-cols-3");
     expect(grid(rendered).map((node) => text(node.props.children))).toEqual(["Auto", "Cloud desktop", "Private desktop", "This Mac", "Browser", "Off"]);
-    expect(placeLine(rendered)).toBe("Uses the built-in browser, a private desktop on this computer, or this computer's screen, whichever the task needs.");
+    expect(placeLine(rendered)).toBe("Uses ego lite, a private desktop on this computer, or this computer's screen, whichever the task needs.");
   });
 
   it("says This PC off a Mac, and never names a Local VM in Auto's line there", () => {
@@ -378,7 +378,7 @@ describe("Where the bot works", () => {
     fixture.localComputer = { available: false, support: "unsupported", enabled: false, status: "unavailable", reasonCode: "remote-server" };
     const rendered = render(makeBot());
     expect(grid(rendered).map((node) => text(node.props.children))).toEqual(["Auto", "Cloud desktop", "Private desktop", "Browser", "Off"]);
-    expect(placeLine(rendered)).toBe("Uses the built-in browser, or a running private desktop when a task needs one.");
+    expect(placeLine(rendered)).toBe("Uses a running private desktop when a task needs one.");
   });
 
   it("shows a bot set to This Mac as Auto on another server's page, without changing its setting", () => {
@@ -390,7 +390,7 @@ describe("Where the bot works", () => {
 
   it("says what Auto does on My Cloud, where it starts a cloud computer by itself", () => {
     fixture.config = { ...fixture.config, cloudHome: true };
-    expect(placeLine(render(makeBot()))).toBe("Uses the built-in browser. In a chat, it starts its cloud desktop by itself when a task needs desktop apps.");
+    expect(placeLine(render(makeBot()))).toBe("In a chat, it starts its cloud desktop by itself when a task needs one.");
   });
 
   it("J11: the Advanced cards and the Simple grid name the same problem in the same words", () => {

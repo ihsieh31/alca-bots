@@ -15,7 +15,7 @@ describe("toolStepLabel", () => {
     [{ name: "mcp__agents__trigger_info" }, "Check automations"],
     // A chip from an earlier conversation keeps the name its call had.
     [{ name: "mcp__agents__create_trigger" }, "Create trigger"],
-    [{ name: "agent_browser_click" }, "Use the browser"],
+    [{ name: "ego_browser_run" }, "Use the browser"],
     [{ name: "GITHUB_GET_A_COMMIT" }, "Get a commit"],
     [{ name: "mcp__composio__LINEAR_CREATE_LINEAR_COMMENT" }, "Create linear comment"],
     [{ name: "mcp__notes__query_database" }, "Query database"],

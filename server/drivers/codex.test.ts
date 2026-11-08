@@ -1749,14 +1749,14 @@ process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:m.id,result})+'\\n');});`)
     expect(instance.adapter.capabilities.agentsMcp).toBe(true);
   });
 
-  it.each(["ask", "auto"] as const)("pre-allows the built-in browser while preserving the native %s reviewer", async (approvalMode) => {
+  it.each(["ask", "auto"] as const)("pre-allows ego lite while preserving the native %s reviewer", async (approvalMode) => {
     await create();
     const dump = join(scratch, "browser.json");
     process.env.FAKE_CODEX_DUMP = dump;
 
     await instance.adapter.sendTurn({
       threadId: "t-browser",
-      text: "open the built-in browser",
+      text: "open ego lite",
       approvalMode,
       integrations: {
         browser: {

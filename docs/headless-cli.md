@@ -345,7 +345,7 @@ bots:                                       # at least one
     approval: ask | edits | auto | full     # a new bot starts at full; Custom is set in the desktop app
     computer: auto | off | browser | local | vm | cloud
     cwd: /work/room                         # a full path that exists on the server
-    browser: true | false | { enabled: true, profile: guest }
+    browser: true | false                   # ego lite, on a macOS or Windows desktop only
     tools: { allow: [SELECTOR], deny: [SELECTOR] }   # docs/tool-selection.md; {} means every tool
     skills:
       - { file: skills/launch-report/SKILL.md, enabled: true }
@@ -410,8 +410,8 @@ defaults:
   team: Launch Room
   model: claude/claude-haiku-5-5
   approval: full                             # nobody is there to answer a permission card
-  computer: browser                          # works only in its own built-in browser
-  browser: { enabled: true, profile: guest } # a fresh temporary profile per bot
+  computer: browser                          # works only in ego lite
+  browser: true                              # needs ego lite on the computer AlcaBots runs on
   cwd: /work/visitors                        # where screenshots go (create it first)
 
 teams:

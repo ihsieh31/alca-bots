@@ -97,7 +97,7 @@ it("never echoes a secret or token in its refusal", () => {
 });
 
 
-it("offers the built-in browser and cloud computers, never this computer or a Local VM", () => {
+it("offers ego lite and cloud computers, never this computer or a Local VM", () => {
   expect((["cloud", "vm", "local", "browser"] as const).filter(cloudHomeOffersPlace)).toEqual(["cloud", "browser"]);
   expect(cloudHomePlaceRefusal("cloud")).toBeUndefined();
   expect(cloudHomePlaceRefusal("browser")).toBeUndefined();

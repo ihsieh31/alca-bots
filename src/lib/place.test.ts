@@ -28,7 +28,7 @@ describe("where a conversation works", () => {
   });
 
   it("gives browser tools the browser, computer tools the conversation's computer, and other tools nothing", () => {
-    expect(toolPlace("agent_browser_snapshot", "cloud")).toBe("browser");
+    expect(toolPlace("ego_browser_guide", "cloud")).toBe("browser");
     expect(toolPlace("mcp__browser__browser_click", "vm")).toBe("browser");
     expect(toolPlace("mcp__computer__screenshot", "cloud")).toBe("cloud");
     expect(toolPlace("click", "local")).toBe("local");
@@ -42,7 +42,7 @@ describe("where a conversation works", () => {
   });
 
   it("classifies tool names without guessing computer for unrelated tools", () => {
-    expect(toolSurfaceKind("agent_browser_open")).toBe("browser");
+    expect(toolSurfaceKind("ego_browser_run")).toBe("browser");
     expect(toolSurfaceKind("browser__snapshot")).toBe("browser");
     expect(toolSurfaceKind("computer__click")).toBe("computer");
     expect(toolSurfaceKind("hotkey")).toBe("computer");

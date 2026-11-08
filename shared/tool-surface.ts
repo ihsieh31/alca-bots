@@ -4,18 +4,14 @@
 // bare (`click`).
 
 /** Tools whose completion can change what a screen shows. A bot on a
- * computer is illustrated only after one of these; the built-in browser's
- * read-only calls (snapshot, read, get_text, waits) stay out by the same rule. */
+ * computer is illustrated only after one of these; ego lite's guide stays out by
+ * the same rule. */
 export const SCREEN_TOUCHING_TOOLS: ReadonlySet<string> = new Set([
   // cloud boat / remote computer
   "screenshot", "click", "type_text", "press_key", "key_press", "scroll", "computer_batch", "open_url", "browser_click", "browser_fill",
-  // built-in browser: the Electron surface's names, from older remote harnesses
+  // a lent computer's browser (Cua Driver), and older remote harnesses
   "browser_navigate", "browser_type", "browser_press", "browser_scroll", "browser_hover", "browser_drag",
   "browser_select_option", "browser_back", "browser_forward", "browser_screenshot",
-  // built-in browser: agent-browser's names, and the new browser's
-  "agent_browser_open", "agent_browser_click", "agent_browser_fill", "agent_browser_type", "agent_browser_press",
-  "agent_browser_select", "agent_browser_check", "agent_browser_screenshot", "agent_browser_hover", "agent_browser_upload",
-  "agent_browser_navigate", "agent_browser_drag", "agent_browser_scroll", "agent_browser_tabs", "agent_browser_dialog", "agent_browser_eval",
   // ego lite
   "ego_browser_run",
   // Cua Driver (local Mac, Local VM, VPS)
@@ -35,7 +31,7 @@ export function screenTouchingTool(toolName: string): boolean {
 }
 
 /** Which surface a screen-touching tool acted on. The computer server's
- * browser_click/fill act inside the desktop, not in agent-browser, so the
+ * browser_click/fill act inside the desktop, not in ego lite, so the
  * server identity is checked before prefixes are stripped. */
 export function screenSurfaceForTool(toolName: string): "browser" | "computer" {
   const name = toolName.toLowerCase();
@@ -43,10 +39,10 @@ export function screenSurfaceForTool(toolName: string): "browser" | "computer" {
   if (name.startsWith("mcp__browser__") || name.startsWith("browser__")) return "browser";
   const bare = name.replace(TOOL_NAMESPACE, "");
   if (bare === "browser_click" || bare === "browser_fill") return "computer";
-  return bare.startsWith("agent_browser_") || bare.startsWith("ego_browser_") || bare.startsWith("browser_") ? "browser" : "computer";
+  return bare.startsWith("ego_browser_") || bare.startsWith("browser_") ? "browser" : "computer";
 }
 
-/** Whether a tool belongs to a screen place at all — the built-in browser, a
+/** Whether a tool belongs to a screen place at all — the browser (ego lite), a
  * computer, or neither (shell, files, teammates, memory). Unlike
  * screenSurfaceForTool this never guesses "computer" for an unrelated tool. */
 export function toolSurfaceKind(toolName: string): "browser" | "computer" | null {
@@ -55,6 +51,6 @@ export function toolSurfaceKind(toolName: string): "browser" | "computer" | null
   if (name.startsWith("mcp__computer__") || name.startsWith("computer__") || name.startsWith("computer_")) return "computer";
   const bare = name.replace(TOOL_NAMESPACE, "");
   if (bare === "browser_click" || bare === "browser_fill") return "computer";
-  if (bare.startsWith("agent_browser_") || bare.startsWith("ego_browser_") || bare.startsWith("browser_")) return "browser";
+  if (bare.startsWith("ego_browser_") || bare.startsWith("browser_")) return "browser";
   return SCREEN_TOUCHING_TOOLS.has(bare) ? "computer" : null;
 }

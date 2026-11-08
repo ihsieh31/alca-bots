@@ -388,7 +388,7 @@ export interface SetupSuggestionsHost extends Pick<SetupSuggestionsDeps, "within
   /** The app's language code ("en", "pt-BR"). */
   languageCode(): string;
   engine(bot: BotRecord): EngineCapabilities | undefined;
-  /** The built-in browser is on here. */
+  /** The browser (ego lite) is on here. */
   browserOn(): boolean;
   /** The connected-apps broker: set up or not, the connection it uses, and what is connected. */
   apps: { configured(): boolean; mode(): string; connected(): Promise<Record<string, { connected: boolean }>> };

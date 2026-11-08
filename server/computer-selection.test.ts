@@ -12,7 +12,7 @@ const option = (surface: ComputerOption["surface"], state: "ready" | "asleep" | 
 
 describe("which computer select_computer picks", () => {
   // A Works on: Cloud computer turn before its first computer call: the
-  // cloud computer is missing or asleep, and the built-in browser is ready.
+  // cloud computer is missing or asleep, and ego lite is ready.
   const offered = (cloud: "asleep" | "missing") => [option("cloud", cloud), option("vm", "off"), option("browser", "ready")];
 
   it("keeps the cloud computer this turn starts on its first call: asking for it or for Auto never moves the request", () => {

@@ -1,7 +1,7 @@
 // The places an ALCA Cloud home offers, shared by the server and the app. A Cloud
 // home is a headless Linux server: "This computer" would be the server itself,
 // and a Local VM needs a container runtime a Fly machine cannot run, so neither
-// is ever offered. Bots there work in the built-in browser and cloud computers.
+// is ever offered. Bots there work on cloud computers; ego lite runs only on desktops.
 import type { Surface } from "./wire.ts";
 
 /** Whether a Cloud home offers this place at all. */

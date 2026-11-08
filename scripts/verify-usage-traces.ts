@@ -110,7 +110,7 @@ try {
   browser.forEach((action, index) => {
     const [verb, page] = action.split(" ");
     const span = verb === "open" ? 1.6 : verb === "snapshot" ? 0.5 : 0.7;
-    tool(researcher.id, `mcp__browser__agent_browser_${verb}`, clock, clock + span, page ?? (verb === "click" ? "Reviews tab" : undefined));
+    tool(researcher.id, "mcp__browser__ego_browser_run", clock, clock + span, page ?? (verb === "click" ? "Reviews tab" : undefined));
     clock += span;
     if (index < browser.length - 1) { step(researcher.id, clock, clock + 0.25, 30, 2_200); clock += 0.25; }
   });

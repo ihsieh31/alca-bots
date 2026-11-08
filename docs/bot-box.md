@@ -28,7 +28,7 @@ tokens and a few names a shell expects. Every `ALCA_CLOUD_*` setting, the server
   `127.0.0.1:3128` inside the box, bridged to the server's gate. `HTTPS_PROXY` and `HTTP_PROXY` point there. The gate
   resolves names itself and connects only to public addresses: this machine, the local network, link-local, the cloud
   metadata service and Fly's private network are refused by address, so neither a name nor a redirect gets around it.
-  It is the engines' twin of the browser's SOCKS gate (`server/browser/egress/`), with the same address policy.
+  Its address policy is `server/egress/policy.ts`.
 - **Harness** (`server/bot-box/harness-gate.ts`): the server's own port inside the box reaches only `/api/internal/`
   routes, which every helper calls with a per-turn capability bearer. Every other route is answered `403` by the gate
   itself, so the server is never asked.
@@ -70,9 +70,8 @@ checks it guards.
   stay in the environment until the credential broker (T0b) replaces them with per-turn tokens.
 - The box runs as the server's own user inside a user namespace; a separate Linux user per bot needs a privileged
   spawn service (T0c notes).
-- On a Team Cloud each Chrome of the bots' browsers runs in a box of its own (`BotBox.browserBox`, written into the
-  launcher agent-browser runs, see [team-cloud.md](team-cloud.md)); the agent-browser daemon is not boxed, and on a My
-  Cloud no browser is.
+- Bots browse only through ego lite on a person's macOS or Windows desktop, outside the box
+  ([browser-engine.md](plans/browser-engine.md)); servers, Team Cloud and My Cloud have no browser.
 
 ## The credential broker
 

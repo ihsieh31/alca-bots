@@ -97,7 +97,7 @@ describe("SignInRequestCard while it waits", () => {
     // explained (the second useState) turns on
     expect(fixture.setters[1]).toHaveBeenCalledWith(true);
     fixture.setters = []; fixture.states = { 1: true };
-    expect(view({ place: "local" })).toContain("Not the Browser tab: it keeps its own sign-ins");
+    expect(view({ place: "local" })).toContain("Not ego lite: it keeps its own sign-ins");
   });
 
   it.each(["browser", "vm", "cloud", "local"])("does not offer to save a login on %s", (place) => {

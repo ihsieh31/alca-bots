@@ -23,10 +23,10 @@ const writer = turn("writer", "Writer", 2_000, 37_000, [
   { kind: "step", id: "w-s1", startedAt: T0 + 2_500, endedAt: T0 + 25_500, costUsd: 0.09, tokens: { input: 900, cachedInput: 500, output: 700 } },
   { kind: "tool", id: "w-t1", name: "mcp__composio__NOTION_CREATE_PAGE", icon: "app", app: "notion", detail: "Pricing draft", startedAt: T0 + 26_000, endedAt: T0 + 29_600, status: "ok", timedBy: "alca" },
   { kind: "tool", id: "w-t2", name: "WebSearch", icon: "search", detail: "G2 reviews", startedAt: T0 + 30_000, endedAt: T0 + 31_000, status: "error", error: "Rate limited", timedBy: "engine" },
-  { kind: "group", id: "w-g1", icon: "browser", name: "mcp__browser__agent_browser_click", count: 3, errors: 0, startedAt: T0 + 31_500, endedAt: T0 + 36_000, children: [
-    { kind: "tool", id: "w-b1", name: "mcp__browser__agent_browser_open", icon: "browser", startedAt: T0 + 31_500, endedAt: T0 + 32_000, status: "ok", timedBy: "alca" },
-    { kind: "tool", id: "w-b2", name: "mcp__browser__agent_browser_click", icon: "browser", startedAt: T0 + 33_000, endedAt: T0 + 33_500, status: "ok", timedBy: "alca" },
-    { kind: "tool", id: "w-b3", name: "mcp__browser__agent_browser_type", icon: "browser", startedAt: T0 + 35_000, endedAt: T0 + 36_000, status: "ok", timedBy: "alca" },
+  { kind: "group", id: "w-g1", icon: "browser", name: "mcp__browser__browser_click", count: 3, errors: 0, startedAt: T0 + 31_500, endedAt: T0 + 36_000, children: [
+    { kind: "tool", id: "w-b1", name: "mcp__browser__browser_open", icon: "browser", startedAt: T0 + 31_500, endedAt: T0 + 32_000, status: "ok", timedBy: "alca" },
+    { kind: "tool", id: "w-b2", name: "mcp__browser__browser_click", icon: "browser", startedAt: T0 + 33_000, endedAt: T0 + 33_500, status: "ok", timedBy: "alca" },
+    { kind: "tool", id: "w-b3", name: "mcp__browser__browser_type", icon: "browser", startedAt: T0 + 35_000, endedAt: T0 + 36_000, status: "ok", timedBy: "alca" },
   ] },
 ]);
 const chief = turn("chief", "Chief", 0, undefined, [
@@ -69,14 +69,14 @@ describe("trace helpers", () => {
     const opened = traceRows([chief], new Set(["w-g1", "writer"]), T0 + 51_000);
     expect(opened.map((row) => row.node.id)).toEqual(["chief", "c-s1", "writer"]);
     expect(traceRows([chief], new Set(["w-g1"]), T0).map((row) => row.node.id)).toContain("w-b3");
-    expect(toolLabel({ name: "mcp__browser__agent_browser_type", icon: "browser" })).toBe("Type");
-    expect(toolLabel({ name: "mcp__browser__agent_browser_frobnicate_widget", icon: "browser" })).toBe("Frobnicate widget");
+    expect(toolLabel({ name: "mcp__browser__browser_type", icon: "browser" })).toBe("Type");
+    expect(toolLabel({ name: "mcp__browser__browser_frobnicate_widget", icon: "browser" })).toBe("Frobnicate widget");
     expect(["mcp__agents__x_search", "mcp__agents__research_call", "mcp__agents__use_tool", "mcp__agents__list_bots"].map((name) => toolLabel({ name, icon: "app" })))
       .toEqual(["X search", "Research call", "Use tool", toolStepLabel({ name: "mcp__agents__list_bots", summary: undefined })]);
     setLocale("pt-br");
     expect(["mcp__agents__x_search", "mcp__agents__x_user_posts", "mcp__agents__research_call", "mcp__agents__use_tool", "mcp__agents__list_bots", "mcp__other__x_search"].map((name) => toolLabel({ name, icon: "app" })))
       .toEqual(["Buscar no X", "Ler posts de um usuário no X", "Consultar uma ferramenta de pesquisa", "Usar ferramenta", toolStepLabel({ name: "mcp__agents__list_bots", summary: undefined }), "X search"]);
-    expect(["agent_browser_click", "agent_browser_get_url", "mcp__computer__type_text", "agent_browser_frobnicate"].map((name) => toolLabel({ name, icon: "computer" })))
+    expect(["browser_click", "browser_get_url", "mcp__computer__type_text", "browser_frobnicate"].map((name) => toolLabel({ name, icon: "computer" })))
       .toEqual(["Clicar", "Ler o endereço", "Digitar texto", "Frobnicate"]);
     setLocale("en");
     expect(groupLabel({ icon: "browser", count: 14, name: "x" })).toBe("Used the browser · 14 steps");

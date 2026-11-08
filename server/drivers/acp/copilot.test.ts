@@ -272,7 +272,7 @@ describe("GitHub Copilot ACP driver", () => {
   it("connects the agents tools even when Copilot rejects ACP stdio servers", async () => {
     const { instance, recorder } = await create({ FAKE_ACP_MODE: "mcp-tools" });
     const browser = await startFakeHttpMcp({
-      tools: [{ name: "agent_browser_open", inputSchema: { type: "object", properties: {} } }],
+      tools: [{ name: "ego_browser_run", inputSchema: { type: "object", properties: {} } }],
     });
     try {
       const { turnId } = await instance.adapter.sendTurn({
@@ -289,7 +289,7 @@ describe("GitHub Copilot ACP driver", () => {
       expect(text).toContain("agents:");
       expect(text).toContain("trigger");
       expect(text).toContain("trigger_info");
-      expect(text).toContain("browser: agent_browser_open");
+      expect(text).toContain("browser: ego_browser_run");
     } finally { await browser.close(); }
   });
 

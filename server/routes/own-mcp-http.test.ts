@@ -26,7 +26,7 @@ beforeAll(async () => {
     if (url.pathname === "/api/internal/browser/mcp") {
       const call = body as { method: string; params?: { name?: string } };
       return json(res, 200, { result: call.method === "tools/list"
-        ? { tools: [{ name: "agent_browser_open", inputSchema: { type: "object" } }] }
+        ? { tools: [{ name: "ego_browser_run", inputSchema: { type: "object" } }] }
         : { content: [{ type: "text", text: `ran ${call.params?.name}` }] } });
     }
     if (url.pathname === "/api/internal/agents") return json(res, 200, { bots: [{ id: "w1", name: "W1", model: "m" }] });
@@ -51,16 +51,16 @@ describe("AlcaBots's own MCP servers over HTTP", () => {
     const notice = await post("browser", { jsonrpc: "2.0", method: "notifications/initialized" });
     expect([notice.status, await notice.text()]).toEqual([202, ""]);
     expect(await (await post("browser", { jsonrpc: "2.0", id: 2, method: "tools/list" })).json())
-      .toEqual({ jsonrpc: "2.0", id: 2, result: { tools: [{ name: "agent_browser_open", inputSchema: { type: "object" } }] } });
-    const batch = await (await post("browser", [{ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "agent_browser_open", arguments: {} } },
+      .toEqual({ jsonrpc: "2.0", id: 2, result: { tools: [{ name: "ego_browser_run", inputSchema: { type: "object" } }] } });
+    const batch = await (await post("browser", [{ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "ego_browser_run", arguments: {} } },
       { jsonrpc: "2.0", id: 4, method: "ping" }])).json();
-    expect(batch).toEqual([{ jsonrpc: "2.0", id: 3, result: { content: [{ type: "text", text: "ran agent_browser_open" }] } }, { jsonrpc: "2.0", id: 4, result: {} }]);
+    expect(batch).toEqual([{ jsonrpc: "2.0", id: 3, result: { content: [{ type: "text", text: "ran ego_browser_run" }] } }, { jsonrpc: "2.0", id: 4, result: {} }]);
     expect(internalCalls.filter((call) => call.path === "/api/internal/browser/mcp").every((call) => call.authorization === "Bearer turn-capability")).toBe(true);
   });
 
   it("refuses without a capability, passes a wrong one to the endpoint that refuses it, and offers no stream or unknown server", async () => {
     expect((await post("browser", { jsonrpc: "2.0", id: 1, method: "tools/list" }, {})).status).toBe(401);
-    const wrong = await (await post("browser", { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "agent_browser_open" } },
+    const wrong = await (await post("browser", { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "ego_browser_run" } },
       { authorization: "Bearer stolen" })).json();
     expect(wrong).toMatchObject({ id: 1, result: { isError: true } });
     expect((await fetch(`${base}${OWN_MCP_HTTP_PATH}browser`, { headers: { authorization: "Bearer turn-capability" } })).status).toBe(405);

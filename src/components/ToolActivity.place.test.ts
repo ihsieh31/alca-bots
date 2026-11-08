@@ -5,7 +5,7 @@ import { ToolActivity } from "./ToolActivity";
 
 describe("tool chip place icon", () => {
   it("shows the place a screen or page tool ran on, and nothing for other tools", () => {
-    const browser = renderToStaticMarkup(createElement(ToolActivity, { tool: { name: "agent_browser_click", ok: true }, place: "browser" }));
+    const browser = renderToStaticMarkup(createElement(ToolActivity, { tool: { name: "ego_browser_run", ok: true }, place: "browser" }));
     expect(browser).toContain('data-testid="tool-place"');
     expect(browser).toContain('aria-label="Browser"');
     const cloud = renderToStaticMarkup(createElement(ToolActivity, { tool: { name: "screenshot", ok: true }, place: "cloud" }));

@@ -261,8 +261,8 @@ describe("Settings in Simple mode", () => {
     const html = render();
     expect(currentPage(html)).toBe("computer");
     expect(blocks(html)).toEqual(["computer", "companion", "browser", "elsewhere", "remote", "desktopWorkspaces"]);
-    expect(groupLabels(html)).toEqual(["Your bots’ computers", "Your devices", "Built-in browser"].map((label) => label.replace("’", "&#x27;")));
-    expect(html).toContain('aria-label="Enable the built-in browser"');
+    expect(groupLabels(html)).toEqual(["Your bots’ computers", "Your devices", "Browser (ego lite)"].map((label) => label.replace("’", "&#x27;")));
+    expect(html).toContain('aria-label="Let bots browse with ego lite"');
   });
 
   it("leads Usage & billing with one usage block, folds the limits, then shows the plan", () => {
@@ -294,7 +294,7 @@ describe("Settings in Simple mode", () => {
     expect(pages(html)).toEqual(["general", "computer"]);
     expect(currentPage(html)).toBe("computer");
     expect(blocks(html)).toEqual(["companion", "elsewhere", "remote", "desktopWorkspaces"]);
-    expect(html).not.toContain('aria-label="Enable the built-in browser"');
+    expect(html).not.toContain('aria-label="Let bots browse with ego lite"');
     fixture.section = "appearance";
     const general = render();
     expect(currentPage(general)).toBe("general");
@@ -375,17 +375,17 @@ describe("Settings in Advanced mode", () => {
   });
 });
 
-describe("the built-in browser switch", () => {
-  const browserSwitch = () => fixture.switches.find((props) => props["aria-label"] === "Enable the built-in browser");
+describe("the browser switch", () => {
+  const browserSwitch = () => fixture.switches.find((props) => props["aria-label"] === "Let bots browse with ego lite");
 
   it.each([false, true])("writes features.browser from Devices (advanced: %s)", async (advanced) => {
     fixture.advancedMode = advanced;
     fixture.section = "computer";
     const html = render();
     if (advanced) {
-      expect(html.indexOf('aria-label="Enable the built-in browser"')).toBeLessThan(html.indexOf("MARKER:computer;"));
+      expect(html.indexOf('aria-label="Let bots browse with ego lite"')).toBeLessThan(html.indexOf("MARKER:computer;"));
     } else {
-      expect(html.indexOf("MARKER:computer;")).toBeLessThan(html.indexOf('aria-label="Enable the built-in browser"'));
+      expect(html.indexOf("MARKER:computer;")).toBeLessThan(html.indexOf('aria-label="Let bots browse with ego lite"'));
     }
     const toggle = browserSwitch()!;
     expect(toggle.checked).toBe(false);
@@ -401,7 +401,7 @@ describe("the built-in browser switch", () => {
     fixture.advancedMode = true;
     fixture.section = "experimental";
     const html = render();
-    expect(html).not.toContain('aria-label="Enable the built-in browser"');
+    expect(html).not.toContain('aria-label="Let bots browse with ego lite"');
     expect(html).toContain("Bots may write their own skills");
     expect(browserSwitch()).toBeUndefined();
   });

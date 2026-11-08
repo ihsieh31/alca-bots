@@ -62,15 +62,12 @@ it.skipIf(process.platform === "win32")("asks the person to sign in from a real 
     await expect.poll(() => evidence().length, { timeout: 20_000 }).toBe(1);
     const call = evidence()[0].evidence.find((entry: any) => entry.step?.tool === "request_sign_in");
     expect(call.response.result.isError).toBeFalsy();
-    expect(call.response.result.content[0].text).toContain("The person was asked to sign in to example.com on your built-in browser. Your turn ends now");
+    expect(call.response.result.content[0].text).toContain("The person was asked to sign in to example.com on ego lite, the browser on their computer. Your turn ends now");
 
     await expect.poll(async () => (await messages()).some((message) => message.text === ASKED_REPLY), { timeout: 15_000 }).toBe(true);
     const cards = (await messages()).filter((message) => message.kind === "signin");
     expect(cards).toHaveLength(1);
     expect(cards[0].signIn).toMatchObject({ site: "example.com", url: "https://www.example.com/dashboard", place: "browser", reason: "The dashboard is behind a login." });
-    // With no page open in the bot's browser, a login saved from the card would fill on the card's site only.
-    expect(await api("GET", `/api/bots/${bot.id}/sign-in-cards/${cards[0].id}/save-login?threadId=${bot.threadId}`)).toEqual({ status: 200, body: { site: "example.com" } });
-    expect((await api("GET", `/api/bots/${bot.id}/sign-in-cards/${cards[0].id}/save-login?threadId=other`)).status).toBe(404);
     const notices = stream.frames.filter((frame) => frame.kind === "notify" && frame.notification?.kind === "sign-in");
     expect(notices).toHaveLength(1);
     expect(notices[0].notification.title).toBe("Signer needs you to sign in to example.com");
@@ -82,7 +79,6 @@ it.skipIf(process.platform === "win32")("asks the person to sign in from a real 
     expect(asked(evidence()[1])).toContain("the person finished signing in to example.com. Check you are signed in, then continue");
     await expect.poll(async () => (await messages()).some((message) => message.text === SIGNED_IN_REPLY), { timeout: 15_000 }).toBe(true);
     expect((await messages()).find((message) => message.id === cards[0].id)?.signIn).toMatchObject({ done: true, resumed: true });
-    expect((await api("GET", `/api/bots/${bot.id}/sign-in-cards/${cards[0].id}/save-login?threadId=${bot.threadId}`))).toMatchObject({ status: 409, body: { error: "this sign-in request was already answered" } });
   } finally {
     await close();
   }
