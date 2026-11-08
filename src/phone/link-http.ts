@@ -64,10 +64,10 @@ export class LinkHttp {
     });
     peer.onClose(() => {
       if (this.current === bound) this.current = null;
-      for (const lost of [...bound.losses]) lost();
+      for (const lost of Array.from(bound.losses)) lost();
     });
     this.current = bound;
-    for (const wake of [...this.waiters]) wake();
+    for (const wake of Array.from(this.waiters)) wake();
   }
 
   readonly fetch: typeof fetch = async (input, init) => {
