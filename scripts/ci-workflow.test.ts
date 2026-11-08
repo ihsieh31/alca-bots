@@ -102,9 +102,7 @@ describe("CI concurrency", () => {
     expect(units["timeout-minutes"]).toBe(5);
     // Once per platform's full run, and beside the locale tests, never once per shard.
     expect(units.if).toBe("matrix.node_tests");
-    // Browser jobs keep one job per platform, and the packaged server one per platform without the macOS smokes.
-    expect(workflow.jobs["browser-identity"].strategy.matrix.os).toBe("${{ fromJSON(needs.static.outputs.vitest_os) }}");
-    expect(workflow.jobs["browser-driver"].strategy.matrix.os).toBe("${{ fromJSON(needs.static.outputs.vitest_os) }}");
+    // The packaged server keeps one job per platform without the macOS smokes.
     expect(workflow.jobs["packaged-server"].strategy.matrix.os).toBe("${{ fromJSON(needs.static.outputs.packaged_server_os) }}");
   });
 

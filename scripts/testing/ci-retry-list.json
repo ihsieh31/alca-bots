@@ -77,6 +77,13 @@
       "owner": "ihsieh31",
       "reason": "Memory capture misses the 45s poll on a loaded Linux shard 8 (CI runs 42407515589, 42409378349); passes locally.",
       "since": "2026-11-08"
+    },
+    {
+      "file": "server/boat-auto-sleep.test.ts",
+      "test": "a cloud computer goes to sleep after its idle window > a stop the relay refuses is logged and retried after a longer wait each time",
+      "owner": "ihsieh31",
+      "reason": "Backoff wait timed out on a loaded Windows shard 2 (scheduled CI run 42430739295, same commit green on push); passes locally.",
+      "since": "2026-11-08"
     }
   ]
 }
