@@ -59,7 +59,7 @@ pnpm exec vitest run <檔案>   # 完整套件很慢（本機一小時以上）�
    npx wrangler deploy
    ```
 4. **手機中繼 relay**：需要一台 VPS 跑 `relay/`（有 Dockerfile 和 Caddyfile），DNS 指到 `bots-relay1.alca-corp.me`；之後在 control-plane 的 `wrangler.jsonc` 設 `RELAY_NODES`、`RELAY_DISABLED: "0"` 和 `RELAY_TOKEN_SIGNING_KEY`。
-5. **瀏覽器換成 ego lite**：分支 `ego-lite-browser` 兩個階段都已完成。bot 只透過 ego lite 瀏覽（`server/ego-browser.ts`、`server/ego-browser-proxy.ts`，設計見 `docs/plans/browser-engine.md`），舊的內置瀏覽器（agent-browser、alca-cdp、瀏覽器面板、瀏覽器設定檔、fill_login、My Chrome、打包的 Chromium 及其 CI）已刪除。分支 `workbuddy/ego-lite-cleanup` 接著清剩下的部分：
+5. **瀏覽器換成 ego lite**：分支 `ego-lite-browser` 兩個階段都已完成。bot 只透過 ego lite 瀏覽（`server/ego-browser.ts`、`server/ego-browser-proxy.ts`，設計見 `docs/plans/browser-engine.md`），舊的內置瀏覽器（agent-browser、alca-cdp、瀏覽器面板、瀏覽器設定檔、fill_login、My Chrome、打包的 Chromium 及其 CI）已刪除。分支 `workbuddy/ego-lite-cleanup` 接著清剩下的部分，2026-11-08 已合併進 main：
 
    **已清**
    - Docker 映像檔、CI 與 compose：`Dockerfile` 不再裝 Chrome 系統庫、agent-browser 或 Chrome for Testing；`docker.yml` 移除瀏覽器 smoke、Chrome/Chromium 版本快取鍵與 build-args；三個 compose 檔移除只為 Chrome 設的 `shm_size`；環境白名單不再帶 `AGENT_BROWSER_EXECUTABLE_PATH`。`scripts/docker-image.test.ts` 同步改斷言，並加了一條「映像裡不得出現瀏覽器二進位」的檢查。
