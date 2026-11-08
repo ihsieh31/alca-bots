@@ -117,9 +117,29 @@ try {
   if (media.status !== 200 || !media.bots) throw new Error(`media through the service worker: ${JSON.stringify(media)}`);
   await context.setOffline(true);
   await page.reload();
-  await page.locator("#root > *").first().waitFor({ timeout: 15_000 });
+  await page.getByText("Ledger").first().waitFor({ timeout: 15_000 });
   await page.screenshot({ path: join(shots, "phone-offline.png") });
   await context.setOffline(false);
+  await until(async () => (await api("GET", "/api/link")).devices[0]?.connection, "phone reconnected", 45_000);
+  await context.grantPermissions(["notifications"]);
+  const cdp = await context.newCDPSession(page);
+  const registrationId = await new Promise((resolve) => {
+    cdp.on("ServiceWorker.workerRegistrationUpdated", ({ registrations }) => { if (registrations[0]) resolve(registrations[0].registrationId); });
+    void cdp.send("ServiceWorker.enable");
+  });
+  await cdp.send("ServiceWorker.deliverPushMessage", {
+    origin: new URL(page.url()).origin,
+    registrationId,
+    data: JSON.stringify({ title: "Ledger", body: "Needs you", tag: "approval:t", botId: "b", threadId: "t" }),
+  });
+  await until(() => page.evaluate(async () => {
+    const shown = await (await navigator.serviceWorker.ready).getNotifications();
+    return shown.some((note) => note.title === "Ledger" && note.body === "Needs you" && note.data?.threadId === "t");
+  }), "the push on screen");
+  const { bots } = await api("GET", "/api/bots?messages=0");
+  await page.goto(`${new URL(page.url()).origin}/?open.botId=${bots.find((bot) => bot.name === "Ledger").id}`);
+  await page.locator("textarea, [contenteditable=true]").first().waitFor({ timeout: 30_000 });
+  if (new URL(page.url()).search) throw new Error("the notification's target stayed in the address");
     console.log(JSON.stringify({ ok: true, device: via, problems: problems.slice(0, 12) }, null, 2));
 } catch (error) {
   failed = true;

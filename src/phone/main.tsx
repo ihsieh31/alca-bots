@@ -1,6 +1,6 @@
 // The phone's page. It holds a pairing with one computer and moves the app's requests onto that connection, so the
 // app itself runs unchanged.
-import { StrictMode, useEffect, useState, type ReactNode } from "react";
+import { StrictMode, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { LinkClient, pairDevice, type LinkCredentials } from "../../link/src/client";
@@ -22,6 +22,7 @@ import { forgetCredentials, phoneIdentity, readCredentials, saveCredentials } fr
 import { LinkHttp } from "./link-http";
 import { linkPathFor, setLinkRequest, setLinkState } from "./link-state";
 import { attachMediaBridge } from "./media-bridge";
+import { OfflineCache, OfflineFetch } from "./offline-cache";
 import { forgetPush, isAppleTouch, isStandalone, reportVisibility, resyncPush } from "./push";
 import { recoverFromMissingCode, startServiceWorker } from "./sw-client";
 
@@ -31,7 +32,8 @@ applyFont(readFont());
 applyChatWidth(readChatWidth());
 
 const http = new LinkHttp({ nativeFetch: globalThis.fetch.bind(globalThis), origin: location.origin });
-globalThis.fetch = http.fetch;
+const offline = new OfflineFetch({ inner: http.fetch, connected: () => http.connected, origin: location.origin });
+globalThis.fetch = offline.fetch;
 globalThis.EventSource = createLinkEventSource(http.fetch, () => location.href) as unknown as typeof EventSource;
 attachMediaBridge(http.fetch);
 recoverFromMissingCode();
@@ -41,6 +43,11 @@ function takePairingLink(): LinkPairingLink | null {
   const link = parseLinkPairingFragment(location.hash);
   if (link) history.replaceState(null, "", location.pathname + location.search);
   return link;
+}
+
+/** The phone works without its offline copy, so a browser that won't store one just goes without. */
+async function openOfflineCopy(deviceId: string): Promise<void> {
+  offline.use(await OfflineCache.open(deviceId).catch(() => null));
 }
 
 function deviceName(): string {
@@ -84,6 +91,7 @@ function PairScreen({ link, reason, onPaired }: { link: LinkPairingLink | null; 
         ...(link?.fingerprint ? { expectFingerprint: link.fingerprint } : {}),
       });
       await saveCredentials(credentials);
+      await openOfflineCopy(credentials.deviceId);
       onPaired(credentials, identity);
     } catch {
       setError(t("phone.pair.failed"));
@@ -127,9 +135,17 @@ function PairScreen({ link, reason, onPaired }: { link: LinkPairingLink | null; 
 
 function Connected({ credentials, identity, onRemoved }: { credentials: LinkCredentials; identity: Identity; onRemoved(): void }) {
   const [app, setApp] = useState<ReactNode>(null);
-  const [offline, setOffline] = useState(false);
+  const [unreachable, setUnreachable] = useState(false);
+  const loading = useRef(false);
+  const mount = useCallback(() => {
+    if (loading.current) return;
+    loading.current = true;
+    void import("./shell/PhoneApp").then(({ default: PhoneApp }) => setApp(<PhoneApp />));
+  }, []);
 
   useEffect(() => {
+    // With a copy of the app's state to draw, there's no reason to wait for the connection before showing it.
+    if (offline.hasBootData()) mount();
     const factory = w3cRtc();
     const client = new LinkClient({ credentials, identity, moveGraceMs: 30_000, ...(factory ? { rtc: factory } : {}) });
     const computer = credentials.coreName;
@@ -140,11 +156,8 @@ function Connected({ credentials, identity, onRemoved }: { credentials: LinkCred
       reportVisibility();
       void resyncPush().catch(() => {});
       setLinkState({ path: linkPathFor(client.via), computer });
-      setOffline(false);
-      setApp((mounted) => {
-        if (!mounted) void import("./shell/PhoneApp").then(({ default: PhoneApp }) => setApp(<PhoneApp />));
-        return mounted;
-      });
+      setUnreachable(false);
+      mount();
     });
     const stopStatus = client.onStatus((status) => {
       if (status === "revoked") onRemoved();
@@ -152,7 +165,7 @@ function Connected({ credentials, identity, onRemoved }: { credentials: LinkCred
         http.setPeer(null);
         setLinkRequest(null);
         setLinkState({ path: "offline", computer });
-        setOffline(true);
+        setUnreachable(true);
       }
     });
     const stopCredentials = client.onCredentials((next) => void saveCredentials(next));
@@ -173,14 +186,14 @@ function Connected({ credentials, identity, onRemoved }: { credentials: LinkCred
       http.setPeer(null);
       setLinkRequest(null);
     };
-  }, [credentials, identity, onRemoved]);
+  }, [credentials, identity, mount, onRemoved]);
 
   if (app) return app;
   return (
     <main className={screen}>
       <div role="status" className={`${card} text-center`}>
-        <p className="text-[17px] font-medium">{offline ? t("phone.offline.title", { computer: credentials.coreName }) : t("phone.connecting", { computer: credentials.coreName })}</p>
-        {offline ? <p className="mt-2 text-[14px] text-ink-secondary">{t("phone.offline.body")}</p> : null}
+        <p className="text-[17px] font-medium">{unreachable ? t("phone.offline.title", { computer: credentials.coreName }) : t("phone.connecting", { computer: credentials.coreName })}</p>
+        {unreachable ? <p className="mt-2 text-[14px] text-ink-secondary">{t("phone.offline.body")}</p> : null}
       </div>
     </main>
   );
@@ -192,6 +205,7 @@ function Phone({ initial, link }: { initial: { credentials: LinkCredentials; ide
   const [removed] = useState(() => () => {
     void forgetCredentials();
     void forgetPush();
+    void offline.forget();
     setPaired(null);
     setReason(t("phone.removed"));
   });
@@ -204,6 +218,7 @@ async function boot(): Promise<void> {
   await startServiceWorker();
   const credentials = await readCredentials();
   const initial = credentials ? { credentials, identity: await phoneIdentity() } : null;
+  if (credentials) await openOfflineCopy(credentials.deviceId);
   document.title = productName();
   await loadPageLanguage();
   createRoot(document.getElementById("root")!).render(<StrictMode><PageBoundary><Phone initial={initial} link={link} /></PageBoundary></StrictMode>);
