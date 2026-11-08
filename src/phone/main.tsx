@@ -20,6 +20,7 @@ import "../styles.css";
 import { createLinkEventSource } from "./event-source";
 import { forgetCredentials, phoneIdentity, readCredentials, saveCredentials } from "./keystore";
 import { LinkHttp } from "./link-http";
+import { linkPathFor, setLinkState } from "./link-state";
 
 settleAdvancedModeDefault();
 applySkinChoice(readSkinChoice());
@@ -127,11 +128,14 @@ function Connected({ credentials, identity, onRemoved }: { credentials: LinkCred
   useEffect(() => {
     const factory = w3cRtc();
     const client = new LinkClient({ credentials, identity, moveGraceMs: 30_000, ...(factory ? { rtc: factory } : {}) });
+    const computer = credentials.coreName;
+    setLinkState({ path: "connecting", computer });
     const stopReady = client.onReady((_ready, peer) => {
       http.setPeer(peer, client.via);
+      setLinkState({ path: linkPathFor(client.via), computer });
       setOffline(false);
       setApp((mounted) => {
-        if (!mounted) void import("../App").then(({ default: App }) => setApp(<App />));
+        if (!mounted) void import("./shell/PhoneApp").then(({ default: PhoneApp }) => setApp(<PhoneApp />));
         return mounted;
       });
     });
@@ -139,6 +143,7 @@ function Connected({ credentials, identity, onRemoved }: { credentials: LinkCred
       if (status === "revoked") onRemoved();
       if (status === "offline") {
         http.setPeer(null);
+        setLinkState({ path: "offline", computer });
         setOffline(true);
       }
     });

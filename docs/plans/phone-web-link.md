@@ -282,6 +282,8 @@ host → 裝置（事件，頻道 `http`）：
 - 端對端驗證：`pnpm build:phone && PLAYWRIGHT_CORE=<playwright-core 路徑> SMOKE_SHOTS=<截圖目錄> node scripts/smoke-phone-link.mjs [--direct]`。
 - 組織政策 `remoteAccess` 關閉時：擋 `POST /api/link/pairings`，也擋已配對手機的每個請求（bridge 的 `remoteAccessRefusal`）。
 - 使用者文件：`docs/phone-link.md`。
+- 手機外殼在 `src/phone/shell/`：`PhoneApp.tsx` 取代桌面的 `<App/>`，分頁（今天／夥伴／工作／更多）加上推入畫面。對話沿用 `ChatView`／`GroupView`。分頁畫面把 `activeView` 設成 `phone-home`，這樣回到首頁時新回覆才會維持未讀。
+- 工具核准不另開抽屜：`Composer` 已把它固定在輸入框上方，單手可及，另開只會重複。抽屜用在 secret、登入、連接、問題卡（`derive.ts` 的 `pendingCards`）。
 - 線上服務（使用者已同意部署）：中繼 `https://bots-relay.alca-corp.me`（Worker `alcabots-relay`，`link/relay-worker`，部署時帶 `--var ALLOWED_ORIGINS:https://bots-app.alca-corp.me --var RELAY_MODE:production`）；手機頁 `https://bots-app.alca-corp.me`（Worker `alcabots-phone`，`link/site-worker`，建置時帶 `VITE_LINK_RELAY_URL=https://bots-relay.alca-corp.me`）。
 - 對線上跑端對端：加 `SMOKE_LIVE_RELAY`、`SMOKE_LIVE_SITE` 給 `scripts/smoke-phone-link.mjs`。新子網域在開通前查過的話，路由器會快取「查無此網域」最多 30 分鐘。
 - 全套測試還剩 4 個在這項工作之前就失敗的項目，都不是手機連線造成的：`server/saved-steps/store.test.ts`（refuses a bot id…）、`src/lib/schedule-label.test.ts`、`src/lib/transcript-derivations.test.ts`、`src/components/SidebarThreadRow.test.ts`（後三個是機器語系為中文、測試預期英文）。`server/outbound-hold.test.ts` 高負載時偶爾在清暫存目錄失敗（ENOTEMPTY），單獨跑會過。

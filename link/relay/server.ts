@@ -58,6 +58,7 @@ const TYPES: Record<string, string> = {
   ".woff2": "font/woff2",
   ".mp3": "audio/mpeg",
   ".wav": "audio/wav",
+  ".webp": "image/webp",
 };
 
 /** The site reaches relays over any secure socket, because a pairing link can name a self-hosted one; STUN needs no

@@ -91,6 +91,7 @@ try {
   if (direct) await until(async () => (await api("GET", "/api/link")).devices[0]?.connection === "rtc", "direct path", 30_000);
   await page.getByText("Ledger").first().waitFor({ timeout: 60_000 });
   await page.screenshot({ path: join(shots, "phone-home.png") });
+  await page.getByText("Ledger").first().click();
   const box = page.locator("textarea, [contenteditable=true]").first();
   await box.waitFor({ timeout: 30_000 });
   await box.fill("hello from the phone");
