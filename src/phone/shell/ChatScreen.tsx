@@ -9,10 +9,11 @@ import { SecretRequestCard } from "@/components/SecretRequestCard";
 import { SignInRequestCard } from "@/components/SignInRequestCard";
 import { ConnectorCard } from "@/components/ConnectorCard";
 import { EgoBrowserWatch } from "@/components/EgoBrowserNote";
-import { ActivityPanel, BotSettingsDialog, ComputerPanel, InspectorPanel, RoomPanel } from "@/components/lazy-screens";
+import { ActivityPanel, ComputerPanel, InspectorPanel } from "@/components/lazy-screens";
 import { t } from "@/lib/i18n";
 import { currentTaskBot, useStore, visibleMessages, type Bot, type Message } from "@/state/store";
 import { BrowserWindow } from "./browser/BrowserWindow";
+import { ComputerOnlySheet } from "./ComputerOnlySheet";
 import { pendingCards } from "./derive";
 import { lightTap } from "./motion";
 import { BackButton } from "./PhoneScreen";
@@ -78,11 +79,10 @@ export function ChatScreen({ onBack }: { onBack(): void }) {
         ) : null}
         {bot && !state.settingsOpen && !state.computerOpen ? <DecisionSheet bot={bot} /> : null}
       </div>
-      {state.settingsOpen && profile ? <div className="phone-panel"><BotSettingsDialog key={`settings:${profile.id}`} bot={profile} overlay /></div> : null}
+      {state.settingsOpen && (profile || group) ? <ComputerOnlySheet title={(profile ?? group)?.name} onClose={() => dispatch({ type: "toggleSettings", open: false })} /> : null}
       {state.computerOpen && profile ? <div className="phone-panel"><EgoBrowserWatch.Provider value={openBrowser}><ComputerPanel key={`computer:${profile.id}`} bot={profile} onOpenVmWorkspace={() => {}} /></EgoBrowserWatch.Provider></div> : null}
       {state.inspectorOpen && profile ? <div className="phone-panel"><InspectorPanel key={profile.threadId} bot={profile} /></div> : null}
       {state.activityOpen && profile ? <div className="phone-panel"><ActivityPanel key={`activity:${profile.id}`} bot={profile} /></div> : null}
-      {group && state.settingsOpen ? <div className="phone-panel"><RoomPanel key={`room:${group.id}`} group={group} overlay /></div> : null}
       {browserOpen && bot ? <BrowserWindow key={`browser:${bot.id}:${bot.threadId}`} botId={bot.id} botName={bot.name} threadId={bot.threadId} onClose={() => setBrowserOpen(false)} /> : null}
     </div>
   );

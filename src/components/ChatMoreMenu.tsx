@@ -1,4 +1,4 @@
-import { useMemo, useState, type JSX } from "react";
+import { useMemo, useState, type JSX, useContext } from "react";
 import { Bug, Copy, Cpu, Download, Gauge, ListChecks, MessagesSquare, Monitor, MoreHorizontal, Search, Share, SquarePen, UserRound } from "lucide-react";
 import { currentTaskBot, openBotThread, useStore, visibleMessages, type Bot } from "@/state/store";
 import { useAdvancedMode } from "@/lib/interface-mode";
@@ -21,6 +21,7 @@ import { orderedThreadList } from "./SidebarThreadRow";
 import { openBotSettings } from "./bot-panel/panel-link";
 import { ShareBotButton, useTeamName } from "./bot-access/ShareBotButton";
 import { UsageBars } from "./EngineUsage";
+import { PhoneShell, phoneMenuItems } from "./phone-menu";
 
 /** One item list for the chat's ⋯ menu wherever it sits; it lists the threads whenever the sidebar hides them. The
  * Simple bot panel draws the same items as rows, and its Share button holds the two that export. */
@@ -29,6 +30,7 @@ export function useChatMoreItems(profile: Bot, phoneHeader = false): { items: Si
   const messages = useMemo(() => visibleMessages(bot), [bot]);
   const { state, dispatch } = useStore();
   const advanced = useAdvancedMode();
+  const onPhone = useContext(PhoneShell);
   const showThreads = useShowThreads();
   const findOpen = useChatFindOpen(bot.threadId);
   const [copyStatus, setCopyStatus] = useState<"copied" | "failed" | null>(null);
@@ -143,7 +145,7 @@ export function useChatMoreItems(profile: Bot, phoneHeader = false): { items: Si
       onSelect: () => dispatch({ type: "toggleInspector" }),
     } satisfies SidebarMenuItem]),
   ];
-  return { items, on: findOpen || state.inspectorOpen || state.activityOpen };
+  return { items: onPhone ? phoneMenuItems(items) : items, on: findOpen || state.inspectorOpen || state.activityOpen };
 }
 
 function RoundChatMoreMenu({ bot, phoneHeader }: { bot: Bot; phoneHeader: boolean }) {

@@ -1,0 +1,16 @@
+html[data-skin="midnight"] {
+  --color-app: #2c2c2e;
+  --color-panel: #2c2c2e;
+  --color-raised: #3a3a3c;
+  --color-raised-hover: #48484a;
+  --color-composer: #3a3a3c;
+  --color-composer-ring: #48484a;
+  --color-card: #3a3a3c;
+  --color-menu: #3a3a3c;
+  --color-inset: #3a3a3c;
+  --color-control: #48484a;
+  --color-hairline: #545458;
+  --color-edge: #f5f5f514;
+  --color-bubble-user: #636366;
+  --color-scrollbar: #636366;
+}

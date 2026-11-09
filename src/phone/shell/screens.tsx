@@ -1,12 +1,11 @@
 // The phone's tab screens.
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Bell, CalendarClock, ChevronRight, FolderOpen, Palette, Plus, Puzzle, Settings2, Users, Wifi } from "lucide-react";
+import { Bell, CalendarClock, ChevronRight, Puzzle, Users, Wifi } from "lucide-react";
 
 import { BotAvatar } from "@/components/Avatar";
-import { NewBotDialog } from "@/components/lazy-screens";
 import { useLanguageChoice } from "@/lib/language-preference";
 import { t } from "@/lib/i18n";
-import { scheduleSentence } from "@/lib/schedule-label";
+import { scheduleLabel } from "@/lib/schedule-label";
 import { cn } from "@/lib/cn";
 import { useStore, type Bot, type Group } from "@/state/store";
 import { useLinkState } from "../link-state";
@@ -193,15 +192,11 @@ function RoomRow({ group, onOpen }: { group: Group; onOpen(): void }) {
 
 export function PartnersScreen({ onOpenChat }: { onOpenChat(id: string): void }) {
   const { state } = useStore();
-  const [adding, setAdding] = useState(false);
   const partners = useMemo(() => partnersInOrder(state.bots), [state.bots]);
   const rooms = state.groups.filter((group) => !group.dm);
   return (
     <div className="phone-page">
-      <ScreenTitle
-        title={t("phone.shell.partners")}
-        action={<Pressable className="phone-round" label={t("phone.shell.addPartner")} onPress={() => setAdding(true)}><Plus size={20} aria-hidden="true" /></Pressable>}
-      />
+      <ScreenTitle title={t("phone.shell.partners")} />
       <div className="phone-list">
         {partners.map((bot) => <PartnerRow key={bot.id} bot={bot} onOpen={() => onOpenChat(bot.id)} />)}
       </div>
@@ -212,7 +207,6 @@ export function PartnersScreen({ onOpenChat }: { onOpenChat(id: string): void })
           </div>
         </Section>
       ) : null}
-      {adding ? <NewBotDialog onClose={() => setAdding(false)} /> : null}
     </div>
   );
 }
@@ -230,7 +224,7 @@ function MenuRow({ icon, title, detail, onPress }: { icon: ReactNode; title: str
   );
 }
 
-export function WorkScreen({ onOpenThread, onShowRoutines, onShowFiles }: { onOpenThread(row: ThreadRow): void; onShowRoutines(): void; onShowFiles(): void }) {
+export function WorkScreen({ onOpenThread, onShowRoutines }: { onOpenThread(row: ThreadRow): void; onShowRoutines(): void }) {
   const { state } = useStore();
   const view = useMemo(() => todayView(state), [state]);
   const now = useNow(view.working.length > 0);
@@ -265,24 +259,18 @@ export function WorkScreen({ onOpenThread, onShowRoutines, onShowFiles }: { onOp
               <span className="phone-menu-icon"><CalendarClock size={18} aria-hidden="true" /></span>
               <span className="min-w-0 flex-1 text-left">
                 <span className="phone-row-title">{routine.name}</span>
-                <span className="phone-row-sub">{scheduleSentence(routine.schedule)}</span>
+                <span className="phone-row-sub">{scheduleLabel(routine.schedule)}</span>
               </span>
             </Pressable>
           ))}
           <MenuRow icon={<CalendarClock size={18} aria-hidden="true" />} title={t("phone.shell.allRoutines")} onPress={onShowRoutines} />
         </div>
       </Section>
-      <Section title={t("phone.shell.library")}>
-        <div className="phone-list">
-          <MenuRow icon={<FolderOpen size={18} aria-hidden="true" />} title={t("files.title")} onPress={onShowFiles} />
-        </div>
-      </Section>
     </div>
   );
 }
 
-export function MoreScreen() {
-  const { dispatch } = useStore();
+export function MoreScreen({ onShowApps }: { onShowApps(): void }) {
   const link = useLinkState();
   useLanguageChoice();
   const path = link.path === "direct" ? t("phone.shell.pathDirect")
@@ -299,21 +287,11 @@ export function MoreScreen() {
         </span>
         <span className={cn("phone-signal", `phone-signal-${link.path}`)} aria-hidden="true" />
       </div>
-      <Section title={t("phone.shell.thisPhone")}>
-        <div className="phone-list">
-          <NotificationsRow icon={<Bell size={18} aria-hidden="true" />} />
-          <MenuRow icon={<Palette size={18} aria-hidden="true" />} title={t("settings.section.appearance")}
-            onPress={() => dispatch({ type: "toggleAppSettings", open: true, section: "appearance" })} />
-        </div>
-      </Section>
-      <Section title={t("phone.shell.thisComputer")}>
-        <div className="phone-list">
-          <MenuRow icon={<Settings2 size={18} aria-hidden="true" />} title={t("settings.title")}
-            onPress={() => dispatch({ type: "toggleAppSettings", open: true })} />
-          <MenuRow icon={<Puzzle size={18} aria-hidden="true" />} title={t("phone.shell.apps")}
-            onPress={() => dispatch({ type: "togglePlugins", open: true })} />
-        </div>
-      </Section>
+      <div className="phone-list">
+        <NotificationsRow icon={<Bell size={18} aria-hidden="true" />} />
+        <MenuRow icon={<Puzzle size={18} aria-hidden="true" />} title={t("phone.shell.apps")} onPress={onShowApps} />
+      </div>
+      <p className="phone-footnote">{t("phone.shell.otherSettings")}</p>
     </div>
   );
 }

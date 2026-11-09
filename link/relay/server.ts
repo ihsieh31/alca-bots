@@ -64,7 +64,7 @@ const TYPES: Record<string, string> = {
 /** The site reaches relays over any secure socket, because a pairing link can name a self-hosted one; STUN needs no
  * entry. Scripts only ever come from the site itself: whoever can add one has every power the paired phone has. */
 export const SITE_CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' ws: wss:; font-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://www.google.com https://*.gstatic.com https://logos.composio.dev; media-src 'self' blob:; connect-src 'self' ws: wss:; font-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
 export const SITE_HEADERS = {
   "x-content-type-options": "nosniff",

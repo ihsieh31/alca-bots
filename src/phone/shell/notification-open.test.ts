@@ -1,15 +1,23 @@
 import { describe, expect, it } from "vitest";
 
-import { openTargetFrom } from "./notification-open";
+import { pendingTarget } from "./notification-open";
 
-describe("openTargetFrom", () => {
-  it("reads where a notification points", () => {
-    expect(openTargetFrom("?open.botId=b&open.threadId=t")).toEqual({ botId: "b", threadId: "t" });
-    expect(openTargetFrom("?open.groupId=g")).toEqual({ groupId: "g" });
+const NOW = 1_000_000_000;
+
+describe("pendingTarget", () => {
+  it("reads where a fresh notification points", () => {
+    expect(pendingTarget({ botId: "b", threadId: "t", at: NOW - 1000 }, NOW)).toEqual({ botId: "b", threadId: "t" });
+    expect(pendingTarget({ groupId: "g", at: NOW }, NOW)).toEqual({ groupId: "g" });
   });
 
-  it("ignores everything else", () => {
-    expect(openTargetFrom("")).toBeNull();
-    expect(openTargetFrom("?other=1&open.nope=2")).toBeNull();
+  it("drops a tap from long ago", () => {
+    expect(pendingTarget({ botId: "b", at: NOW - 6 * 60_000 }, NOW)).toBeNull();
+  });
+
+  it("ignores anything that isn't a target", () => {
+    expect(pendingTarget(null, NOW)).toBeNull();
+    expect(pendingTarget({ at: NOW }, NOW)).toBeNull();
+    expect(pendingTarget({ botId: "b" }, NOW)).toBeNull();
+    expect(pendingTarget({ botId: 5, at: NOW }, NOW)).toBeNull();
   });
 });

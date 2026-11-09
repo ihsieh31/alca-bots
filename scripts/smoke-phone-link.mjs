@@ -132,14 +132,32 @@ try {
     registrationId,
     data: JSON.stringify({ title: "Ledger", body: "Needs you", tag: "approval:t", botId: "b", threadId: "t" }),
   });
+  await sleep(2500);
   await until(() => page.evaluate(async () => {
     const shown = await (await navigator.serviceWorker.ready).getNotifications();
     return shown.some((note) => note.title === "Ledger" && note.body === "Needs you" && note.data?.threadId === "t");
   }), "the push on screen");
   const { bots } = await api("GET", "/api/bots?messages=0");
-  await page.goto(`${new URL(page.url()).origin}/?open.botId=${bots.find((bot) => bot.name === "Ledger").id}`);
-  await page.locator("textarea, [contenteditable=true]").first().waitFor({ timeout: 30_000 });
-  if (new URL(page.url()).search) throw new Error("the notification's target stayed in the address");
+  const ledger = bots.find((bot) => bot.name === "Ledger");
+  const tapNotification = (botId, threadId) => context.serviceWorkers()[0].evaluate(async (data) => {
+    const note = (await self.registration.showNotification("Ledger", { body: "Needs you", tag: "tap", data }), (await self.registration.getNotifications({ tag: "tap" }))[0]);
+    let done;
+    const work = new Promise((resolve) => { done = resolve; });
+    const event = new NotificationEvent("notificationclick", { notification: note });
+    const waitUntil = event.waitUntil.bind(event);
+    event.waitUntil = (promise) => { waitUntil(promise); void promise.then(done, done); };
+    self.dispatchEvent(event);
+    await Promise.race([work, new Promise((resolve) => setTimeout(resolve, 3000))]);
+  }, { botId, threadId });
+  await tapNotification(ledger.id, ledger.threadId);
+  await page.locator("[data-phone-chat] textarea, [data-phone-chat] [contenteditable=true]").first().waitFor({ timeout: 30_000 });
+  await page.locator(".phone-back").click();
+  await page.locator("[data-phone-chat]").waitFor({ state: "detached", timeout: 10_000 });
+  const site = new URL(page.url()).origin;
+  await page.goto("about:blank");
+  await tapNotification(ledger.id, ledger.threadId).catch(() => {});
+  await page.goto(site);
+  await page.locator("[data-phone-chat] textarea, [data-phone-chat] [contenteditable=true]").first().waitFor({ timeout: 30_000 });
     console.log(JSON.stringify({ ok: true, device: via, problems: problems.slice(0, 12) }, null, 2));
 } catch (error) {
   failed = true;

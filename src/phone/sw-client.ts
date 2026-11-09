@@ -45,6 +45,7 @@ export async function startServiceWorker(): Promise<void> {
     return;
   }
   watch(registration);
+  void registration.update().catch(() => {});
   if (worker.controller) return;
   await new Promise<void>((resolve) => {
     const timer = setTimeout(resolve, CONTROL_WAIT_MS);

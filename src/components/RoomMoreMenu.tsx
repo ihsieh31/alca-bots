@@ -1,4 +1,4 @@
-import { useState, type JSX } from "react";
+import { useState, type JSX, useContext } from "react";
 import { Copy, Download, Gauge, MessagesSquare, MoreHorizontal, Search, SquarePen, Timer } from "lucide-react";
 
 import { requestChatFind, useChatFindOpen } from "@/lib/chat-find";
@@ -18,6 +18,7 @@ import { groupUsageSummary } from "./GroupUsageChip";
 import { ShortcutHint } from "./ShortcutHint";
 import { SidebarPopoverMenu, type SidebarMenuItem } from "./SidebarPopoverMenu";
 import { orderedThreadList } from "./SidebarThreadRow";
+import { PhoneShell, phoneMenuItems } from "./phone-menu";
 
 function turnLimitLabel(minutes: number): string {
   if (minutes === 60) return t("room.panel.hour");
@@ -27,6 +28,7 @@ function turnLimitLabel(minutes: number): string {
 
 function useRoomMoreItems(group: Group): { items: SidebarMenuItem[]; on: boolean } {
   const { dispatch } = useStore();
+  const onPhone = useContext(PhoneShell);
   const showThreads = useShowThreads();
   const findOpen = useChatFindOpen(group.threadId);
   const limit = useConversationTurnLimit(group);
@@ -115,7 +117,7 @@ function useRoomMoreItems(group: Group): { items: SidebarMenuItem[]; on: boolean
       onSelect: () => {},
     } satisfies SidebarMenuItem] : []),
   ];
-  return { items, on: findOpen };
+  return { items: onPhone ? phoneMenuItems(items) : items, on: findOpen };
 }
 
 function RoundRoomMoreMenu({ group }: { group: Group }) {

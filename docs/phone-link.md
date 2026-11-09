@@ -68,3 +68,5 @@ Put it behind your own HTTPS proxy, or pass `--tls-cert` and `--tls-key`. Phones
 - Phone access is off until you turn it on.
 - The phone can watch and take over a bot's browser (ego lite). A VM, a VPS or a cloud desktop still opens as screenshots, without takeover.
 - Notifications need an iPhone to have the page on its Home Screen, and a phone's browser to support Web Push.
+- On iPhone a Home Screen page can't draw behind the status bar, so iOS paints that strip itself in a gray the page doesn't choose (seen on iOS 27.2).
+- The phone is for everyday control. Settings, plugins and new partners or routines stay on the computer, and the page follows the phone's light or dark mode.

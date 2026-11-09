@@ -4,6 +4,8 @@
 export const MEDIA_MESSAGE = "alca.media";
 export const SKIP_WAITING_MESSAGE = "alca.skipWaiting";
 export const OPEN_MESSAGE = "alca.open";
+export const PENDING_OPEN_CACHE = "alca-open";
+export const PENDING_OPEN_URL = "/__alca/pending-open";
 
 const ROUTED = ["/api/", "/.well-known/alcabots/"];
 const FORWARDED_HEADERS = ["range", "accept", "if-none-match", "if-modified-since", "if-range"];

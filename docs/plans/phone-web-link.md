@@ -317,3 +317,11 @@ host → 裝置（事件，頻道 `http`）：
 - 瀏覽器視窗、離線、媒體代理、通知顯示與點開，都用無頭 Chrome 驗證過（`scripts/smoke-phone-link.mjs`、隔離的假 ego）。
 - **還沒驗證：** 真實的 Apple／Google 推播服務送達、iPhone 上的接手手勢與鍵盤、真實 ego lite。無頭瀏覽器訂閱不到推播服務，所以推播的端到端要真機測。
 - VM、VPS、雲端桌面的 noVNC 接手仍在第三階段（`ws.*` 通道）。
+
+## Decisions from testing on an iPhone (2026-11-09)
+
+- The phone keeps only everyday control. Settings, plugins, adding partners and editing routines live on the computer; `ComputerOnlySheet` says so where the shared UI asks for them.
+- The page follows the system's light or dark mode, with no choice of its own.
+- In a Home Screen app the edge swipe belongs to iOS whenever the page has history, so an iPhone Home Screen app navigates without `pushState` (`usesBrowserHistory`).
+- A notification tap stores its target in a cache before focusing or opening the page, because an opened window's URL can't be relied on to carry it.
+- The status bar strip stays. With `viewport-fit=cover`, `black-translucent` and a fresh Home Screen install, iOS 27.2 still reports `innerHeight` 812 of 874 and a top inset of 0, and neither `theme-color` nor the page's background set the strip's color. The tag and the light-mode scrim stay for iOS versions that do let the page draw there. Removing the strip would take a native wrapper.

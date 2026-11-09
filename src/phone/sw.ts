@@ -1,6 +1,6 @@
 // The phone site's service worker. It keeps the page openable with no network and answers media requests through the
 // page's connection. A new version waits until the person chooses to update, so a page isn't swapped under them.
-import { answerFromPage, OPEN_MESSAGE, routeFor, SKIP_WAITING_MESSAGE, type PageClient } from "./sw-core";
+import { answerFromPage, OPEN_MESSAGE, PENDING_OPEN_CACHE, PENDING_OPEN_URL, routeFor, SKIP_WAITING_MESSAGE, type PageClient } from "./sw-core";
 
 declare const __SW_VERSION__: string;
 declare const __SW_PRECACHE__: string[];
@@ -111,14 +111,14 @@ sw.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const target = (event.notification.data ?? {}) as Record<string, string | undefined>;
   event.waitUntil((async () => {
+    const pending = await caches.open(PENDING_OPEN_CACHE);
+    await pending.put(PENDING_OPEN_URL, new Response(JSON.stringify({ ...target, at: Date.now() })));
     const [page] = await sw.clients.matchAll({ type: "window", includeUncontrolled: true });
     if (page) {
-      await page.focus();
-      page.postMessage({ type: OPEN_MESSAGE, ...target }, []);
-      return;
+      const focused = await page.focus().then(() => true, () => false);
+      page.postMessage({ type: OPEN_MESSAGE }, []);
+      if (focused) return;
     }
-    const query = new URLSearchParams();
-    for (const [name, value] of Object.entries(target)) if (value) query.set(`open.${name}`, value);
-    await sw.clients.openWindow(`/?${query}`);
+    await sw.clients.openWindow(SHELL);
   })());
 });

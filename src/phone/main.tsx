@@ -15,8 +15,9 @@ import { applyFont, readFont } from "../lib/fonts";
 import { t } from "../lib/i18n";
 import { settleAdvancedModeDefault } from "../lib/interface-mode";
 import { loadPageLanguage } from "../lib/language-preference";
-import { applySkinChoice, readSkinChoice } from "../lib/skins";
+import { applySkinChoice } from "../lib/skins";
 import "../styles.css";
+import "./phone-colors.css";
 import { createLinkEventSource } from "./event-source";
 import { forgetCredentials, phoneIdentity, readCredentials, saveCredentials } from "./keystore";
 import { LinkHttp } from "./link-http";
@@ -27,7 +28,7 @@ import { forgetPush, isAppleTouch, isStandalone, reportVisibility, resyncPush } 
 import { recoverFromMissingCode, startServiceWorker } from "./sw-client";
 
 settleAdvancedModeDefault();
-applySkinChoice(readSkinChoice());
+applySkinChoice("system");
 applyFont(readFont());
 applyChatWidth(readChatWidth());
 

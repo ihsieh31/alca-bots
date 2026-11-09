@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { initialGreeting, setupRequestLine } from "./initial-greeting.ts";
+import { hasSetupChoices, initialGreeting, setupChoices, setupRequestLine } from "./initial-greeting.ts";
 
 describe("the line after Set me up", () => {
   it("is written in the app's language, by region, with English for any other", () => {
@@ -19,6 +19,13 @@ describe("the line after Set me up", () => {
 });
 
 describe("a new bot's greeting", () => {
+  it("speaks Traditional Chinese, card included, for a zh-TW app", () => {
+    expect(initialGreeting("Ledger", "zh-TW")).toBe("你好，我是 Ledger。想請我做什麼呢？");
+    expect(setupRequestLine("zh-Hant")).toContain("每週研究");
+    expect(setupChoices("zh-TW")[0]).toBe("研究和深入了解主題");
+    expect(hasSetupChoices("zh-TW")).toBe(true);
+  });
+
   it("names the person by their first name, in the app's language", () => {
     expect(initialGreeting("Scout", "en", "Milind Soni")).toBe("Hi Milind, I'm Scout. What would you like me to do?");
     expect(initialGreeting("Scout", "es-MX", "  Ana  María ")).toBe("Hola Ana, soy Scout. ¿Qué te gustaría que hiciera?");

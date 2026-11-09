@@ -1,11 +1,12 @@
 // The app as a phone shows it: its store and conversation views, in a shell made for one hand.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Layers, MoreHorizontal, Sparkles, Users } from "lucide-react";
 
 import { DesktopCapabilitiesProvider } from "@/components/DesktopCapabilities";
 import { ChatNotice } from "@/components/ChatErrorBanner";
-import { CloudAddDialog, FilesView, PluginsPanel, SettingsModal, TriggersPage, preloadScreens } from "@/components/lazy-screens";
+import { CloudAddDialog } from "@/components/lazy-screens";
 import { LiveCallHost } from "@/components/LiveCallHost";
+import { PhoneShell } from "@/components/phone-menu";
 import { ThreadRefsProvider } from "@/components/ThreadRefs";
 import { WorkspaceBackupRecovery } from "@/components/WorkspaceBackupSettings";
 import { useDesktopNotificationOpens, useExternalChatLinks } from "@/hooks/use-external-chat-links";
@@ -22,13 +23,17 @@ import { useTeamChats } from "@/state/team-chats";
 import { needsYouVersion, useTeamPeopleLoader } from "@/state/team-people";
 import { useLinkState } from "../link-state";
 import { applyUpdate, useUpdateReady } from "../sw-client";
+import { AppsScreen } from "./AppsScreen";
 import { ChatScreen } from "./ChatScreen";
+import { ComputerOnlySheet } from "./ComputerOnlySheet";
 import { todayView, type ThreadRow } from "./derive";
 import { lightTap } from "./motion";
 import { useNotificationOpen, type OpenTarget } from "./notification-open";
 import { usePhoneNav, type PhoneRoute, type PhoneTab } from "./nav";
-import { BackButton, PhoneScreen } from "./PhoneScreen";
+import { PhoneScreen } from "./PhoneScreen";
+import { RoutinesScreen } from "./RoutinesScreen";
 import { MoreScreen, PartnersScreen, TodayScreen, WorkScreen } from "./screens";
+import { useTabPager } from "./tab-pager";
 import { useKeyboardInset } from "./use-keyboard-inset";
 import "./phone.css";
 
@@ -39,10 +44,17 @@ const TABS: Array<{ id: PhoneTab; icon: typeof Sparkles; label: Parameters<typeo
   { id: "more", icon: MoreHorizontal, label: "phone.shell.more" },
 ];
 
-function TabBar({ tab, badge, onSelect }: { tab: PhoneTab; badge: number; onSelect(tab: PhoneTab): void }) {
-  const index = TABS.findIndex((entry) => entry.id === tab);
+const TAB_IDS = TABS.map((entry) => entry.id);
+
+function TabBar({ tab, badge, barRef, handlers, onSelect }: {
+  tab: PhoneTab;
+  badge: number;
+  barRef: React.Ref<HTMLElement>;
+  handlers: ReturnType<typeof useTabPager>["barHandlers"];
+  onSelect(tab: PhoneTab): void;
+}) {
   return (
-    <nav className="phone-tabs" aria-label={t("phone.shell.navigation")} style={{ "--tab-index": index, "--tab-count": TABS.length } as React.CSSProperties}>
+    <nav ref={barRef} className="phone-tabs" aria-label={t("phone.shell.navigation")} style={{ "--tab-count": TABS.length } as React.CSSProperties} {...handlers}>
       <span className="phone-tab-indicator" aria-hidden="true" />
       {TABS.map(({ id, icon: Icon, label }) => (
         <button
@@ -86,10 +98,8 @@ function UpdatePill() {
 
 function Screen({ route, onBack }: { route: PhoneRoute; onBack(): void }) {
   if (route.kind === "chat") return <ChatScreen onBack={onBack} />;
-  if (route.kind === "routines") {
-    return <div className="phone-chat"><BackButton onBack={onBack} /><TriggersPage onBack={onBack} onOpenRoom={() => {}} /></div>;
-  }
-  return <div className="phone-chat"><BackButton onBack={onBack} /><FilesView /></div>;
+  if (route.kind === "routines") return <RoutinesScreen onBack={onBack} />;
+  return <AppsScreen onBack={onBack} />;
 }
 
 function Shell() {
@@ -110,19 +120,14 @@ function Shell() {
   const unread = state.bots.filter((bot) => !bot.hidden).reduce((sum, bot) => sum + botUnreadCount(bot), 0)
     + state.groups.filter((group) => group.unread).length;
   useEffect(() => showBrowserUnread(unread), [unread]);
-  useEffect(() => {
-    void preloadScreens();
-  }, []);
 
-  // Keeps a screen on the page while it plays its way out, after navigation has already moved on.
-  const [leaving, setLeaving] = useState<Array<{ id: number; route: PhoneRoute }>>([]);
+  // A screen stays the same mounted element while it plays its way out, so it leaves from where the finger let go of it.
+  const screens = useRef<Array<{ id: number; route: PhoneRoute; leaving: boolean }>>([]);
   const serial = useRef(0);
-  const shown = useRef<Array<{ id: number; route: PhoneRoute }>>([]);
-  while (shown.current.length < nav.stack.length) shown.current.push({ id: ++serial.current, route: nav.stack[shown.current.length]! });
-  if (shown.current.length > nav.stack.length) {
-    const gone = shown.current.splice(nav.stack.length);
-    queueMicrotask(() => setLeaving((current) => [...current, ...gone]));
-  }
+  const [, screenGone] = useReducer((count: number) => count + 1, 0);
+  const staying = screens.current.filter((entry) => !entry.leaving);
+  for (const entry of staying.slice(nav.stack.length)) entry.leaving = true;
+  for (const route of nav.stack.slice(staying.length)) screens.current.push({ id: ++serial.current, route, leaving: false });
 
   // The home screens aren't a conversation on screen, so a reply arriving there stays unread.
   const atHome = nav.stack.length === 0;
@@ -154,35 +159,44 @@ function Shell() {
   const link = useLinkState();
   const offline = link.path === "offline" || (link.path === "connecting" && !state.connected);
   const waiting = todayView(state).waiting.length;
-  const pushed = shown.current.length > 0;
+  const pushed = nav.stack.length > 0;
+  const { pager, bar, barHandlers } = useTabPager(TAB_IDS, nav.tab, nav.selectTab);
+  const showRoutines = () => { dispatch({ type: "showRoutines" }); nav.push({ kind: "routines" }); };
+  const pages: Record<PhoneTab, React.ReactNode> = {
+    today: <TodayScreen onOpenThread={openRow} onOpenChat={openChat} />,
+    partners: <PartnersScreen onOpenChat={openChat} />,
+    work: <WorkScreen onOpenThread={openRow} onShowRoutines={showRoutines} />,
+    more: <MoreScreen onShowApps={() => nav.push({ kind: "apps" })} />,
+  };
 
   return (
     <div data-phone-shell data-pushed={pushed ? "" : undefined} data-offline={offline ? "" : undefined} className="phone-shell">
       <ConnectionLine offline={offline} />
       <UpdatePill />
       <div className="phone-base">
-        <div key={nav.tab} className="phone-tab-page">
-          {state.notice ? <div className="px-5 pt-3"><ChatNotice notice={state.notice} /></div> : null}
-          {nav.tab === "today" ? <TodayScreen onOpenThread={openRow} onOpenChat={openChat} />
-            : nav.tab === "partners" ? <PartnersScreen onOpenChat={openChat} />
-            : nav.tab === "work" ? <WorkScreen onOpenThread={openRow} onShowRoutines={() => { dispatch({ type: "showRoutines" }); nav.push({ kind: "routines" }); }} onShowFiles={() => { dispatch({ type: "showFiles" }); nav.push({ kind: "files" }); }} />
-            : <MoreScreen />}
+        <div ref={pager} className="phone-pager">
+          {TAB_IDS.map((id) => (
+            <div key={id} className="phone-tab-page" inert={id !== nav.tab}>
+              {id === nav.tab && state.notice ? <div className="px-5 pt-3"><ChatNotice notice={state.notice} /></div> : null}
+              {pages[id]}
+            </div>
+          ))}
         </div>
-        <TabBar tab={nav.tab} badge={waiting} onSelect={nav.selectTab} />
+        <TabBar tab={nav.tab} badge={waiting} barRef={bar} handlers={barHandlers} onSelect={nav.selectTab} />
         <div className="phone-base-dim" aria-hidden="true" />
       </div>
-      {shown.current.map(({ id, route }) => (
-        <PhoneScreen key={id} leaving={false} onBack={nav.back} onGone={() => {}}>
+      {screens.current.map(({ id, route, leaving }) => (
+        <PhoneScreen
+          key={id}
+          leaving={leaving}
+          onBack={nav.back}
+          onGone={() => { screens.current = screens.current.filter((entry) => entry.id !== id); screenGone(); }}
+        >
           <Screen route={route} onBack={nav.back} />
         </PhoneScreen>
       ))}
-      {leaving.map(({ id, route }) => (
-        <PhoneScreen key={id} leaving onBack={nav.back} onGone={() => setLeaving((current) => current.filter((entry) => entry.id !== id))}>
-          <Screen route={route} onBack={nav.back} />
-        </PhoneScreen>
-      ))}
-      {state.appSettingsOpen ? <SettingsModal /> : null}
-      {state.pluginsOpen ? <PluginsPanel /> : null}
+      {state.appSettingsOpen ? <ComputerOnlySheet onClose={() => dispatch({ type: "toggleAppSettings", open: false })} /> : null}
+      {state.pluginsOpen ? <ComputerOnlySheet onClose={() => dispatch({ type: "togglePlugins", open: false })} /> : null}
       {state.cloudAdd ? <CloudAddDialog /> : null}
     </div>
   );
@@ -194,7 +208,9 @@ export default function PhoneApp() {
       <DesktopCapabilitiesProvider>
         <StoreProvider>
           <ThreadRefsProvider>
-            <Shell />
+            <PhoneShell.Provider value>
+              <Shell />
+            </PhoneShell.Provider>
           </ThreadRefsProvider>
           <LiveCallHost />
         </StoreProvider>
